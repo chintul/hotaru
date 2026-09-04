@@ -1,0 +1,363 @@
+# =============================================================================
+# hotaru — GraphQL schema (REFERENCE, not deployed)
+# =============================================================================
+# This file is documentation and codegen input. It is NOT the source of truth
+# and it is NOT uploaded anywhere.
+#
+# Supabase serves GraphQL through pg_graphql, which reflects the live Postgres
+# catalog on every request. The real schema is produced by:
+#   * the tables in supabase/migrations/*_tables.sql
+#   * the comment directives in *_graphql.sql (type names, totalCount)
+#   * the SQL privileges in *_rls.sql — a role only sees what it may access, so
+#     `anon`, `authenticated` and an admin session each introspect a DIFFERENT
+#     schema from the same endpoint
+#
+# Endpoint:  POST https://<project-ref>.supabase.co/graphql/v1
+# Headers:   apikey: <publishable key>
+#            Authorization: Bearer <user access token>
+# =============================================================================
+
+scalar UUID
+scalar Datetime
+scalar JSON
+scalar BigInt
+scalar Cursor
+
+enum ProductStatus { draft active archived }
+enum OrderStatus   { awaiting_payment paid packed shipped delivered cancelled refunded oversold }
+enum PaymentStatus { unpaid submitted confirmed failed refunded }
+enum DeliveryKind  { courier pickup intercity }
+enum DiscountKind  { percentage fixed_amount free_delivery }
+
+enum OrderByDirection { AscNullsFirst AscNullsLast DescNullsFirst DescNullsLast }
+
+interface Node { nodeId: ID! }
+
+type PageInfo {
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+  endCursor: String
+}
+
+# -----------------------------------------------------------------------------
+# Catalog
+# -----------------------------------------------------------------------------
+
+type Product implements Node {
+  nodeId: ID!
+  id: UUID!
+  slug: String!
+  status: ProductStatus!
+  isFeatured: Boolean!
+  position: Int!
+  tags: [String]
+  publishedAt: Datetime
+
+  # Derived, trigger-maintained. Filterable and sortable precisely because they
+  # are real columns rather than a computed join.
+  minPriceMnt: BigInt   # whole MNT. Never divide by 100.
+  maxPriceMnt: BigInt
+  inStock: Boolean!
+  ratingAvg: Float
+  ratingCount: Int!
+
+  category: Category
+  productTranslationCollection(first: Int, filter: ProductTranslationFilter): ProductTranslationConnection
+  productImageCollection(first: Int, orderBy: [ProductImageOrderBy!]): ProductImageConnection
+  variantCollection(first: Int, filter: VariantFilter, orderBy: [VariantOrderBy!]): VariantConnection
+  reviewCollection(first: Int, filter: ReviewFilter): ReviewConnection
+}
+
+type ProductTranslation implements Node {
+  nodeId: ID!
+  id: UUID!
+  locale: String!
+  title: String!
+  subtitle: String
+  description: String
+  careDetails: String
+  seoTitle: String
+  seoDescription: String
+}
+
+type ProductImage implements Node {
+  nodeId: ID!
+  id: UUID!
+  imagekitFileId: String!
+  filePath: String!      # feed to ImageKit's <Image src>, not to next/image
+  alt: String
+  width: Int
+  height: Int
+  position: Int!         # 0 = card image, 1 = hover-swap image
+}
+
+type Variant implements Node {
+  nodeId: ID!
+  id: UUID!
+  sku: String
+  optionLabel: String    # null on single-SKU products -> PDP renders no selector
+  optionValue: String
+  priceMnt: BigInt!
+  compareAtPriceMnt: BigInt
+  quantity: Int!
+  allowBackorder: Boolean!
+  position: Int!
+  isActive: Boolean!
+  product: Product
+}
+
+type Category implements Node {
+  nodeId: ID!
+  id: UUID!
+  slug: String!
+  position: Int!
+  isVisible: Boolean!
+  imagePath: String
+  categoryTranslationCollection(first: Int): CategoryTranslationConnection
+  productCollection(first: Int, filter: ProductFilter, orderBy: [ProductOrderBy!]): ProductConnection
+}
+
+type CategoryTranslation implements Node {
+  nodeId: ID!
+  id: UUID!
+  locale: String!
+  name: String!
+  description: String
+}
+
+# -----------------------------------------------------------------------------
+# Commerce
+# -----------------------------------------------------------------------------
+
+type Cart implements Node {
+  nodeId: ID!
+  id: UUID!
+  status: String!
+  updatedAt: Datetime!
+  cartItemCollection(first: Int): CartItemConnection
+}
+
+type CartItem implements Node {
+  nodeId: ID!
+  id: UUID!
+  quantity: Int!
+  variant: Variant       # price is read from here, never stored on the line
+}
+
+type Order implements Node {
+  nodeId: ID!
+  id: UUID!
+  orderNumber: String!
+  email: String!
+  phone: String!
+  status: OrderStatus!
+  paymentStatus: PaymentStatus!
+  subtotalMnt: BigInt!
+  discountMnt: BigInt!
+  deliveryMnt: BigInt!
+  totalMnt: BigInt!
+  shippingAddress: JSON!   # frozen snapshot, not a live reference
+  customerNote: String
+  trackingNumber: String
+  placedAt: Datetime!
+  paidAt: Datetime
+  deliveryMethod: DeliveryMethod
+  orderItemCollection(first: Int): OrderItemConnection
+  paymentCollection(first: Int): PaymentConnection
+}
+
+type OrderItem implements Node {
+  nodeId: ID!
+  id: UUID!
+  productTitle: String!    # snapshot
+  variantLabel: String
+  sku: String
+  imagePath: String
+  unitPriceMnt: BigInt!
+  quantity: Int!
+  lineTotalMnt: BigInt!
+}
+
+type Payment implements Node {
+  nodeId: ID!
+  id: UUID!
+  provider: String!
+  status: PaymentStatus!
+  amountMnt: BigInt!
+  externalReference: String
+  confirmedAt: Datetime
+}
+
+type DeliveryMethod implements Node {
+  nodeId: ID!
+  id: UUID!
+  code: String!
+  name: String!
+  kind: DeliveryKind!
+  feeMnt: BigInt!
+  note: String
+  position: Int!
+}
+
+# -----------------------------------------------------------------------------
+# Customer
+# -----------------------------------------------------------------------------
+
+type Profile implements Node {
+  nodeId: ID!
+  id: UUID!
+  email: String
+  phone: String
+  fullName: String
+  marketingOptIn: Boolean!
+}
+
+type Address implements Node {
+  nodeId: ID!
+  id: UUID!
+  label: String
+  recipientName: String!
+  phone: String!
+  cityAimag: String!
+  districtSum: String!
+  khorooBag: String
+  building: String
+  entrance: String
+  apartment: String
+  landmarkNote: String
+  isDefault: Boolean!
+}
+
+type Review implements Node {
+  nodeId: ID!
+  id: UUID!
+  rating: Int!
+  title: String
+  body: String
+  isVerifiedPurchase: Boolean!
+  isApproved: Boolean!
+  createdAt: Datetime!
+}
+
+type WishlistItem implements Node {
+  nodeId: ID!
+  product: Product
+  createdAt: Datetime!
+}
+
+# -----------------------------------------------------------------------------
+# Connections (pg_graphql generates one per type; abbreviated here)
+# -----------------------------------------------------------------------------
+
+type ProductConnection            { edges: [ProductEdge!]!            pageInfo: PageInfo! totalCount: Int! }
+type ProductEdge                  { cursor: String! node: Product! }
+type VariantConnection            { edges: [VariantEdge!]!            pageInfo: PageInfo! }
+type VariantEdge                  { cursor: String! node: Variant! }
+type ProductImageConnection       { edges: [ProductImageEdge!]!       pageInfo: PageInfo! }
+type ProductImageEdge             { cursor: String! node: ProductImage! }
+type ProductTranslationConnection { edges: [ProductTranslationEdge!]! pageInfo: PageInfo! }
+type ProductTranslationEdge       { cursor: String! node: ProductTranslation! }
+type CategoryConnection           { edges: [CategoryEdge!]!           pageInfo: PageInfo! }
+type CategoryEdge                 { cursor: String! node: Category! }
+type CategoryTranslationConnection{ edges: [CategoryTranslationEdge!]! pageInfo: PageInfo! }
+type CategoryTranslationEdge      { cursor: String! node: CategoryTranslation! }
+type CartItemConnection           { edges: [CartItemEdge!]!           pageInfo: PageInfo! }
+type CartItemEdge                 { cursor: String! node: CartItem! }
+type OrderConnection              { edges: [OrderEdge!]!              pageInfo: PageInfo! totalCount: Int! }
+type OrderEdge                    { cursor: String! node: Order! }
+type OrderItemConnection          { edges: [OrderItemEdge!]!          pageInfo: PageInfo! }
+type OrderItemEdge                { cursor: String! node: OrderItem! }
+type PaymentConnection            { edges: [PaymentEdge!]!            pageInfo: PageInfo! }
+type PaymentEdge                  { cursor: String! node: Payment! }
+type DeliveryMethodConnection     { edges: [DeliveryMethodEdge!]!     pageInfo: PageInfo! }
+type DeliveryMethodEdge           { cursor: String! node: DeliveryMethod! }
+type AddressConnection            { edges: [AddressEdge!]!            pageInfo: PageInfo! }
+type AddressEdge                  { cursor: String! node: Address! }
+type ProfileConnection            { edges: [ProfileEdge!]!            pageInfo: PageInfo! }
+type ProfileEdge                  { cursor: String! node: Profile! }
+type ReviewConnection             { edges: [ReviewEdge!]!             pageInfo: PageInfo! totalCount: Int! }
+type ReviewEdge                   { cursor: String! node: Review! }
+type WishlistItemConnection       { edges: [WishlistItemEdge!]!       pageInfo: PageInfo! }
+type WishlistItemEdge             { cursor: String! node: WishlistItem! }
+
+# Filter/order inputs follow pg_graphql's pattern:
+#   <Type>Filter  { <field>: <Scalar>Filter, and: [...], or: [...], not: ... }
+#   <Scalar>Filter{ eq, neq, gt, gte, lt, lte, in, is, startsWith, like, ilike }
+#   <Type>OrderBy { <field>: OrderByDirection }
+input ProductFilter            { id: UUIDFilter, slug: StringFilter, status: ProductStatusFilter, isFeatured: BooleanFilter, inStock: BooleanFilter, minPriceMnt: BigIntFilter, categoryId: UUIDFilter, and: [ProductFilter!], or: [ProductFilter!] }
+input ProductOrderBy           { position: OrderByDirection, minPriceMnt: OrderByDirection, publishedAt: OrderByDirection }
+input VariantFilter            { isActive: BooleanFilter }
+input VariantOrderBy           { position: OrderByDirection }
+input ProductImageOrderBy      { position: OrderByDirection }
+input ProductTranslationFilter { locale: StringFilter }
+input ReviewFilter             { isApproved: BooleanFilter }
+input OrderFilter              { status: OrderStatusFilter, paymentStatus: PaymentStatusFilter }
+input OrderOrderBy             { placedAt: OrderByDirection }
+input UUIDFilter          { eq: UUID, in: [UUID!] }
+input StringFilter        { eq: String, in: [String!], like: String, ilike: String, startsWith: String }
+input BooleanFilter       { eq: Boolean, is: FilterIs }
+input BigIntFilter        { eq: BigInt, gt: BigInt, gte: BigInt, lt: BigInt, lte: BigInt }
+input ProductStatusFilter { eq: ProductStatus, in: [ProductStatus!] }
+input OrderStatusFilter   { eq: OrderStatus, in: [OrderStatus!] }
+input PaymentStatusFilter { eq: PaymentStatus, in: [PaymentStatus!] }
+enum FilterIs { NULL NOT_NULL }
+
+# -----------------------------------------------------------------------------
+# Query
+# -----------------------------------------------------------------------------
+# Auto-generated collections, plus `stable` SQL functions.
+
+type Query {
+  node(nodeId: ID!): Node
+
+  productCollection(first: Int, last: Int, before: Cursor, after: Cursor, filter: ProductFilter, orderBy: [ProductOrderBy!]): ProductConnection
+  categoryCollection(first: Int, after: Cursor): CategoryConnection
+  variantCollection(first: Int, filter: VariantFilter): VariantConnection
+  deliveryMethodCollection(first: Int): DeliveryMethodConnection
+  cartCollection(first: Int): CartConnection
+  orderCollection(first: Int, after: Cursor, filter: OrderFilter, orderBy: [OrderOrderBy!]): OrderConnection
+  addressCollection(first: Int): AddressConnection
+  profileCollection(first: Int): ProfileConnection
+  reviewCollection(first: Int, filter: ReviewFilter): ReviewConnection
+  wishlistItemCollection(first: Int): WishlistItemConnection
+
+  # public.search_products(term text) — `stable`, so it lands on Query and
+  # returns a full Relay connection.
+  searchProducts(term: String!, first: Int, after: Cursor, filter: ProductFilter, orderBy: [ProductOrderBy!]): ProductConnection
+}
+
+type CartConnection { edges: [CartEdge!]! pageInfo: PageInfo! }
+type CartEdge       { cursor: String! node: Cart! }
+
+# -----------------------------------------------------------------------------
+# Mutation
+# -----------------------------------------------------------------------------
+# ONLY function-backed mutations are listed, because `authenticated` is granted
+# SELECT and nothing else — pg_graphql therefore does not reflect
+# insertInto*/update*/deleteFrom* into the storefront schema at all.
+#
+# Arguments without a SQL default are non-null here; ones with a default are
+# nullable. That mapping is automatic, not hand-written.
+
+type Mutation {
+  addToCart(variantId: UUID!, quantity: Int): Cart
+  setCartItemQuantity(variantId: UUID!, quantity: Int!): Cart
+  clearCart: Cart
+
+  # Anonymous session mints a token; the signed-in account redeems it. Never
+  # takes a profile id — see the security note in the functions migration.
+  issueCartTransferToken: UUID
+  redeemCartTransfer(token: UUID!): Cart
+
+  placeOrder(addressId: UUID!, deliveryMethodId: UUID!, discountCode: String, customerNote: String): Order
+  submitPaymentProof(orderId: UUID!, externalReference: String, payerNote: String): Order
+  cancelOrder(orderId: UUID!, reason: String): Order
+
+  toggleWishlist(productId: UUID!): Boolean
+  submitReview(productId: UUID!, rating: Int!, title: String, body: String): Review
+
+  # Admin session only. is_admin() is enforced inside the function, not by the
+  # schema — an ordinary customer can see the field and will be refused.
+  confirmPayment(orderId: UUID!, externalReference: String, amountMnt: BigInt): Order
+}

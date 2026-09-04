@@ -1,0 +1,249 @@
+# =============================================================================
+# Storefront operations — every query/mutation the shop actually issues.
+# =============================================================================
+# All money fields are whole MNT. Format with Intl.NumberFormat('mn-MN'), never
+# by dividing by 100.
+# =============================================================================
+
+fragment ProductCard on Product {
+  id
+  slug
+  minPriceMnt
+  maxPriceMnt
+  inStock
+  ratingAvg
+  ratingCount
+  productTranslationCollection(first: 1, filter: { locale: { eq: "mn" } }) {
+    edges { node { title subtitle } }
+  }
+  # Two images: position 0 renders in the grid, position 1 is the hover swap.
+  productImageCollection(first: 2, orderBy: [{ position: AscNullsLast }]) {
+    edges { node { filePath alt width height position } }
+  }
+}
+
+# Catalog grid. One request per page; no N+1, because price/stock/rating are
+# real columns on Product rather than aggregates over variants.
+query CatalogPage($first: Int = 12, $after: Cursor, $categoryId: UUID) {
+  productCollection(
+    first: $first
+    after: $after
+    filter: { status: { eq: active }, categoryId: { eq: $categoryId } }
+    orderBy: [{ position: AscNullsLast }]
+  ) {
+    totalCount
+    pageInfo { hasNextPage endCursor }
+    edges { node { ...ProductCard } }
+  }
+}
+
+query FeaturedProducts {
+  productCollection(
+    first: 8
+    filter: { status: { eq: active }, isFeatured: { eq: true } }
+    orderBy: [{ position: AscNullsLast }]
+  ) {
+    edges { node { ...ProductCard } }
+  }
+}
+
+query NavCategories {
+  categoryCollection(first: 20) {
+    edges {
+      node {
+        id
+        slug
+        position
+        categoryTranslationCollection(first: 1) { edges { node { name } } }
+      }
+    }
+  }
+}
+
+# Product detail. A product whose variantCollection has a single node with a
+# null optionLabel renders NO selector — that is the single-SKU case.
+query ProductDetail($slug: String!) {
+  productCollection(first: 1, filter: { slug: { eq: $slug } }) {
+    edges {
+      node {
+        id
+        slug
+        inStock
+        ratingAvg
+        ratingCount
+        tags
+        productTranslationCollection(first: 1, filter: { locale: { eq: "mn" } }) {
+          edges { node { title subtitle description careDetails seoTitle seoDescription } }
+        }
+        productImageCollection(first: 12, orderBy: [{ position: AscNullsLast }]) {
+          edges { node { filePath alt width height position } }
+        }
+        variantCollection(first: 20, filter: { isActive: { eq: true } }, orderBy: [{ position: AscNullsLast }]) {
+          edges {
+            node { id sku optionLabel optionValue priceMnt compareAtPriceMnt quantity allowBackorder }
+          }
+        }
+        reviewCollection(first: 10, filter: { isApproved: { eq: true } }) {
+          totalCount
+          edges { node { id rating title body isVerifiedPurchase createdAt } }
+        }
+      }
+    }
+  }
+}
+
+query SearchProducts($term: String!, $first: Int = 8) {
+  searchProducts(term: $term, first: $first) {
+    edges { node { ...ProductCard } }
+  }
+}
+
+# -----------------------------------------------------------------------------
+# Cart — the drawer refetches this after every mutation
+# -----------------------------------------------------------------------------
+
+fragment CartContents on Cart {
+  id
+  status
+  updatedAt
+  cartItemCollection(first: 50) {
+    edges {
+      node {
+        id
+        quantity
+        variant {
+          id
+          sku
+          optionLabel
+          optionValue
+          priceMnt
+          quantity
+          allowBackorder
+          product {
+            slug
+            productTranslationCollection(first: 1, filter: { locale: { eq: "mn" } }) {
+              edges { node { title } }
+            }
+            productImageCollection(first: 1, orderBy: [{ position: AscNullsLast }]) {
+              edges { node { filePath alt } }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+query MyCart { cartCollection(first: 1) { edges { node { ...CartContents } } } }
+
+mutation AddToCart($variantId: UUID!, $quantity: Int = 1) {
+  addToCart(variantId: $variantId, quantity: $quantity) { ...CartContents }
+}
+
+mutation SetCartItemQuantity($variantId: UUID!, $quantity: Int!) {
+  setCartItemQuantity(variantId: $variantId, quantity: $quantity) { ...CartContents }
+}
+
+mutation ClearCart { clearCart { ...CartContents } }
+
+# Cart handoff. Call IssueCartTransferToken while still in the anonymous
+# session, keep the token in memory, then redeem it after signing in to the
+# pre-existing account. Only needed when identity linking fails because the
+# email already belongs to an account.
+mutation IssueCartTransferToken { issueCartTransferToken }
+mutation RedeemCartTransfer($token: UUID!) { redeemCartTransfer(token: $token) { ...CartContents } }
+
+# -----------------------------------------------------------------------------
+# Checkout
+# -----------------------------------------------------------------------------
+
+query CheckoutContext {
+  deliveryMethodCollection(first: 10) {
+    edges { node { id code name kind feeMnt note position } }
+  }
+  addressCollection(first: 10) {
+    edges {
+      node {
+        id label recipientName phone cityAimag districtSum
+        khorooBag building entrance apartment landmarkNote isDefault
+      }
+    }
+  }
+}
+
+# Amounts are absent from the input on purpose: subtotal, discount, delivery and
+# total are all computed in Postgres from the catalog.
+mutation PlaceOrder(
+  $addressId: UUID!
+  $deliveryMethodId: UUID!
+  $discountCode: String
+  $customerNote: String
+) {
+  placeOrder(
+    addressId: $addressId
+    deliveryMethodId: $deliveryMethodId
+    discountCode: $discountCode
+    customerNote: $customerNote
+  ) {
+    id orderNumber status paymentStatus
+    subtotalMnt discountMnt deliveryMnt totalMnt
+  }
+}
+
+mutation SubmitPaymentProof($orderId: UUID!, $externalReference: String, $payerNote: String) {
+  submitPaymentProof(orderId: $orderId, externalReference: $externalReference, payerNote: $payerNote) {
+    id orderNumber status paymentStatus
+  }
+}
+
+# -----------------------------------------------------------------------------
+# Account
+# -----------------------------------------------------------------------------
+
+query MyOrders($first: Int = 20, $after: Cursor) {
+  orderCollection(first: $first, after: $after, orderBy: [{ placedAt: DescNullsLast }]) {
+    totalCount
+    pageInfo { hasNextPage endCursor }
+    edges {
+      node {
+        id orderNumber status paymentStatus totalMnt placedAt trackingNumber
+        deliveryMethod { name kind }
+        orderItemCollection(first: 20) {
+          edges { node { productTitle variantLabel quantity unitPriceMnt lineTotalMnt imagePath } }
+        }
+      }
+    }
+  }
+}
+
+query OrderStatus($orderNumber: String!) {
+  orderCollection(first: 1, filter: { orderNumber: { eq: $orderNumber } }) {
+    edges {
+      node {
+        id orderNumber status paymentStatus totalMnt placedAt paidAt trackingNumber shippingAddress
+        paymentCollection(first: 1) { edges { node { provider status externalReference confirmedAt } } }
+        orderItemCollection(first: 20) {
+          edges { node { productTitle variantLabel quantity unitPriceMnt lineTotalMnt imagePath } }
+        }
+      }
+    }
+  }
+}
+
+query MyWishlist {
+  wishlistItemCollection(first: 50) {
+    edges { node { createdAt product { ...ProductCard } } }
+  }
+}
+
+mutation ToggleWishlist($productId: UUID!) { toggleWishlist(productId: $productId) }
+
+mutation SubmitReview($productId: UUID!, $rating: Int!, $title: String, $body: String) {
+  submitReview(productId: $productId, rating: $rating, title: $title, body: $body) {
+    id rating title body isApproved isVerifiedPurchase
+  }
+}
+
+mutation CancelOrder($orderId: UUID!, $reason: String) {
+  cancelOrder(orderId: $orderId, reason: $reason) { id orderNumber status }
+}

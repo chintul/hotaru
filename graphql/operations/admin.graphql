@@ -1,0 +1,117 @@
+# =============================================================================
+# Admin operations — /admin, solo owner
+# =============================================================================
+# The admin session introspects a LARGER schema than the storefront: is_admin()
+# widens the RLS policies, so draft products, all orders and discount codes
+# become visible through the very same queries.
+# =============================================================================
+
+# The owner's home screen. Orders awaiting payment confirmation come first —
+# with manual bank transfer this queue is the business.
+query PendingPayments($first: Int = 50) {
+  orderCollection(
+    first: $first
+    filter: { status: { eq: awaiting_payment } }
+    orderBy: [{ placedAt: AscNullsLast }]
+  ) {
+    totalCount
+    edges {
+      node {
+        id orderNumber email phone totalMnt placedAt paymentStatus customerNote shippingAddress
+        deliveryMethod { name kind feeMnt }
+        paymentCollection(first: 1) {
+          edges { node { id provider status amountMnt externalReference payerNote } }
+        }
+        orderItemCollection(first: 30) {
+          edges { node { productTitle variantLabel sku quantity unitPriceMnt lineTotalMnt } }
+        }
+      }
+    }
+  }
+}
+
+# Anything here needs the owner's attention immediately: money was taken but
+# stock could not be decremented.
+query OversoldOrders {
+  orderCollection(first: 50, filter: { status: { eq: oversold } }, orderBy: [{ placedAt: DescNullsLast }]) {
+    totalCount
+    edges {
+      node {
+        id orderNumber email phone totalMnt placedAt internalNote
+        orderItemCollection(first: 30) {
+          edges { node { productTitle variantLabel sku quantity } }
+        }
+      }
+    }
+  }
+}
+
+query AllOrders($first: Int = 50, $after: Cursor, $status: OrderStatus) {
+  orderCollection(first: $first, after: $after, filter: { status: { eq: $status } }, orderBy: [{ placedAt: DescNullsLast }]) {
+    totalCount
+    pageInfo { hasNextPage endCursor }
+    edges {
+      node { id orderNumber email phone status paymentStatus totalMnt placedAt trackingNumber }
+    }
+  }
+}
+
+# Confirms funds received AND performs the authoritative stock decrement.
+# Idempotent: calling it twice never decrements twice. If stock cannot cover the
+# order it returns status `oversold` instead of shipping something that is gone.
+mutation ConfirmPayment($orderId: UUID!, $externalReference: String, $amountMnt: BigInt) {
+  confirmPayment(orderId: $orderId, externalReference: $externalReference, amountMnt: $amountMnt) {
+    id orderNumber status paymentStatus paidAt
+  }
+}
+
+mutation AdminCancelOrder($orderId: UUID!, $reason: String) {
+  cancelOrder(orderId: $orderId, reason: $reason) { id orderNumber status }
+}
+
+# Inventory view — includes drafts, which the storefront cannot see at all.
+query InventoryList($first: Int = 100, $after: Cursor) {
+  productCollection(first: $first, after: $after, orderBy: [{ position: AscNullsLast }]) {
+    totalCount
+    pageInfo { hasNextPage endCursor }
+    edges {
+      node {
+        id slug status isFeatured position minPriceMnt inStock publishedAt
+        productTranslationCollection(first: 1, filter: { locale: { eq: "mn" } }) {
+          edges { node { title } }
+        }
+        productImageCollection(first: 1, orderBy: [{ position: AscNullsLast }]) {
+          edges { node { filePath } }
+        }
+        variantCollection(first: 20, orderBy: [{ position: AscNullsLast }]) {
+          edges { node { id sku optionLabel optionValue priceMnt quantity isActive } }
+        }
+      }
+    }
+  }
+}
+
+query DiscountCodes {
+  discountCodeCollection(first: 50) {
+    edges {
+      node { id code kind value minSubtotalMnt startsAt endsAt usageLimit timesUsed isActive }
+    }
+  }
+}
+
+query PendingReviews {
+  reviewCollection(first: 50, filter: { isApproved: { eq: false } }) {
+    totalCount
+    edges { node { id rating title body isVerifiedPurchase createdAt } }
+  }
+}
+
+# -----------------------------------------------------------------------------
+# NOTE ON ADMIN WRITES
+# -----------------------------------------------------------------------------
+# Product/variant/image CRUD and review approval are NOT in this document yet.
+# They are deliberately absent rather than forgotten: like every other write in
+# this system they must land as SECURITY DEFINER functions (admin_upsert_product,
+# admin_set_stock, admin_approve_review, ...) so that the "no direct table
+# writes" rule holds for the owner too, and so the every-product-has-a-variant
+# invariant is enforced in one place. Those functions are Phase 3 work.
