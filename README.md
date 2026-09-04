@@ -7,13 +7,17 @@ Supabase Postgres + Auth + `pg_graphql` · ImageKit · Resend · Vercel
 
 ## Status
 
-Phase 1 complete: database schema, write path, RLS, and the GraphQL surface.
-Phases 2 (storefront) and 3 (backoffice) not started.
+All three phases built and verified end to end against the live project
+(`ordmeqxctxvhpesbmexi`, ap-northeast-1).
+
+**Read [MORNING.md](MORNING.md) first** — it lists the few things still needed.
 
 ```
-supabase/migrations/   6 migrations — applied and behaviour-tested
+supabase/migrations/   9 migrations, applied to the linked project
 graphql/schema.graphql reference SDL (not deployed; pg_graphql reflects live)
-graphql/operations/    the queries the app will actually issue
+graphql/operations/    the documented operation set
+lib/queries.js         the documents the app actually sends
+app/                   storefront + /admin
 docs/decisions.md      why the schema looks like this
 ```
 
