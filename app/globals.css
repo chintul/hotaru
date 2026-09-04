@@ -1,0 +1,99 @@
+@import "tailwindcss";
+
+/* ---------------------------------------------------------------------------
+   hotaru — editorial minimal
+   Reference (tagiofficial.com) runs Poppins at 12px body / 16px 700 headings.
+   We keep the proportions and the generous whitespace, with our own palette.
+   Deliberately light-only: an editorial storefront is a white gallery wall,
+   and a dark variant would need its own photography treatment to not look off.
+--------------------------------------------------------------------------- */
+
+@theme {
+  --color-ink:        #0d0d0d;
+  --color-ink-soft:   #4a4a4a;
+  --color-ink-faint:  #8c8c8c;
+  --color-line:       #e6e4e0;
+  --color-paper:      #ffffff;
+  --color-paper-warm: #f7f6f4;
+  --color-accent:     #0d0d0d;
+  --color-sale:       #9a2c2c;
+
+  --font-sans: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
+
+  --tracking-label: 0.14em;
+}
+
+:root { color-scheme: light; }
+
+html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+/* Small uppercase labels carry most of the editorial voice here. */
+.label {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.display {
+  font-weight: 300;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+}
+
+/* Understated link underline that grows on hover. */
+.link-underline {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-size: 0% 1px;
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  transition: background-size 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.link-underline:hover { background-size: 100% 1px; }
+
+/* Product card hover swap. The second image is stacked and cross-fades in;
+   a slow scale keeps it feeling photographic rather than mechanical. */
+.card-media img,
+.card-media .ph {
+  transition: opacity 0.5s ease, transform 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.card-media:hover .media-primary { opacity: 0; }
+.card-media:hover .media-hover   { opacity: 1; }
+.card-media:hover img,
+.card-media:hover .ph { transform: scale(1.04); }
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+.fade-up { animation: fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+@keyframes overlay-in { from { opacity: 0 } to { opacity: 1 } }
+.overlay-in { animation: overlay-in 0.25s ease both; }
+
+@keyframes drawer-in {
+  from { transform: translateX(100%) }
+  to   { transform: none }
+}
+.drawer-in { animation: drawer-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+::selection { background: var(--color-ink); color: var(--color-paper); }
+
+/* Hide the number input spinners on quantity fields. */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+input[type="number"] { -moz-appearance: textfield; }
