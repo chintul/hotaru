@@ -56,6 +56,38 @@ dictionary, so `search_products` combines `to_tsvector('simple', …)` with
 trigram similarity. Verified: `ээмэг` matches, the suffixed `ээмгийг` does not.
 If that becomes a problem the answer is an external index, not a config change.
 
+## Configuration split
+
+**Owner-editable settings live in the database** (`store_settings`, a single
+row): bank name, account number, account holder, payment instructions, payment
+deadline, owner alert address, store contact details. The owner changes an
+account number from /admin; no deploy, no developer.
+
+**Only secrets live in env**: Supabase keys, the ImageKit private key, the
+Resend API key, the worker secret. The owner never touches these.
+
+Bank details are also **snapshotted into each notification payload**, so an
+email shows the account that was current when the order was placed even if the
+owner edits it afterwards.
+
+## Notifications are an outbox, not a direct call
+
+Postgres does not call Resend. Triggers write to `notification_outbox`; a
+service_role worker drains it. Reasons, in order of importance:
+
+1. A missed owner alert means an unfulfilled paid order, so a failed send must
+   be *retried*, not lost. Failures back off exponentially and give up at 5.
+2. The Resend key never has to be stored in the database.
+3. The whole path is testable today with no credentials — verified: 7 events
+   queued across two orders, batch claim under `for update skip locked` hands
+   disjoint rows to concurrent workers.
+4. An email is never sent for a transaction that later rolls back, because the
+   outbox row commits with the order.
+
+A confirmed payment on an `oversold` order deliberately does **not** email the
+customer: telling someone their payment succeeded when you cannot ship is worse
+than silence. The owner's oversold alert drives that refund conversation.
+
 ## Still open
 
 - Brand wordmark and photography — the editorial look is mostly photography
