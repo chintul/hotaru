@@ -25,11 +25,28 @@ export default function ProductCard({ product, priority = false }) {
   const [active, setActive] = useState(0)
 
   const variant = variants[active] ?? variants[0]
-  // Each variant carries its own photo (variants.image_id), so hovering a
-  // swatch shows that colourway rather than a generic second shot. Falls back
-  // to the product gallery for products whose variants have no image.
+
+  // Each variant carries its own photo (variants.image_id).
   const primaryImage = variant?.image ?? images[0]
-  const hoverImage = images.find((i) => i.filePath !== primaryImage?.filePath) ?? images[1]
+
+  // Hovering the card previews the NEXT variant, cycling from whichever swatch
+  // is currently active — not a fixed second photo. Variants can share an image
+  // (a product with five colourways but three photos reuses the last), so walk
+  // forward until the picture actually differs; otherwise the hover looks dead.
+  const nextVariant = (() => {
+    for (let step = 1; step < variants.length; step++) {
+      const candidate = variants[(active + step) % variants.length]
+      if (candidate?.image?.filePath && candidate.image.filePath !== primaryImage?.filePath) {
+        return candidate
+      }
+    }
+    return null
+  })()
+
+  // No label on the preview: the reference's photography already has the
+  // variant name burned into the image, so ours would just print it twice.
+  const hoverImage =
+    nextVariant?.image ?? images.find((i) => i.filePath !== primaryImage?.filePath) ?? null
   const min = toNumber(product.minPriceMnt)
   const max = toNumber(product.maxPriceMnt)
   const ranged = max > min
