@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="mn">
+  <body style="margin:0;background:#f4f4f4;font-family:system-ui,-apple-system,sans-serif;color:#232323">
+    <div style="max-width:520px;margin:0 auto;background:#fff;padding:32px">
+      <p style="font-size:22px;font-weight:700;letter-spacing:-.4px;margin:0 0 24px">hotaru</p>
+
+      <h1 style="font-size:17px;font-weight:700;margin:0 0 8px">Нэвтрэх код</h1>
+      <p style="font-size:14px;color:#6b6b6b;margin:0 0 20px">
+        Доорх 6 оронтой кодыг хуудсанд оруулна уу. Код 1 цагийн дараа хүчингүй болно.
+      </p>
+
+      <!-- The code is the primary path: the sign-in screen asks for it directly,
+           which works on a desktop browser where the link would open the wrong
+           device's session. -->
+      <p style="font-size:30px;font-weight:700;letter-spacing:6px;margin:0 0 24px">{{ .Token }}</p>
+
+      <p style="font-size:13px;color:#6b6b6b;margin:0 0 8px">Эсвэл энэ холбоосоор шууд нэвтэрнэ үү:</p>
+      <p style="margin:0 0 24px">
+        <a href="{{ .ConfirmationURL }}" style="font-size:13px;color:#232323">{{ .ConfirmationURL }}</a>
+      </p>
+
+      <p style="font-size:12px;color:#8a8a8a;border-top:1px solid #e5e5e5;padding-top:16px;margin:0">
+        Хэрэв та энэ хүсэлтийг илгээгээгүй бол энэ захидлыг үл хайхран орхино уу.
+      </p>
+    </div>
+  </body>
+</html>

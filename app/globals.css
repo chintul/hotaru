@@ -152,6 +152,30 @@ body {
   .btn-outline:hover { background: var(--color-ink-strong); color: #fff; }
 
   .link-underline { text-decoration: underline; text-underline-offset: 4px; }
+
+  /* Auth screens: larger, rounded fields with a 2px focus ring, matching the
+     reference's hosted sign-in. */
+  .auth-input {
+    width: 100%;
+    border-radius: 8px;
+    border: 2px solid var(--color-line);
+    padding: 14px 16px;
+    font-size: 14px;
+    outline: none;
+    transition: border-color .15s ease;
+  }
+  .auth-input:focus { border-color: var(--color-ink-strong); }
+
+  .secondary-action {
+    width: 100%;
+    border-radius: 999px;
+    border: 1px solid var(--color-line);
+    padding: 14px 0;
+    font-size: 14px;
+    font-weight: 500;
+    transition: border-color .15s ease;
+  }
+  .secondary-action:hover { border-color: var(--color-ink-strong); }
 }
 
 @keyframes fade-up { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: none } }

@@ -247,6 +247,18 @@ otp_expiry = 3600
 # subject = "You have been invited"
 # content_path = "./supabase/templates/invite.html"
 
+# Sign-in is OTP, not a password, so the email should carry {{ .Token }} —
+# Supabase's default magic-link template contains only the URL.
+#
+# COMMENTED OUT ON PURPOSE: template overrides are rejected on the free tier
+# with the built-in email provider ("Email template modification is not
+# available for free tier projects using the default email provider"). Leaving
+# it active makes every `supabase config push` fail. Uncomment once custom SMTP
+# (Resend) is configured — the template file is ready and includes the code.
+# [auth.email.template.magic_link]
+# subject = "hotaru — нэвтрэх код"
+# content_path = "./supabase/templates/magic_link.html"
+
 # Uncomment to customize notification email template
 # [auth.email.notification.password_changed]
 # enabled = true

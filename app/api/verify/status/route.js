@@ -39,8 +39,11 @@ export async function GET(request) {
       return NextResponse.json({
         status: 'VERIFIED',
         phone: record.phone,
-        // The caller needs to know whether it must move a cart across accounts.
+        // 'attached'          -> same uid kept, cart untouched
+        // 'signed_in_existing'-> different account owns this number; the client
+        //                        adopts the returned session and moves the cart
         outcome: attach.outcome,
+        session: attach.session ?? null,
       })
     }
 

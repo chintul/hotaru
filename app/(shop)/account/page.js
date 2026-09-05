@@ -6,11 +6,12 @@ import { ME } from '@/lib/queries'
 import { nodes } from '@/lib/format'
 import { useSession } from '@/components/useSession'
 import { useAuthUpgrade } from '@/components/useAuthUpgrade'
+import PhoneVerify from '@/components/PhoneVerify'
 
 export default function AccountPage() {
   const { isAuthenticated, ready, user } = useSession()
   const { signOut } = useAuthUpgrade()
-  const { data } = useQuery(ME, {
+  const { data, refetch } = useQuery(ME, {
     variables: { id: user?.id },
     skip: !isAuthenticated || !user?.id,
     fetchPolicy: 'cache-and-network',
@@ -34,9 +35,31 @@ export default function AccountPage() {
 
       <dl className="mt-10 divide-y divide-line border-y border-line">
         <Row label="Имэйл" value={profile?.email ?? user?.email ?? '—'} />
-        <Row label="Утас" value={profile?.phone ?? '—'} />
+        <Row
+          label="Утас"
+          value={
+            profile?.phone
+              ? `${profile.phone}${profile.phoneVerifiedAt ? ' · баталгаажсан' : ''}`
+              : '—'
+          }
+        />
         <Row label="Нэр" value={profile?.fullName ?? '—'} />
       </dl>
+
+      {/* Attaching a verified number is what makes phone sign-in possible for
+          this account afterwards — including the owner's own admin account. */}
+      {!profile?.phoneVerifiedAt && (
+        <section className="mt-8 border border-line p-6">
+          <h2 className="text-[15px] font-bold">Утасны дугаараа баталгаажуулах</h2>
+          <p className="mt-1.5 text-[13px] text-ink-soft">
+            Баталгаажуулсны дараа зөвхөн утсаараа нэвтэрч, хүргэлтийн үед холбогдоход
+            ашиглагдана.
+          </p>
+          <div className="mt-5">
+            <PhoneVerify onVerified={() => refetch()} initialPhone={profile?.phone ?? ''} />
+          </div>
+        </section>
+      )}
 
       <div className="mt-8 flex flex-wrap gap-x-6 gap-y-3">
         <Link href="/orders" className="label link-underline">Миний захиалга</Link>

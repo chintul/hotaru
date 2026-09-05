@@ -1,6 +1,8 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useApolloClient } from '@apollo/client/react'
+import { ISSUE_CART_TRANSFER, REDEEM_CART_TRANSFER } from '@/lib/queries'
 import { ensureSession, supabaseBrowser } from '@/lib/supabase/browser'
 
 const POLL_MS = 3000
@@ -25,6 +27,9 @@ export default function PhoneVerify({ onVerified, initialPhone = '' }) {
   const [error, setError] = useState(null)
   const [secondsLeft, setSecondsLeft] = useState(0)
   const pollRef = useRef(null)
+  const apollo = useApolloClient()
+  // Minted before the account can change hands, while we still own the cart.
+  const transferTokenRef = useRef(null)
 
   const stopPolling = useCallback(() => {
     if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null }
@@ -54,6 +59,16 @@ export default function PhoneVerify({ onVerified, initialPhone = '' }) {
       // same identity the cart uses — and verification then converts it in
       // place, so nothing is stranded.
       await ensureSession()
+
+      // If this number turns out to belong to another account we will be signed
+      // in as that account, and the cart we are holding would be stranded. Mint
+      // the single-use handoff token now, while it is still ours.
+      try {
+        const t = await apollo.mutate({ mutation: ISSUE_CART_TRANSFER })
+        transferTokenRef.current = t.data?.issueCartTransferToken ?? null
+      } catch {
+        // An empty cart has nothing to hand over.
+      }
 
       const res = await fetch('/api/verify/start', {
         method: 'POST',
@@ -87,9 +102,26 @@ export default function PhoneVerify({ onVerified, initialPhone = '' }) {
         if (body.status === 'VERIFIED') {
           stopPolling()
           setStatus('verified')
-          // The phone was attached to the account server-side; refresh so the
-          // client session reflects it before checkout continues.
-          await supabaseBrowser().auth.refreshSession()
+          const supabase = supabaseBrowser()
+
+          if (body.session) {
+            // The number belongs to an existing account, so we adopt its
+            // session and carry the cart across with the token minted earlier.
+            await supabase.auth.setSession(body.session)
+            if (transferTokenRef.current) {
+              try {
+                await apollo.mutate({
+                  mutation: REDEEM_CART_TRANSFER,
+                  variables: { token: transferTokenRef.current },
+                })
+              } catch { /* nothing to move */ }
+            }
+          } else {
+            // Same uid kept; refresh so is_anonymous reflects the conversion.
+            await supabase.auth.refreshSession()
+          }
+
+          await apollo.resetStore().catch(() => {})
           onVerified?.({ phone: body.phone, outcome: body.outcome })
         } else if (body.status === 'EXPIRED') {
           stopPolling()

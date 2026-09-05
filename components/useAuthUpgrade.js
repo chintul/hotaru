@@ -6,7 +6,11 @@ import { ISSUE_CART_TRANSFER, REDEEM_CART_TRANSFER } from '@/lib/queries'
 import { ensureSession, supabaseBrowser } from '@/lib/supabase/browser'
 
 /**
- * Turn the visitor into a real account without losing their cart.
+ * Sign-out and cart-handoff helpers.
+ *
+ * The password-based upgrade this file used to own is gone: sign-in is OTP
+ * everywhere now (phone via verify.mn, email via Supabase). What remains is the
+ * cart handoff those flows share and signOut.
  *
  * Happy path: the visitor is an anonymous user, so updateUser() links an email
  * to that SAME uid. The cart never moves and there is nothing to merge.
