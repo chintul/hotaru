@@ -20,7 +20,7 @@ export default function CategoryRail({ categories }) {
             <li key={c.id} className="text-center">
               <Link href={`/shop?c=${c.slug}`} className="group inline-flex flex-col items-center gap-3">
                 <span className="relative block h-[92px] w-[92px] overflow-hidden rounded-full bg-shade transition-transform duration-300 group-hover:scale-105">
-                  <ProductImage filePath={c.imagePath} alt={name} seed={c.slug} sizes="92px" />
+                  <ProductImage filePath={c.imagePath} alt="" seed={c.slug} sizes="92px" />
                 </span>
                 <span className="text-[13px] font-semibold">{name}</span>
               </Link>

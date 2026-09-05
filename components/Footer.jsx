@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import NewsletterForm from './NewsletterForm'
 
 const COLUMNS = [
   {
@@ -53,18 +54,7 @@ export default function Footer() {
           <p className="mt-5 text-[13px] text-white/70">
             Шинэ бүтээгдэхүүн, хөнгөлөлтийн мэдээллийг хамгийн түрүүнд аваарай.
           </p>
-          <form className="mt-4 flex" action="/api/newsletter" method="post">
-            <input
-              type="email"
-              name="email"
-              required
-              placeholder="Имэйл хаяг"
-              className="min-w-0 flex-1 border border-white/25 bg-transparent px-3 py-3 text-[13px] placeholder:text-white/40 focus:border-white focus:outline-none"
-            />
-            <button type="submit" className="bg-white px-5 py-3 text-[13px] font-bold uppercase tracking-[0.7px] text-ink-strong">
-              Илгээх
-            </button>
-          </form>
+          <NewsletterForm />
         </div>
       </div>
 

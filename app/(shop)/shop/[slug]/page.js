@@ -13,7 +13,13 @@ export async function generateMetadata({ params }) {
   const product = nodes(data?.productCollection)[0]
   if (!product) return { title: 'Бүтээгдэхүүн' }
   const c = productCopy(product)
-  return { title: c.title, description: c.subtitle ?? undefined }
+  // seo_* are the fields written for search results; title/subtitle are what
+  // the page itself shows. Fall back so a product with no SEO copy still gets
+  // a sensible tag rather than nothing.
+  return {
+    title: c.seoTitle ?? c.title,
+    description: c.seoDescription ?? c.description ?? c.subtitle ?? undefined,
+  }
 }
 
 export default async function ProductPage({ params }) {

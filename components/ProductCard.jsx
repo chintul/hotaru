@@ -8,15 +8,20 @@ import ProductImage from './ProductImage'
 /**
  * Deterministic swatch colour from the option name.
  *
- * The reference puts a tiny product photo inside each swatch. We do not have
- * per-variant photography yet, so the name is hashed into a stable hue — the
- * same colour every render, and distinct enough to tell options apart.
+ * Only a fallback now. Every variant carries its own photo, so a swatch shows
+ * the actual colourway as the reference does; this hue is what a variant with
+ * no image of its own gets, and it stays stable across renders.
  */
 function swatchTone(name = '') {
   let h = 0
   for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) % 360
   return `hsl(${h} 38% 72%)`
 }
+
+// Four fit one row at the narrowest card we render (2-up at 390px). A fifth
+// wrapped, which pushed the swatch row onto two lines and made neighbouring
+// cards different heights.
+const MAX_SWATCHES = 4
 
 export default function ProductCard({ product, priority = false }) {
   const c = copy(product)
@@ -96,7 +101,10 @@ export default function ProductCard({ product, priority = false }) {
 
       <div className="mt-3 text-center">
         <Link href={`/shop/${product.slug}`} className="block">
-          <p className="line-clamp-2 text-[14px] leading-snug hover:underline underline-offset-4">
+          {/* Reserve both lines whether or not the title needs them, so the
+              price and swatch rows line up across a row of cards instead of
+              stepping up and down with title length. */}
+          <p className="line-clamp-2 min-h-[2.75em] text-[14px] leading-snug hover:underline underline-offset-4">
             {c.title}
           </p>
         </Link>
@@ -106,8 +114,8 @@ export default function ProductCard({ product, priority = false }) {
         </p>
 
         {variants.length > 1 && (
-          <div className="mt-2.5 flex flex-wrap justify-center gap-1.5">
-            {variants.slice(0, 5).map((v, i) => (
+          <div className="mt-2.5 flex justify-center gap-1.5">
+            {variants.slice(0, MAX_SWATCHES).map((v, i) => (
               <button
                 key={v.id}
                 onMouseEnter={() => setActive(i)}
@@ -118,15 +126,30 @@ export default function ProductCard({ product, priority = false }) {
                 title={v.optionValue ?? ''}
                 aria-label={v.optionValue ?? 'Сонголт'}
               >
-                <span
-                  className="block h-[22px] w-[22px] rounded-full"
-                  style={{ background: swatchTone(v.optionValue) }}
-                />
+                {/* The reference shows the colourway itself, not an abstract
+                    dot — which is the only way to tell "Cream White" from
+                    "Cream Pink" at a glance. */}
+                <span className="block h-[22px] w-[22px] overflow-hidden rounded-full bg-shade">
+                  {v.image?.filePath ? (
+                    <ProductImage
+                      filePath={v.image.filePath}
+                      alt=""
+                      width={22}
+                      height={22}
+                      className="h-full w-full"
+                    />
+                  ) : (
+                    <span
+                      className="block h-full w-full"
+                      style={{ background: swatchTone(v.optionValue) }}
+                    />
+                  )}
+                </span>
               </button>
             ))}
-            {variants.length > 5 && (
+            {variants.length > MAX_SWATCHES && (
               <span className="grid h-[30px] place-items-center px-1 text-[12px] text-ink-soft">
-                +{variants.length - 5}
+                +{variants.length - MAX_SWATCHES}
               </span>
             )}
           </div>

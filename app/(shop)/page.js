@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { safeQuery } from '@/lib/apollo/safeQuery'
-import { CATALOG_PAGE, FEATURED_PRODUCTS, HERO, NAV_CATEGORIES } from '@/lib/queries'
+import { FEATURED_PRODUCTS, HERO, NAV_CATEGORIES, NEW_ARRIVALS } from '@/lib/queries'
 import { firstNode, nodes } from '@/lib/format'
 import ProductImage from '@/components/ProductImage'
 import ProductGrid from '@/components/ProductGrid'
@@ -10,18 +10,18 @@ import CategoryRail from '@/components/CategoryRail'
 export const revalidate = 60
 
 export default async function HomePage() {
-  const [{ data: featuredData, error }, { data: navData }, { data: allData }, { data: heroData }] =
+  const [{ data: featuredData, error }, { data: navData }, { data: newData }, { data: heroData }] =
     await Promise.all([
       safeQuery(FEATURED_PRODUCTS),
       safeQuery(NAV_CATEGORIES),
-      safeQuery(CATALOG_PAGE, { first: 8 }),
+      safeQuery(NEW_ARRIVALS, { first: 8 }),
       safeQuery(HERO),
     ])
 
   const hero = firstNode(heroData?.storeSettingsCollection) ?? {}
 
   const featured = nodes(featuredData?.productCollection)
-  const latest = nodes(allData?.productCollection)
+  const latest = nodes(newData?.productCollection)
 
   return (
     <>

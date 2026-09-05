@@ -9,7 +9,7 @@ import { IconClose, IconMinus, IconPlus } from './Icons'
 
 export default function CartDrawer() {
   const { cartOpen, setCartOpen } = useUI()
-  const { items, subtotal, loading, setQuantity, clear } = useCart()
+  const { items, subtotal, count, loading, setQuantity, clear } = useCart()
 
   if (!cartOpen) return null
 
@@ -22,7 +22,9 @@ export default function CartDrawer() {
       />
       <aside className="drawer-in absolute inset-y-0 right-0 flex w-full max-w-[420px] flex-col bg-paper">
         <div className="flex items-center justify-between border-b border-line px-6 py-4">
-          <p className="nav-link text-[14px]">Сагс{items.length ? ` (${items.length})` : ''}</p>
+          {/* Same total as the header badge: units, not line items. The two
+              disagreed when a single line held more than one of something. */}
+          <p className="nav-link text-[14px]">Сагс{count ? ` (${count})` : ''}</p>
           <button onClick={() => setCartOpen(false)} className="icon-btn -mr-2" aria-label="Хаах">
             <IconClose />
           </button>

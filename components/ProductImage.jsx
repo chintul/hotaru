@@ -30,20 +30,45 @@ export default function ProductImage({
   className = '',
   sizes = '(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw',
   priority = false,
+  // Fixed-size mode. `fill` needs a positioned ancestor and stretches to it,
+  // which is wrong for a swatch: those are tiny, numerous, and sit in normal
+  // flow. Passing a width asks ImageKit for a thumbnail that small instead of
+  // downloading the full 1080px product shot once per swatch.
+  width,
+  height,
 }) {
   const usable = IK_ENDPOINT && filePath
+  const fixed = Boolean(width && height)
 
   if (!usable) {
     const label = (alt || seed || '').trim().charAt(0).toUpperCase()
     return (
       <div
-        className={`ph flex h-full w-full items-center justify-center ${className}`}
-        style={{ background: placeholderTone(seed || alt) }}
+        className={`ph flex items-center justify-center ${fixed ? '' : 'h-full w-full'} ${className}`}
+        style={{
+          background: placeholderTone(seed || alt),
+          ...(fixed ? { width, height } : null),
+        }}
         aria-label={alt || undefined}
         role={alt ? 'img' : 'presentation'}
       >
-        <span className="label text-ink-faint select-none">{label || '—'}</span>
+        {!fixed && <span className="label text-ink-faint select-none">{label || '—'}</span>}
       </div>
+    )
+  }
+
+  if (fixed) {
+    return (
+      <IKImage
+        urlEndpoint={IK_ENDPOINT}
+        src={filePath}
+        alt={alt}
+        width={width}
+        height={height}
+        // Ask for 2x so the thumbnail stays crisp on retina.
+        transformation={[{ width: width * 2, height: height * 2, quality: 80, crop: 'maintain_ratio' }]}
+        className={`object-cover ${className}`}
+      />
     )
   }
 

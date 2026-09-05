@@ -65,7 +65,7 @@ export default function Header() {
           <Link href={isAuthenticated ? '/account' : '/login'} className="icon-btn" aria-label="Профайл">
             <IconUser />
           </Link>
-          <Link href="/wishlist" className="icon-btn hidden sm:grid" aria-label="Хадгалсан">
+          <Link href="/wishlist" className="icon-btn" aria-label="Хадгалсан">
             <IconHeart />
           </Link>
           <button onClick={() => setCartOpen(true)} className="icon-btn relative" aria-label="Сагс">
