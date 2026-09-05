@@ -132,6 +132,15 @@ $$;
 
 -- Admin-gated inside the function; granted so the mutation is reflected into an
 -- authenticated session's schema. A non-admin calling it gets 42501.
+--
+-- The revoke is not optional: Postgres grants EXECUTE to PUBLIC on every new
+-- function, and anon inherits PUBLIC.
+revoke execute on function
+  public.admin_add_product_image(uuid, text, text, text, int, int),
+  public.admin_delete_product_image(uuid),
+  public.admin_reorder_product_images(uuid, uuid[])
+from public, anon;
+
 grant execute on function
   public.admin_add_product_image(uuid, text, text, text, int, int),
   public.admin_delete_product_image(uuid),

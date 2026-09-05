@@ -51,7 +51,33 @@ And one you should reverse before launch:
   returns no session and checkout dead-ends, and there is no verified sending
   domain yet. **Turn this back on once Resend/SMTP is configured.**
 
-## 5. Known gaps
+## 5. What the cron endpoints need on Vercel
+
+`vercel.json` schedules two jobs. Both are gated by `NOTIFICATION_WORKER_SECRET`
+(set it to something real before deploying — the local value is a placeholder):
+
+- `/api/cron/notifications` every 5 minutes — drains the outbox through Resend.
+  Without `RESEND_API_KEY` it returns rows to `pending` rather than burning
+  attempts, so nothing is lost until the key exists.
+- `/api/cron/maintenance` daily at 03:00 — sweeps anonymous users older than
+  7 days that hold no order and no cart, and expires 30-day-old carts.
+
+## 6. Tests
+
+```bash
+npm test          # unit + database
+npm run test:unit # fast, no Docker
+npm run test:db   # migrations + behaviour, needs Docker
+```
+
+The database suite spins a throwaway Postgres, applies every migration and
+asserts the behaviour that matters: checkout maths, the oversell path, RLS
+isolation, cart-transfer tokens, admin guards, and the privilege ledger. It
+mirrors Supabase's permissive default privileges on purpose — a test database
+stricter than production cannot find privilege leaks, which is how one shipped
+earlier.
+
+## 7. Known gaps
 
 - **Product photography does not exist.** The layout is a frame around images;
   it will not look like the reference until real shots go in. This is the single

@@ -2,8 +2,11 @@
 
 import { useState } from 'react'
 import { useMutation, useQuery } from '@apollo/client/react'
-import { ADMIN_PENDING, CANCEL_ORDER, CONFIRM_PAYMENT } from '@/lib/queries'
-import { formatAddress, formatDate, formatMnt, nodes, parseJson } from '@/lib/format'
+import {
+  ADMIN_ALL_ORDERS, ADMIN_MARK_REFUNDED, ADMIN_PENDING, ADMIN_SET_ORDER_STATUS,
+  CANCEL_ORDER, CONFIRM_PAYMENT,
+} from '@/lib/queries'
+import { ORDER_STATUS_LABEL, formatAddress, formatDate, formatMnt, nodes, parseJson } from '@/lib/format'
 import { Badge, Button, Card, EmptyState, Input, PageHeader, Table, Td, Tr } from '@/components/admin/ui'
 
 export default function AdminOrdersPage() {
@@ -35,15 +38,8 @@ export default function AdminOrdersPage() {
           <p className="mb-4 text-[13px] text-a-muted">
             Төлбөр нь баталгаажсан ч бараа дууссан. Буцаалт хийх шаардлагатай.
           </p>
-          <Table head={['Дугаар', 'Имэйл', 'Утас', { label: 'Дүн', align: 'right' }]}>
-            {oversold.map((o) => (
-              <Tr key={o.id}>
-                <Td className="font-medium tabular-nums">{o.orderNumber}</Td>
-                <Td>{o.email}</Td>
-                <Td className="text-a-muted">{o.phone}</Td>
-                <Td align="right" className="tabular-nums">{formatMnt(o.totalMnt)}</Td>
-              </Tr>
-            ))}
+          <Table head={['Дугаар', 'Имэйл', 'Утас', { label: 'Дүн', align: 'right' }, { label: '', align: 'right' }]}>
+            {oversold.map((o) => <OversoldRow key={o.id} order={o} onDone={refetch} />)}
           </Table>
         </Card>
       )}
@@ -55,7 +51,108 @@ export default function AdminOrdersPage() {
           {awaiting.map((order) => <OrderCard key={order.id} order={order} onDone={refetch} />)}
         </div>
       )}
+
+      <FulfilmentQueue />
     </>
+  )
+}
+
+/**
+ * Paid orders waiting to be packed and shipped. Separate from the payment queue
+ * because they are a different job: one is "did the money arrive", the other is
+ * "get it out the door".
+ */
+function FulfilmentQueue() {
+  const { data, refetch } = useQuery(ADMIN_ALL_ORDERS, { variables: { first: 50 }, fetchPolicy: 'cache-and-network' })
+  const open = nodes(data?.orderCollection).filter((o) => ['paid', 'packed', 'shipped'].includes(o.status))
+  if (!open.length) return null
+
+  return (
+    <div className="mt-10">
+      <h2 className="mb-3 text-[14px] font-semibold text-a-ink">Хүргэлт ({open.length})</h2>
+      <Card>
+        <Table head={['Дугаар', 'Төлөв', 'Хаяг', 'Хяналтын дугаар', { label: 'Үйлдэл', align: 'right' }]}>
+          {open.map((o) => <FulfilRow key={o.id} order={o} onDone={refetch} />)}
+        </Table>
+      </Card>
+    </div>
+  )
+}
+
+const NEXT_STATUS = { paid: 'packed', packed: 'shipped', shipped: 'delivered' }
+const NEXT_LABEL = { paid: 'Бэлтгэсэн', packed: 'Илгээсэн', shipped: 'Хүргэгдсэн' }
+
+function FulfilRow({ order, onDone }) {
+  const [setStatus, { loading }] = useMutation(ADMIN_SET_ORDER_STATUS)
+  const [tracking, setTracking] = useState(order.trackingNumber ?? '')
+  const [error, setError] = useState(null)
+  const next = NEXT_STATUS[order.status]
+
+  return (
+    <Tr>
+      <Td className="font-medium tabular-nums">{order.orderNumber}</Td>
+      <Td>
+        <Badge tone={order.status === 'shipped' ? 'blue' : order.status === 'paid' ? 'green' : 'neutral'}>
+          {ORDER_STATUS_LABEL[order.status] ?? order.status}
+        </Badge>
+      </Td>
+      <Td className="text-a-muted">{order.email}</Td>
+      <Td>
+        <Input
+          value={tracking}
+          onChange={(e) => setTracking(e.target.value)}
+          placeholder="Заавал биш"
+          className="max-w-[160px]"
+        />
+      </Td>
+      <Td align="right">
+        {next && (
+          <Button
+            disabled={loading}
+            onClick={async () => {
+              setError(null)
+              try {
+                await setStatus({
+                  variables: {
+                    orderId: order.id,
+                    status: next,
+                    trackingNumber: tracking.trim() || null,
+                  },
+                })
+                onDone()
+              } catch (e) { setError(e?.message ?? 'Алдаа гарлаа.') }
+            }}
+          >
+            {NEXT_LABEL[order.status]}
+          </Button>
+        )}
+        {error && <p className="mt-1 text-[12px] text-red-600">{error}</p>}
+      </Td>
+    </Tr>
+  )
+}
+
+function OversoldRow({ order, onDone }) {
+  const [markRefunded, { loading }] = useMutation(ADMIN_MARK_REFUNDED)
+  return (
+    <Tr>
+      <Td className="font-medium tabular-nums">{order.orderNumber}</Td>
+      <Td>{order.email}</Td>
+      <Td className="text-a-muted">{order.phone}</Td>
+      <Td align="right" className="tabular-nums">{formatMnt(order.totalMnt)}</Td>
+      <Td align="right">
+        <Button
+          variant="secondary"
+          disabled={loading}
+          onClick={async () => {
+            await markRefunded({ variables: { orderId: order.id, note: 'refunded from admin' } })
+            onDone()
+          }}
+        >
+          Буцаалт хийсэн
+        </Button>
+      </Td>
+    </Tr>
   )
 }
 

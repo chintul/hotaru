@@ -12,6 +12,8 @@ const NAV = [
   { href: '/admin', label: 'Захиалга', exact: true },
   { href: '/admin/inventory', label: 'Бараа' },
   { href: '/admin/images', label: 'Зураг' },
+  { href: '/admin/discounts', label: 'Хөнгөлөлт' },
+  { href: '/admin/reviews', label: 'Сэтгэгдэл' },
   { href: '/admin/settings', label: 'Тохиргоо' },
 ]
 

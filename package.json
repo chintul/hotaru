@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "node --test \"tests/unit/*.test.js\" && ./scripts/test-db.sh",
+    "test:unit": "node --test \"tests/unit/*.test.js\"",
+    "test:db": "./scripts/test-db.sh"
   },
   "dependencies": {
     "@apollo/client": "^4.2.12",
@@ -24,5 +27,6 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.4",
     "tailwindcss": "^4"
-  }
+  },
+  "type": "module"
 }
