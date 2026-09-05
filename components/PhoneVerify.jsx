@@ -23,7 +23,7 @@ const POLL_MS = 3000
 export default function PhoneVerify({ onVerified, initialPhone = '' }) {
   const [phone, setPhone] = useState(initialPhone)
   const [session, setSession] = useState(null)
-  const [status, setStatus] = useState('idle') // idle | starting | pending | verified | expired
+  const [status, setStatus] = useState('idle') // idle | starting | pending | verified | expired | failed
   const [error, setError] = useState(null)
   const [secondsLeft, setSecondsLeft] = useState(0)
   const pollRef = useRef(null)
@@ -126,6 +126,12 @@ export default function PhoneVerify({ onVerified, initialPhone = '' }) {
         } else if (body.status === 'EXPIRED') {
           stopPolling()
           setStatus('expired')
+        } else if (body.status === 'ERROR') {
+          // Number proven, session not issued. Say so rather than letting the
+          // visitor believe they are signed in when they are not.
+          stopPolling()
+          setError(body.message ?? 'Нэвтэрч чадсангүй.')
+          setStatus('failed')
         }
       } catch {
         // Transient network trouble: keep polling until the deadline.
@@ -203,7 +209,21 @@ export default function PhoneVerify({ onVerified, initialPhone = '' }) {
         </div>
       )}
 
-      {error && <p className="mt-3 text-[13px] text-sale">{error}</p>}
+      {status === 'failed' && (
+        <div className="mt-3 border border-line bg-shade p-4">
+          <p className="text-[13px] text-ink-soft">
+            Дугаар баталгаажсан ч нэвтрэлт дуусгаж чадсангүй. Дахин оролдоно уу.
+          </p>
+          <button
+            onClick={() => { setSession(null); setError(null); setStatus('idle') }}
+            className="btn-outline mt-3 px-5 py-2.5"
+          >
+            Дахин оролдох
+          </button>
+        </div>
+      )}
+
+      {error && status !== 'failed' && <p className="mt-3 text-[13px] text-sale">{error}</p>}
     </div>
   )
 }

@@ -119,3 +119,54 @@ select test.as_user('99999999-9999-9999-9999-999999999999', false);
 select test.ok(public.current_cart_id() is not null, 'a missing profile is backfilled from auth.users');
 select test.eq((select count(*)::int from public.profiles where id='99999999-9999-9999-9999-999999999999'),
                1, 'the backfilled profile exists');
+
+-- ---- phone sign-in support -------------------------------------------------
+-- Returning sign-ins mint a session for the account that already owns the
+-- number, so the server has to look that account up. Being able to map a phone
+-- number to a user id is exactly the enumeration auth.users is protected
+-- against, so the lookup is service-role only.
+select test.ok(
+  not has_function_privilege('anon', 'public.find_user_id_by_phone(text)', 'EXECUTE'),
+  'anon cannot map a phone number to an account');
+select test.ok(
+  not has_function_privilege('authenticated', 'public.find_user_id_by_phone(text)', 'EXECUTE'),
+  'a signed-in customer cannot map a phone number to an account');
+select test.ok(
+  not has_function_privilege('authenticated', 'public.sync_admin_roles()', 'EXECUTE'),
+  'a signed-in customer cannot run the admin role sync');
+
+-- The lookup matches on the normalised number, so a +976 prefix still resolves.
+insert into auth.users (id, phone, phone_confirmed_at)
+values ('7c000000-0000-0000-0000-0000000000c7', '99112233', now());
+select test.eq(
+  public.find_user_id_by_phone('99112233'),
+  '7c000000-0000-0000-0000-0000000000c7'::uuid,
+  'the owning account is found by its plain number');
+select test.eq(
+  public.find_user_id_by_phone('+976 9911 2233'),
+  '7c000000-0000-0000-0000-0000000000c7'::uuid,
+  'the same account is found through a country code and spacing');
+select test.ok(
+  public.find_user_id_by_phone('90000009') is null,
+  'an unknown number resolves to nobody');
+
+-- A phone-only account gets a synthesised sign-in address. It is a login
+-- identity, not somewhere a human reads mail, so it must never reach
+-- profiles.email — order_notification_payload sends there.
+select test.ok(public.is_placeholder_email('89286859@phone.hotaru.invalid'),
+  'a synthesised sign-in address is recognised as a placeholder');
+select test.ok(not public.is_placeholder_email('someone@gmail.com'),
+  'a real address is not a placeholder');
+
+update auth.users set email = '99112233@phone.hotaru.invalid'
+ where id = '7c000000-0000-0000-0000-0000000000c7';
+select test.ok(
+  (select email from public.profiles where id='7c000000-0000-0000-0000-0000000000c7') is null,
+  'a placeholder sign-in address is kept out of the contact email');
+
+update auth.users set email = 'real@example.com'
+ where id = '7c000000-0000-0000-0000-0000000000c7';
+select test.eq(
+  (select email::text from public.profiles where id='7c000000-0000-0000-0000-0000000000c7'),
+  'real@example.com',
+  'a genuine address still reaches the contact email');

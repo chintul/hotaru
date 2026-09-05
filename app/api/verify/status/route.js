@@ -37,6 +37,19 @@ export async function GET(request) {
       }
       const attach = await attachPhoneToUser(admin, { userId: user.id, phone: record.phone })
 
+      // Say so when the handover failed. This used to report VERIFIED with a
+      // null session, which the client reads as "same uid kept" — so it
+      // refreshed the ANONYMOUS session and announced success while the
+      // visitor was still signed out. A silent failure is worse than a loud
+      // one: the number is proven, but we could not produce the session.
+      if (attach.outcome === 'error') {
+        console.error('[verify.mn] could not complete sign-in:', attach.message)
+        return NextResponse.json({
+          status: 'ERROR',
+          message: 'Дугаар баталгаажсан ч нэвтэрч чадсангүй. Дахин оролдоно уу.',
+        })
+      }
+
       // The number is confirmed on auth.users now, so an allowlisted owner
       // number becomes an admin role here rather than on some later login.
       // Promotion reads auth.users.phone, never the customer-writable
