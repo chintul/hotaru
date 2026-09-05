@@ -5,10 +5,16 @@
 -- exactly how migration 07 shipped tables with ALL privileges granted to anon.
 create schema if not exists auth;
 
+-- Mirrors the columns of Supabase's real auth.users that our migrations read.
+-- Anything missing here passes locally and fails on push, so add the column
+-- when a migration starts depending on it: phone_confirmed_at was added after
+-- sync_admin_roles() began gating admin promotion on a *confirmed* number.
 create table if not exists auth.users (
   id uuid primary key default gen_random_uuid(),
   email text,
   phone text,
+  email_confirmed_at timestamptz,
+  phone_confirmed_at timestamptz,
   raw_user_meta_data jsonb default '{}'::jsonb,
   is_anonymous boolean not null default false,
   created_at timestamptz not null default now()

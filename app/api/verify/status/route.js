@@ -36,6 +36,14 @@ export async function GET(request) {
         await markSession(admin, sessionId, 'verified')
       }
       const attach = await attachPhoneToUser(admin, { userId: user.id, phone: record.phone })
+
+      // The number is confirmed on auth.users now, so an allowlisted owner
+      // number becomes an admin role here rather than on some later login.
+      // Promotion reads auth.users.phone, never the customer-writable
+      // profiles.phone — see 20260905120000_admin_phone_allowlist.sql.
+      const { error: syncError } = await admin.rpc('sync_admin_roles')
+      if (syncError) console.error('[admin] role sync failed:', syncError.message)
+
       return NextResponse.json({
         status: 'VERIFIED',
         phone: record.phone,
