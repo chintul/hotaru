@@ -47,7 +47,7 @@ export default function ProductCard({ product, priority = false }) {
             />
           </div>
           {hoverImage && (
-            <div className="media-hover absolute inset-0 opacity-0">
+            <div className="media-hover absolute inset-0">
               <ProductImage
                 filePath={hoverImage.filePath}
                 alt={hoverImage.alt || c.title || product.slug}
