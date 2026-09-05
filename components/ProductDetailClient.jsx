@@ -24,6 +24,13 @@ export default function ProductDetailClient({ product, copy }) {
 
   const [selectedId, setSelectedId] = useState(variants[0]?.id ?? null)
   const [activeImage, setActiveImage] = useState(0)
+  // Picking a colour should show that colour. Jump the gallery to the variant's
+  // own image when it has one.
+  const selectVariant = (v) => {
+    setSelectedId(v.id)
+    const idx = images.findIndex((img) => img.filePath === v.image?.filePath)
+    if (idx >= 0) setActiveImage(idx)
+  }
   const [qty, setQty] = useState(1)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState(null)
@@ -133,7 +140,7 @@ export default function ProductDetailClient({ product, copy }) {
                   return (
                     <button
                       key={v.id}
-                      onClick={() => setSelectedId(v.id)}
+                      onClick={() => selectVariant(v)}
                       disabled={out}
                       data-active={v.id === selectedId}
                       className={`swatch h-[46px] w-[46px] ${out ? 'cursor-not-allowed opacity-40' : ''}`}
@@ -233,7 +240,10 @@ export default function ProductDetailClient({ product, copy }) {
             {hasOptions && (
               <select
                 value={selectedId ?? ''}
-                onChange={(e) => setSelectedId(e.target.value)}
+                onChange={(e) => {
+                  const v = variants.find((x) => x.id === e.target.value)
+                  if (v) selectVariant(v)
+                }}
                 className="hidden border border-line px-3 py-2 text-[13px] sm:block"
               >
                 {variants.map((v) => <option key={v.id} value={v.id}>{v.optionValue}</option>)}

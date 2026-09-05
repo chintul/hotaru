@@ -88,3 +88,18 @@ select test.eq(
 select test.ok(
   not has_function_privilege('anon', 'public.order_notification_payload(uuid)', 'EXECUTE'),
   'the RLS-bypassing notification payload is not reachable by anon');
+
+-- ---- store settings column exposure ---------------------------------------
+-- The hero must be readable by a logged-out visitor; the bank account must not.
+select test.ok(
+  has_column_privilege('anon', 'public.store_settings', 'hero_image_path', 'SELECT'),
+  'anon can read the hero image');
+select test.ok(
+  not has_column_privilege('anon', 'public.store_settings', 'bank_account_number', 'SELECT'),
+  'anon cannot read the bank account number');
+select test.ok(
+  not has_column_privilege('anon', 'public.store_settings', 'owner_alert_email', 'SELECT'),
+  'anon cannot read the owner alert address');
+select test.ok(
+  has_column_privilege('authenticated', 'public.store_settings', 'bank_account_number', 'SELECT'),
+  'a signed-in customer can read the bank details to pay');

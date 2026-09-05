@@ -1,7 +1,8 @@
 import Link from 'next/link'
 import { safeQuery } from '@/lib/apollo/safeQuery'
-import { CATALOG_PAGE, FEATURED_PRODUCTS, NAV_CATEGORIES } from '@/lib/queries'
-import { nodes } from '@/lib/format'
+import { CATALOG_PAGE, FEATURED_PRODUCTS, HERO, NAV_CATEGORIES } from '@/lib/queries'
+import { firstNode, nodes } from '@/lib/format'
+import ProductImage from '@/components/ProductImage'
 import ProductGrid from '@/components/ProductGrid'
 import SectionHeading from '@/components/SectionHeading'
 import CategoryRail from '@/components/CategoryRail'
@@ -9,34 +10,58 @@ import CategoryRail from '@/components/CategoryRail'
 export const revalidate = 60
 
 export default async function HomePage() {
-  const [{ data: featuredData, error }, { data: navData }, { data: allData }] = await Promise.all([
-    safeQuery(FEATURED_PRODUCTS),
-    safeQuery(NAV_CATEGORIES),
-    safeQuery(CATALOG_PAGE, { first: 8 }),
-  ])
+  const [{ data: featuredData, error }, { data: navData }, { data: allData }, { data: heroData }] =
+    await Promise.all([
+      safeQuery(FEATURED_PRODUCTS),
+      safeQuery(NAV_CATEGORIES),
+      safeQuery(CATALOG_PAGE, { first: 8 }),
+      safeQuery(HERO),
+    ])
+
+  const hero = firstNode(heroData?.storeSettingsCollection) ?? {}
 
   const featured = nodes(featuredData?.productCollection)
   const latest = nodes(allData?.productCollection)
 
   return (
     <>
-      {/* Full-bleed hero. The reference runs a photographic carousel here; this
-          is the same footprint and type scale, built to work before the
-          photography exists and to take an image the moment it does. */}
+      {/* Full-bleed hero. Image and copy come from store_settings so the owner
+          runs a campaign from /admin rather than a deploy.
+
+          The copy sits in its own translucent panel rather than free-floating
+          over the photograph: a hero image gets swapped often, and text laid
+          directly on an unknown picture is legible only by luck. The panel
+          keeps contrast guaranteed whatever image lands here next. */}
       <section className="relative overflow-hidden bg-[#c98a5b]">
-        <div className="mx-auto flex min-h-[420px] max-w-[1400px] flex-col items-center justify-center px-5 py-24 text-center lg:min-h-[540px] lg:px-8">
-          <p className="fade-up text-[13px] font-semibold uppercase tracking-[1.2px] text-white/80">
-            2026 намрын цуглуулга
-          </p>
-          <h1 className="fade-up mt-4 max-w-3xl text-[clamp(2.2rem,6vw,4.5rem)] font-bold leading-[1.05] text-white">
-            Өдөр бүрийг<br />гэрэлтүүлэх зүйлс
-          </h1>
-          <Link
-            href="/shop"
-            className="fade-up mt-9 bg-white px-9 py-4 text-[13px] font-bold uppercase tracking-[0.7px] text-ink-strong transition-opacity hover:opacity-90"
-          >
-            Дэлгүүр үзэх
-          </Link>
+        {hero.heroImagePath && (
+          <div className="absolute inset-0">
+            <ProductImage
+              filePath={hero.heroImagePath}
+              alt={hero.heroHeadline ?? ''}
+              seed="hero"
+              priority
+              sizes="100vw"
+            />
+          </div>
+        )}
+
+        <div className="relative mx-auto flex min-h-[380px] max-w-[1400px] items-center px-5 py-16 lg:min-h-[520px] lg:px-8">
+          <div className="fade-up max-w-[520px] bg-paper/92 px-8 py-9 backdrop-blur-[2px] lg:px-10 lg:py-11">
+            {hero.heroSubline && (
+              <p className="text-[12px] font-semibold uppercase tracking-[1.2px] text-ink-soft">
+                {hero.heroSubline}
+              </p>
+            )}
+            <h1 className="mt-3 text-[clamp(1.8rem,4vw,3rem)] font-bold leading-[1.1] tracking-[-.01em] text-ink">
+              {hero.heroHeadline ?? 'Өдөр бүрийг гэрэлтүүлэх зүйлс'}
+            </h1>
+            <Link
+              href={hero.heroCtaHref ?? '/shop'}
+              className="mt-7 inline-block bg-ink-strong px-8 py-3.5 text-[13px] font-bold uppercase tracking-[0.7px] text-white transition-opacity hover:opacity-85"
+            >
+              {hero.heroCtaLabel ?? 'Дэлгүүр үзэх'}
+            </Link>
+          </div>
         </div>
       </section>
 

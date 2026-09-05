@@ -25,6 +25,11 @@ export default function ProductCard({ product, priority = false }) {
   const [active, setActive] = useState(0)
 
   const variant = variants[active] ?? variants[0]
+  // Each variant carries its own photo (variants.image_id), so hovering a
+  // swatch shows that colourway rather than a generic second shot. Falls back
+  // to the product gallery for products whose variants have no image.
+  const primaryImage = variant?.image ?? images[0]
+  const hoverImage = images.find((i) => i.filePath !== primaryImage?.filePath) ?? images[1]
   const min = toNumber(product.minPriceMnt)
   const max = toNumber(product.maxPriceMnt)
   const ranged = max > min
@@ -35,17 +40,17 @@ export default function ProductCard({ product, priority = false }) {
         <div className="card-media relative aspect-square overflow-hidden bg-shade">
           <div className="media-primary absolute inset-0">
             <ProductImage
-              filePath={images[0]?.filePath}
-              alt={images[0]?.alt || c.title || product.slug}
+              filePath={primaryImage?.filePath}
+              alt={primaryImage?.alt || c.title || product.slug}
               seed={product.slug}
               priority={priority}
             />
           </div>
-          {images[1] && (
+          {hoverImage && (
             <div className="media-hover absolute inset-0 opacity-0">
               <ProductImage
-                filePath={images[1].filePath}
-                alt={images[1].alt || c.title || product.slug}
+                filePath={hoverImage.filePath}
+                alt={hoverImage.alt || c.title || product.slug}
                 seed={`${product.slug}-2`}
               />
             </div>
@@ -54,7 +59,7 @@ export default function ProductCard({ product, priority = false }) {
           {/* Variant pill. Suppressed when real photography exists: the
               reference's own images already have this badge baked in, and two
               stacked pills read as a bug. */}
-          {variant?.optionValue && !images[0]?.filePath && (
+          {variant?.optionValue && !primaryImage?.filePath && (
             <span
               className="badge-pill absolute left-3 top-3"
               style={{ background: swatchTone(variant.optionValue) }}

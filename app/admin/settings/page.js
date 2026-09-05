@@ -19,6 +19,17 @@ const GROUPS = [
     ],
   },
   {
+    title: 'Нүүр хуудасны баннер',
+    hint: 'Зургийг /admin/images-аас байршуулаад замыг нь энд оруулна.',
+    fields: [
+      ['heroImagePath', 'Зурагны зам (ImageKit)'],
+      ['heroHeadline', 'Гарчиг'],
+      ['heroSubline', 'Дэд гарчиг'],
+      ['heroCtaLabel', 'Товчны текст'],
+      ['heroCtaHref', 'Товчны холбоос'],
+    ],
+  },
+  {
     title: 'Холбоо барих',
     fields: [
       ['ownerAlertEmail', 'Мэдэгдэл очих имэйл'],
