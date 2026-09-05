@@ -7,9 +7,9 @@ select test.as_user('33333333-3333-3333-3333-333333333333', false);
 insert into public.addresses (id, profile_id, recipient_name, phone, city_aimag, district_sum)
 values ('aaaa0000-0000-0000-0000-000000000002','33333333-3333-3333-3333-333333333333','Болд','88112233','Улаанбаатар','Баянгол');
 
-select public.add_to_cart((select id from public.variants where sku='HTR-VB6-01'), 4);
+select public.add_to_cart((select id from public.variants where sku='TEST-BOTTLE-1'), 4);
 select test.as_service();
-update public.variants set quantity = 1 where sku='HTR-VB6-01';   -- sold in-store meanwhile
+update public.variants set quantity = 1 where sku='TEST-BOTTLE-1';   -- sold in-store meanwhile
 select test.as_user('33333333-3333-3333-3333-333333333333', false);
 
 create temp table t_over as
@@ -19,7 +19,7 @@ select * from public.place_order('aaaa0000-0000-0000-0000-000000000002',
 select test.as_user('22222222-2222-2222-2222-222222222222', false);
 select test.eq((select status from public.confirm_payment((select id from t_over)))::text,
                'oversold', 'confirmation flags oversold instead of shipping air');
-select test.eq((select quantity from public.variants where sku='HTR-VB6-01'), 1,
+select test.eq((select quantity from public.variants where sku='TEST-BOTTLE-1'), 1,
                'stock is never driven negative');
 select test.eq((select payment_status from public.orders where id=(select id from t_over))::text,
                'confirmed', 'the money is still recorded so a refund has a record');
@@ -32,7 +32,7 @@ insert into auth.users (id, email) values ('44444444-4444-4444-4444-444444444444
 select test.as_user('44444444-4444-4444-4444-444444444444', false);
 insert into public.addresses (id, profile_id, recipient_name, phone, city_aimag, district_sum)
 values ('aaaa0000-0000-0000-0000-000000000003','44444444-4444-4444-4444-444444444444','Ц','8800','УБ','ЧД');
-select public.add_to_cart((select id from public.variants where sku='HTR-PH-01'), 1);
+select public.add_to_cart((select id from public.variants where sku='TEST-HOLDER-1'), 1);
 create temp table t_unpaid as
 select * from public.place_order('aaaa0000-0000-0000-0000-000000000003',
   (select id from public.delivery_methods where code='pickup'));
@@ -52,7 +52,7 @@ reset role;
 -- ---- cart transfer token -------------------------------------------------
 insert into auth.users (id, is_anonymous) values ('55555555-5555-5555-5555-555555555555', true);
 select test.as_user('55555555-5555-5555-5555-555555555555', true);
-select public.add_to_cart((select id from public.variants where sku='HTR-BCP-01'), 1);
+select public.add_to_cart((select id from public.variants where sku='TEST-CHARM-1'), 1);
 create temp table t_tok as select public.issue_cart_transfer_token() as token;
 
 insert into auth.users (id, email) values ('66666666-6666-6666-6666-666666666666','returning@example.com');

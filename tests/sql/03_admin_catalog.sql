@@ -6,7 +6,7 @@ select test.as_user('22222222-2222-2222-2222-222222222222', false);   -- admin
 -- ---- products ------------------------------------------------------------
 create temp table t_p as
 select * from public.admin_upsert_product(
-  slug => 'test-lamp', title => 'Test Lamp', category_slug => 'accessories',
+  slug => 'test-lamp', title => 'Test Lamp', category_slug => 'test-cat',
   subtitle => 'Туршилт', status => 'active', sort_order => 99);
 
 select test.eq((select status from t_p)::text, 'active', 'product is created active');
@@ -64,20 +64,20 @@ select test.raises(
 select test.as_user('11111111-1111-1111-1111-111111111111', false);  -- bought the mug
 create temp table t_r as
 select * from public.submit_review(
-  product_id => (select id from public.products where slug='ceramic-mug'),
+  product_id => (select id from public.products where slug='test-mug'),
   rating => 5, title => 'Сайхан', body => 'Гоё');
 
 select test.ok(not (select is_approved from t_r), 'a new review starts unapproved');
 select test.ok((select is_verified_purchase from t_r), 'the purchase is verified from order history');
-select test.eq((select rating_count from public.products where slug='ceramic-mug'), 0,
+select test.eq((select rating_count from public.products where slug='test-mug'), 0,
                'an unapproved review does not count toward the rating');
 
 select test.as_user('22222222-2222-2222-2222-222222222222', false);
 select test.ok((select is_approved from public.admin_set_review_approval((select id from t_r), true)),
                'admin can approve a review');
-select test.eq((select rating_count from public.products where slug='ceramic-mug'), 1,
+select test.eq((select rating_count from public.products where slug='test-mug'), 1,
                'approval feeds the derived rating');
-select test.eq((select rating_avg from public.products where slug='ceramic-mug'), 5.0::numeric(2,1),
+select test.eq((select rating_avg from public.products where slug='test-mug'), 5.0::numeric(2,1),
                'the average rating is computed');
 
 select test.as_user('44444444-4444-4444-4444-444444444444', false);

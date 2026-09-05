@@ -51,8 +51,10 @@ export default function ProductCard({ product, priority = false }) {
             </div>
           )}
 
-          {/* Variant name pill, exactly where the reference puts it. */}
-          {variant?.optionValue && (
+          {/* Variant pill. Suppressed when real photography exists: the
+              reference's own images already have this badge baked in, and two
+              stacked pills read as a bug. */}
+          {variant?.optionValue && !images[0]?.filePath && (
             <span
               className="badge-pill absolute left-3 top-3"
               style={{ background: swatchTone(variant.optionValue) }}

@@ -9,7 +9,7 @@ select test.eq((select count(*)::int from public.profiles where id='11111111-111
 select test.ok(public.is_anonymous_user(), 'anonymous flag reads from the JWT');
 
 -- Cart
-select test.ok((public.add_to_cart((select id from public.variants where sku='HTR-CM-01'), 2)).id is not null,
+select test.ok((public.add_to_cart((select id from public.variants where sku='TEST-MUG-1'), 2)).id is not null,
                'anonymous visitor can build a cart');
 select test.eq((select sum(quantity)::int from public.cart_items), 2, 'cart holds the added quantity');
 
@@ -44,7 +44,7 @@ select test.eq((select total_mnt from t_order), 235400::bigint,    'total = subt
 select test.eq((select status from t_order)::text, 'awaiting_payment', 'order starts awaiting payment');
 
 -- Stock is NOT reserved at order time.
-select test.eq((select quantity from public.variants where sku='HTR-CM-01'), 12, 'stock untouched before payment');
+select test.eq((select quantity from public.variants where sku='TEST-MUG-1'), 12, 'stock untouched before payment');
 
 -- Only an admin may confirm.
 select test.raises(
@@ -55,11 +55,11 @@ select test.as_user('22222222-2222-2222-2222-222222222222', false);   -- admin, 
 
 select test.eq((select status from public.confirm_payment((select id from t_order)))::text,
                'paid', 'admin confirmation marks the order paid');
-select test.eq((select quantity from public.variants where sku='HTR-CM-01'), 10, 'stock decrements on confirmation');
+select test.eq((select quantity from public.variants where sku='TEST-MUG-1'), 10, 'stock decrements on confirmation');
 
 -- Idempotent: a double click must not decrement twice.
 select public.confirm_payment((select id from t_order));
-select test.eq((select quantity from public.variants where sku='HTR-CM-01'), 10, 'second confirmation is a no-op');
+select test.eq((select quantity from public.variants where sku='TEST-MUG-1'), 10, 'second confirmation is a no-op');
 
 -- Fulfilment
 select test.eq((select status from public.admin_set_order_status((select id from t_order), 'shipped', 'TRACK-1'))::text,

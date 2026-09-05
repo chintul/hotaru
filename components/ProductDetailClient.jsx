@@ -77,7 +77,7 @@ export default function ProductDetailClient({ product, copy }) {
               priority
               sizes="(min-width: 1024px) 50vw, 100vw"
             />
-            {selected?.optionValue && (
+            {selected?.optionValue && !images[activeImage]?.filePath && (
               <span
                 className="badge-pill absolute left-4 top-4 text-[15px]"
                 style={{ background: swatchTone(selected.optionValue) }}
