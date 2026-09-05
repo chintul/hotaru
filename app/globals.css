@@ -88,8 +88,15 @@ body {
   }
   .marquee-track:hover { animation-play-state: paused; }
 
-  /* Card image cross-fade on hover. */
+  /* Card image cross-fade on hover.
+     Both states live here on purpose. The resting `opacity: 0` used to be an
+     `opacity-0` utility on the element, but a utility beats this components
+     layer, so the :hover rule below could never raise it. Dropping the utility
+     without restoring the rule here left the preview permanently opaque on top
+     of the primary image — the card showed the second photo at rest and hover
+     appeared to do nothing. Keep the pair together. */
   .card-media img, .card-media .ph { transition: opacity .45s ease, transform 1s cubic-bezier(.22,1,.36,1); }
+  .card-media .media-hover { opacity: 0; }
   .card-media:hover .media-hover { opacity: 1; }
   .card-media:hover .media-primary { opacity: 0; }
   .card-media:hover img, .card-media:hover .ph { transform: scale(1.03); }
