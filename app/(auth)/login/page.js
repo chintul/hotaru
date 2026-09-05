@@ -42,22 +42,31 @@ function SignIn() {
       </p>
 
       <div className="mt-8">
-        <OAuthButtons next={next} />
-        <Divider />
-
+        {/* Phone is the primary path: it is the identity Mongolian shoppers
+            actually carry, it proves possession rather than access to an
+            inbox, and it is the number the courier will ring. Social and email
+            sit below as alternatives. */}
         {method === 'phone' ? (
           <>
             <PhoneVerify onVerified={() => router.push(next)} />
+
             <Divider />
-            <button onClick={() => setMethod('email')} className="secondary-action">
+
+            <OAuthButtons next={next} />
+
+            <button onClick={() => setMethod('email')} className="secondary-action mt-2.5">
               Имэйлээр үргэлжлүүлэх
             </button>
           </>
         ) : (
           <>
             <EmailOtp onVerified={() => router.push(next)} next={next} />
+
             <Divider />
-            <button onClick={() => setMethod('phone')} className="secondary-action">
+
+            <OAuthButtons next={next} />
+
+            <button onClick={() => setMethod('phone')} className="secondary-action mt-2.5">
               Утсаар үргэлжлүүлэх
             </button>
           </>

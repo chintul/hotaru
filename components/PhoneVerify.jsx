@@ -144,25 +144,28 @@ export default function PhoneVerify({ onVerified, initialPhone = '' }) {
   return (
     <div>
       {status !== 'pending' && (
-        <div className="flex flex-wrap items-end gap-3">
-          <label className="min-w-[180px] flex-1">
-            <span className="label text-ink-faint">Утасны дугаар</span>
-            <input
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              inputMode="tel"
-              placeholder="99112233"
-              className="mt-2 w-full border-b border-line bg-transparent py-2 outline-none focus:border-ink"
-            />
-          </label>
+        <form
+          onSubmit={(e) => { e.preventDefault(); start() }}
+        >
+          <input
+            value={phone}
+            onChange={(e) => setPhone(e.target.value.replace(/[^\d\s+-]/g, ''))}
+            inputMode="tel"
+            autoComplete="tel"
+            placeholder="Утасны дугаар"
+            className="auth-input"
+          />
           <button
-            onClick={start}
+            type="submit"
             disabled={status === 'starting' || phone.replace(/\D/g, '').length < 8}
-            className="btn-solid px-6 py-3"
+            className="btn-solid mt-3 w-full rounded-full py-4"
           >
-            {status === 'starting' ? 'Түр хүлээнэ үү…' : 'Код авах'}
+            {status === 'starting' ? 'Түр хүлээнэ үү…' : 'Үргэлжлүүлэх'}
           </button>
-        </div>
+          <p className="mt-2.5 text-center text-[12px] text-ink-faint">
+            144773 руу 1 мессеж илгээнэ · 150₮
+          </p>
+        </form>
       )}
 
       {status === 'pending' && session && (
