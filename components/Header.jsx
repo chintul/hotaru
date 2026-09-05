@@ -8,85 +8,90 @@ import { firstNode, nodes } from '@/lib/format'
 import { useUI } from './UIProvider'
 import { useCart } from './useCart'
 import { useSession } from './useSession'
+import { IconBag, IconClose, IconHeart, IconMenu, IconSearch, IconUser } from './Icons'
 
+/**
+ * Header laid out like the reference: wordmark left, centred uppercase nav,
+ * icon cluster right (search, account, wishlist, cart with a count badge).
+ */
 export default function Header() {
   const { setCartOpen, setSearchOpen, navOpen, setNavOpen } = useUI()
   const { count } = useCart()
   const { isAuthenticated } = useSession()
-  const [lifted, setLifted] = useState(false)
-
-  // Nav is data-driven: adding a category in the database puts it in the header,
-  // with no deploy and no list to keep in sync.
   const { data } = useQuery(NAV_CATEGORIES)
+
   const categories = nodes(data?.categoryCollection).map((c) => ({
     href: `/shop?c=${c.slug}`,
     label: firstNode(c.categoryTranslationCollection)?.name ?? c.slug,
   }))
-  const nav = [{ href: '/shop', label: 'Бүгд' }, ...categories.slice(0, 5)]
 
-  // The header is transparent over the hero and gains a hairline once the page
-  // moves — the border appearing is what signals "sticky" without a shadow.
-  useEffect(() => {
-    const onScroll = () => setLifted(window.scrollY > 8)
-    onScroll()
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [])
+  const nav = [
+    { href: '/', label: 'Нүүр' },
+    { href: '/shop', label: 'Дэлгүүр' },
+    ...categories.slice(0, 4),
+  ]
+
+  // Close the mobile sheet on route change; otherwise it hangs over the page.
+  useEffect(() => { setNavOpen(false) }, [setNavOpen])
 
   return (
-    <header
-      className={`sticky top-0 z-40 bg-paper/90 backdrop-blur-sm transition-colors duration-300 ${
-        lifted ? 'border-b border-line' : 'border-b border-transparent'
-      }`}
-    >
-      <div className="mx-auto flex h-14 max-w-[1400px] items-center gap-6 px-5 sm:px-8">
+    <header className="sticky top-0 z-40 border-b border-line bg-paper">
+      <div className="mx-auto flex h-[72px] max-w-[1400px] items-center gap-4 px-5 lg:px-8">
         <button
           onClick={() => setNavOpen(!navOpen)}
-          className="label -ml-1 p-1 md:hidden"
+          className="icon-btn -ml-2 lg:hidden"
           aria-label="Цэс"
           aria-expanded={navOpen}
         >
-          {navOpen ? 'Хаах' : 'Цэс'}
+          {navOpen ? <IconClose /> : <IconMenu />}
         </button>
 
-        <Link href="/" className="display text-[17px] font-medium tracking-[0.28em] uppercase">
-          hotaru
+        <Link href="/" className="shrink-0 text-[30px] font-bold leading-none tracking-tight">
+          hotaru<span className="text-ink-faint">.</span>
         </Link>
 
-        <nav className="ml-6 hidden items-center gap-7 md:flex">
+        <nav className="mx-auto hidden items-center gap-8 lg:flex">
           {nav.map((item) => (
-            <Link key={item.href} href={item.href} className="label link-underline text-ink-soft hover:text-ink">
+            <Link key={item.href + item.label} href={item.href} className="nav-link hover:opacity-60">
               {item.label}
             </Link>
           ))}
         </nav>
 
-        <div className="ml-auto flex items-center gap-5">
-          <button onClick={() => setSearchOpen(true)} className="label link-underline text-ink-soft hover:text-ink">
-            Хайх
+        <div className="ml-auto flex items-center gap-1 lg:ml-0">
+          <button onClick={() => setSearchOpen(true)} className="icon-btn" aria-label="Хайх">
+            <IconSearch />
           </button>
-          <Link href={isAuthenticated ? '/account' : '/login'} className="label link-underline hidden text-ink-soft hover:text-ink sm:inline">
-            {isAuthenticated ? 'Профайл' : 'Нэвтрэх'}
+          <Link href={isAuthenticated ? '/account' : '/login'} className="icon-btn" aria-label="Профайл">
+            <IconUser />
           </Link>
-          <button onClick={() => setCartOpen(true)} className="label link-underline hover:text-ink" aria-label="Сагс">
-            Сагс{count > 0 ? ` (${count})` : ''}
+          <Link href="/wishlist" className="icon-btn hidden sm:grid" aria-label="Хадгалсан">
+            <IconHeart />
+          </Link>
+          <button onClick={() => setCartOpen(true)} className="icon-btn relative" aria-label="Сагс">
+            <IconBag />
+            {count > 0 && (
+              <span className="absolute -right-0.5 -top-0.5 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-sale px-1 text-[10px] font-bold text-white">
+                {count}
+              </span>
+            )}
           </button>
         </div>
       </div>
 
       {navOpen && (
-        <nav className="overlay-in border-t border-line bg-paper px-5 py-4 md:hidden">
+        <nav className="overlay-in border-t border-line bg-paper px-5 py-3 lg:hidden">
           {nav.map((item) => (
             <Link
-              key={item.href}
+              key={item.href + item.label}
               href={item.href}
               onClick={() => setNavOpen(false)}
-              className="label block py-2.5 text-ink-soft"
+              className="nav-link block py-3"
             >
               {item.label}
             </Link>
           ))}
-          <Link href="/orders" onClick={() => setNavOpen(false)} className="label block py-2.5 text-ink-soft">
+          <Link href="/orders" onClick={() => setNavOpen(false)} className="nav-link block py-3">
             Захиалга
           </Link>
         </nav>

@@ -24,21 +24,23 @@ export default function AdminGate({ children }) {
   })
   const profile = nodes(data?.profileCollection)[0]
 
-  if (!ready || loading) return <p className="label text-ink-faint">Ачааллаж байна…</p>
+  if (!ready || loading) return <p className="text-[13px] text-a-muted">Ачааллаж байна…</p>
 
   if (!isAuthenticated) {
     return (
-      <div className="border border-line bg-paper-warm px-5 py-16 text-center">
-        <p className="text-ink-soft">Админаар нэвтэрнэ үү.</p>
-        <Link href="/login?next=/admin" className="label link-underline mt-4 inline-block">Нэвтрэх</Link>
+      <div className="rounded-lg border border-a-line bg-white px-6 py-16 text-center">
+        <p className="text-[14px] text-a-ink">Админаар нэвтэрнэ үү.</p>
+        <Link href="/login?next=/admin" className="mt-4 inline-block rounded-md bg-a-ink px-4 py-2 text-[13px] font-medium text-white">
+          Нэвтрэх
+        </Link>
       </div>
     )
   }
   if (profile?.role !== 'admin') {
     return (
-      <div className="border border-line bg-paper-warm px-5 py-16 text-center">
-        <p className="text-ink-soft">Танд админ эрх алга.</p>
-        <p className="label mt-3 text-ink-faint">
+      <div className="rounded-lg border border-a-line bg-white px-6 py-16 text-center">
+        <p className="text-[14px] text-a-ink">Танд админ эрх алга.</p>
+        <p className="mt-3 text-[12px] text-a-muted">
           Supabase SQL editor дээр:
           <br />
           <code>update public.profiles set role = &apos;admin&apos; where email = &apos;…&apos;;</code>

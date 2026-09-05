@@ -33,14 +33,21 @@ export default async function ProductPage({ params }) {
   const reviews = nodes(product.reviewCollection)
 
   return (
-    <div className="mx-auto max-w-[1400px] px-5 py-10 sm:px-8">
+    <div className="mx-auto max-w-[1400px] px-5 py-8 lg:px-8">
+      <nav className="mb-6 text-[12px] text-ink-faint">
+        <a href="/" className="hover:text-ink">Нүүр</a>
+        <span className="px-2">/</span>
+        <a href="/shop" className="hover:text-ink">Дэлгүүр</a>
+        <span className="px-2">/</span>
+        <span className="text-ink">{productCopy(product).title}</span>
+      </nav>
       <ProductDetailClient product={product} copy={productCopy(product)} />
 
       {/* Reviews section stays hidden until a product actually has one — an
           empty review block on a new store reads worse than none at all. */}
       {reviews.length > 0 && (
-        <section className="mt-20 border-t border-line pt-10">
-          <h2 className="label">Сэтгэгдэл ({product.reviewCollection.totalCount})</h2>
+        <section className="mt-20 border-t border-line pt-12">
+          <h2 className="section-title uppercase">Сэтгэгдэл ({product.reviewCollection.totalCount})</h2>
           <ul className="mt-6 grid gap-8 md:grid-cols-2">
             {reviews.map((r) => (
               <li key={r.id}>

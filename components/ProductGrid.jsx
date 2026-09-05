@@ -1,13 +1,17 @@
 import ProductCard from './ProductCard'
 
-export default function ProductGrid({ products, emptyMessage = 'Бүтээгдэхүүн олдсонгүй.' }) {
+export default function ProductGrid({ products, cols = 4, emptyMessage = 'Бүтээгдэхүүн олдсонгүй.' }) {
   if (!products?.length) {
     return <p className="py-20 text-center text-ink-soft">{emptyMessage}</p>
   }
+  const grid =
+    cols === 3
+      ? 'grid-cols-2 md:grid-cols-3'
+      : 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4'
   return (
-    <div className="grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-3 md:gap-x-6 lg:grid-cols-4">
+    <div className={`grid gap-x-5 gap-y-12 ${grid}`}>
       {products.map((p, i) => (
-        <div key={p.id} className="fade-up" style={{ animationDelay: `${Math.min(i, 8) * 40}ms` }}>
+        <div key={p.id} className="fade-up" style={{ animationDelay: `${Math.min(i, 8) * 35}ms` }}>
           <ProductCard product={p} priority={i < 4} />
         </div>
       ))}

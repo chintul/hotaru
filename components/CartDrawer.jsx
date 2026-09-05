@@ -5,6 +5,7 @@ import { useUI } from './UIProvider'
 import { useCart } from './useCart'
 import { copy, firstNode, formatMnt, toNumber } from '@/lib/format'
 import ProductImage from './ProductImage'
+import { IconClose, IconMinus, IconPlus } from './Icons'
 
 export default function CartDrawer() {
   const { cartOpen, setCartOpen } = useUI()
@@ -21,9 +22,9 @@ export default function CartDrawer() {
       />
       <aside className="drawer-in absolute inset-y-0 right-0 flex w-full max-w-[420px] flex-col bg-paper">
         <div className="flex items-center justify-between border-b border-line px-6 py-4">
-          <p className="label">Сагс{items.length ? ` (${items.length})` : ''}</p>
-          <button onClick={() => setCartOpen(false)} className="label link-underline text-ink-soft">
-            Хаах
+          <p className="nav-link text-[14px]">Сагс{items.length ? ` (${items.length})` : ''}</p>
+          <button onClick={() => setCartOpen(false)} className="icon-btn -mr-2" aria-label="Хаах">
+            <IconClose />
           </button>
         </div>
 
@@ -55,7 +56,7 @@ export default function CartDrawer() {
                   <Link
                     href={`/shop/${product?.slug ?? ''}`}
                     onClick={() => setCartOpen(false)}
-                    className="relative aspect-[3/4] w-20 shrink-0 overflow-hidden bg-paper-warm"
+                    className="relative aspect-square w-20 shrink-0 overflow-hidden bg-paper-warm"
                   >
                     <ProductImage filePath={image?.filePath} alt={title} seed={product?.slug} sizes="80px" />
                   </Link>
@@ -71,20 +72,20 @@ export default function CartDrawer() {
                     <div className="mt-3 flex items-center gap-3">
                       <div className="flex items-center border border-line">
                         <button
-                          className="px-2.5 py-1 text-ink-soft hover:text-ink"
+                          className="grid h-8 w-8 place-items-center text-ink-soft hover:text-ink"
                           onClick={() => setQuantity(variant.id, item.quantity - 1)}
                           aria-label="Хасах"
                         >
-                          −
+                          <IconMinus />
                         </button>
                         <span className="min-w-7 text-center tabular-nums">{item.quantity}</span>
                         <button
-                          className="px-2.5 py-1 text-ink-soft hover:text-ink disabled:opacity-30"
+                          className="grid h-8 w-8 place-items-center text-ink-soft hover:text-ink disabled:opacity-30"
                           onClick={() => setQuantity(variant.id, item.quantity + 1)}
                           disabled={!variant?.allowBackorder && item.quantity >= variant?.quantity}
                           aria-label="Нэмэх"
                         >
-                          +
+                          <IconPlus />
                         </button>
                       </div>
                       <button
@@ -112,7 +113,7 @@ export default function CartDrawer() {
             <Link
               href="/checkout"
               onClick={() => setCartOpen(false)}
-              className="label mt-4 block bg-ink py-3.5 text-center text-paper transition-opacity hover:opacity-85"
+              className="btn-solid mt-4 block py-4 text-center"
             >
               Захиалах
             </Link>

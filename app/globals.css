@@ -1,26 +1,37 @@
 @import "tailwindcss";
 
 /* ---------------------------------------------------------------------------
-   hotaru — editorial minimal
-   Reference (tagiofficial.com) runs Poppins at 12px body / 16px 700 headings.
-   We keep the proportions and the generous whitespace, with our own palette.
-   Deliberately light-only: an editorial storefront is a white gallery wall,
-   and a dark variant would need its own photography treatment to not look off.
+   Design tokens read off tagiofficial.com.
+   Poppins throughout; nav 14px/700 uppercase with 0.7px tracking; section
+   headings 24px/700 at 1.2px; body text #232323 on white; the only rounded
+   things are circles (swatches, icon buttons) and the variant badge pills.
 --------------------------------------------------------------------------- */
 
 @theme {
-  --color-ink:        #0d0d0d;
-  --color-ink-soft:   #4a4a4a;
-  --color-ink-faint:  #8c8c8c;
-  --color-line:       #e6e4e0;
+  --color-ink:        #232323;
+  --color-ink-strong: #000000;
+  --color-ink-soft:   #6b6b6b;
+  --color-ink-faint:  #9a9a9a;
+  --color-line:       #e5e5e5;
+  --color-line-soft:  #f0f0f0;
   --color-paper:      #ffffff;
-  --color-paper-warm: #f7f6f4;
-  --color-accent:     #0d0d0d;
-  --color-sale:       #9a2c2c;
+  --color-shade:      #f4f4f4;   /* product image backdrop */
+  --color-footer:     #1c1c1c;
+  --color-sale:       #d33;
+  --color-buy:        #2196c4;   /* "Buy it now" blue */
+  --color-badge:      #8f8f8f;
 
   --font-sans: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
 
-  --tracking-label: 0.14em;
+  /* Admin palette. Kept separate from the storefront tokens on purpose: the
+     shop is a gallery, the dashboard is a console, and sharing one scale makes
+     both worse. */
+  --color-a-bg:     #f7f7f8;
+  --color-a-ink:    #18181b;
+  --color-a-muted:  #71717a;
+  --color-a-line:   #e4e4e7;
+  --color-a-hover:  #f4f4f5;
+  --color-a-focus:  #3b82f6;
 }
 
 :root { color-scheme: light; }
@@ -30,70 +41,132 @@ html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; 
 body {
   background: var(--color-paper);
   color: var(--color-ink);
-  font-size: 13px;
-  line-height: 1.65;
+  font-size: 14px;
+  line-height: 1.6;
 }
 
-/* Small uppercase labels carry most of the editorial voice here. */
-.label {
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
+@layer components {
+  /* Primary nav + anything that reads as a control label. */
+  .nav-link {
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.7px;
+    text-transform: uppercase;
+    color: var(--color-ink-strong);
+  }
+
+  /* Centred section headings: "BEST SELLING" with a small underlined View All. */
+  .section-title {
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-align: center;
+  }
+
+  /* Small uppercase label. Kept as a utility because checkout, account and admin
+     surfaces lean on it heavily; the storefront chrome uses .nav-link instead. */
+  .label {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+  }
+
+  .eyebrow {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+  }
+
+  /* Announcement marquee. Duplicated track so the loop has no visible seam. */
+  @keyframes marquee { from { transform: translateX(0) } to { transform: translateX(-50%) } }
+  .marquee-track {
+    display: flex;
+    width: max-content;
+    animation: marquee 40s linear infinite;
+  }
+  .marquee-track:hover { animation-play-state: paused; }
+
+  /* Card image cross-fade on hover. */
+  .card-media img, .card-media .ph { transition: opacity .45s ease, transform 1s cubic-bezier(.22,1,.36,1); }
+  .card-media:hover .media-hover { opacity: 1; }
+  .card-media:hover .media-primary { opacity: 0; }
+  .card-media:hover img, .card-media:hover .ph { transform: scale(1.03); }
+
+  /* Variant name pill sitting over the image, with its little circular knob. */
+  .badge-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 14px 4px 4px;
+    border-radius: 999px;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+  .badge-knob {
+    width: 22px; height: 22px; border-radius: 999px;
+    background: rgba(255,255,255,.35);
+    display: grid; place-items: center;
+    font-size: 10px;
+  }
+
+  /* Colour swatch circles under a card and on the PDP. */
+  .swatch {
+    width: 30px; height: 30px; border-radius: 999px;
+    border: 1px solid var(--color-line);
+    display: grid; place-items: center;
+    transition: box-shadow .15s ease, border-color .15s ease;
+  }
+  .swatch[data-active="true"] { border-color: var(--color-ink-strong); box-shadow: 0 0 0 1px var(--color-ink-strong); }
+
+  .icon-btn {
+    width: 40px; height: 40px; border-radius: 999px;
+    display: grid; place-items: center;
+    transition: background-color .15s ease;
+  }
+  .icon-btn:hover { background: var(--color-line-soft); }
+
+  .btn-solid {
+    background: var(--color-ink-strong);
+    color: #fff;
+    font-weight: 700;
+    letter-spacing: 0.7px;
+    text-transform: uppercase;
+    font-size: 14px;
+    transition: opacity .15s ease;
+  }
+  .btn-solid:hover { opacity: .85; }
+  .btn-solid:disabled { opacity: .35; cursor: not-allowed; }
+
+  .btn-outline {
+    border: 1px solid var(--color-ink-strong);
+    font-weight: 700;
+    letter-spacing: .7px;
+    text-transform: uppercase;
+    font-size: 13px;
+    transition: background-color .15s ease, color .15s ease;
+  }
+  .btn-outline:hover { background: var(--color-ink-strong); color: #fff; }
+
+  .link-underline { text-decoration: underline; text-underline-offset: 4px; }
 }
 
-.display {
-  font-weight: 300;
-  letter-spacing: -0.02em;
-  line-height: 1.05;
-}
-
-/* Understated link underline that grows on hover. */
-.link-underline {
-  background-image: linear-gradient(currentColor, currentColor);
-  background-size: 0% 1px;
-  background-repeat: no-repeat;
-  background-position: 0 100%;
-  transition: background-size 0.35s cubic-bezier(0.22, 1, 0.36, 1);
-}
-.link-underline:hover { background-size: 100% 1px; }
-
-/* Product card hover swap. The second image is stacked and cross-fades in;
-   a slow scale keeps it feeling photographic rather than mechanical. */
-.card-media img,
-.card-media .ph {
-  transition: opacity 0.5s ease, transform 1.2s cubic-bezier(0.22, 1, 0.36, 1);
-}
-.card-media:hover .media-primary { opacity: 0; }
-.card-media:hover .media-hover   { opacity: 1; }
-.card-media:hover img,
-.card-media:hover .ph { transform: scale(1.04); }
-
-@keyframes fade-up {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: none; }
-}
-.fade-up { animation: fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
-
+@keyframes fade-up { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: none } }
+.fade-up { animation: fade-up .45s cubic-bezier(.22,1,.36,1) both; }
 @keyframes overlay-in { from { opacity: 0 } to { opacity: 1 } }
-.overlay-in { animation: overlay-in 0.25s ease both; }
-
-@keyframes drawer-in {
-  from { transform: translateX(100%) }
-  to   { transform: none }
-}
-.drawer-in { animation: drawer-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.overlay-in { animation: overlay-in .2s ease both; }
+@keyframes drawer-in { from { transform: translateX(100%) } to { transform: none } }
+.drawer-in { animation: drawer-in .35s cubic-bezier(.22,1,.36,1) both; }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
-  }
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
 
-::selection { background: var(--color-ink); color: var(--color-paper); }
-
-/* Hide the number input spinners on quantity fields. */
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 input[type="number"] { -moz-appearance: textfield; }
+
+::selection { background: var(--color-ink-strong); color: #fff; }
