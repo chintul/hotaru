@@ -9,6 +9,7 @@ import { copy, firstNode, formatMnt, nodes, toNumber } from '@/lib/format'
 import { useCart } from '@/components/useCart'
 import { useSession } from '@/components/useSession'
 import { useAuthUpgrade } from '@/components/useAuthUpgrade'
+import PhoneVerify from '@/components/PhoneVerify'
 
 const EMPTY_ADDRESS = {
   recipientName: '', phone: '', cityAimag: 'Улаанбаатар', districtSum: '',
@@ -47,42 +48,67 @@ export default function CheckoutPage() {
  */
 function AuthGate({ onDone }) {
   const { upgrade, busy, error } = useAuthUpgrade()
+  const [method, setMethod] = useState('phone')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
 
   return (
     <div className="mt-10 max-w-md">
       <p className="label text-ink-faint">Алхам 1 / 2</p>
-      <h2 className="display mt-2 text-2xl">Бүртгэл</h2>
+      <h2 className="display mt-2 text-2xl">Баталгаажуулалт</h2>
       <p className="mt-2 text-ink-soft">
-        Захиалгаа хянах боломжтой болгохын тулд имэйлээ оруулна уу. Сагсанд байгаа бараа хадгалагдана.
+        Захиалгаа хянах боломжтой болгохын тулд утсаа баталгаажуулна уу.
+        Сагсанд байгаа бараа хадгалагдана.
       </p>
-      <form
-        className="mt-8 space-y-5"
-        onSubmit={async (e) => {
-          e.preventDefault()
-          const res = await upgrade({ email, password })
-          if (res.ok) onDone()
-        }}
-      >
-        <div>
-          <label className="label text-ink-faint" htmlFor="co-email">Имэйл</label>
-          <input id="co-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
-            autoComplete="email"
-            className="mt-2 w-full border-b border-line bg-transparent py-2 outline-none focus:border-ink" />
-        </div>
-        <div>
-          <label className="label text-ink-faint" htmlFor="co-pass">Нууц үг</label>
-          <input id="co-pass" type="password" required minLength={6} value={password}
-            onChange={(e) => setPassword(e.target.value)} autoComplete="new-password"
-            className="mt-2 w-full border-b border-line bg-transparent py-2 outline-none focus:border-ink" />
-        </div>
-        {error && <p className="text-sale">{error}</p>}
-        <button type="submit" disabled={busy}
-          className="label w-full bg-ink py-3.5 text-paper transition-opacity hover:opacity-85 disabled:opacity-40">
-          {busy ? 'Түр хүлээнэ үү…' : 'Үргэлжлүүлэх'}
+
+      <div className="mt-6 flex gap-2">
+        <button
+          onClick={() => setMethod('phone')}
+          className={`label border px-4 py-2.5 ${method === 'phone' ? 'border-ink bg-ink text-paper' : 'border-line'}`}
+        >
+          Утсаар
         </button>
-      </form>
+        <button
+          onClick={() => setMethod('email')}
+          className={`label border px-4 py-2.5 ${method === 'email' ? 'border-ink bg-ink text-paper' : 'border-line'}`}
+        >
+          Имэйлээр
+        </button>
+      </div>
+
+      <div className="mt-6">
+        {method === 'phone' ? (
+          // verify.mn is Mongolia-only, so email stays available as the path
+          // that always works — including for anyone abroad.
+          <PhoneVerify onVerified={onDone} />
+        ) : (
+          <form
+            className="space-y-5"
+            onSubmit={async (e) => {
+              e.preventDefault()
+              const res = await upgrade({ email, password })
+              if (res.ok) onDone()
+            }}
+          >
+            <div>
+              <label className="label text-ink-faint" htmlFor="co-email">Имэйл</label>
+              <input id="co-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
+                className="mt-2 w-full border-b border-line bg-transparent py-2 outline-none focus:border-ink" />
+            </div>
+            <div>
+              <label className="label text-ink-faint" htmlFor="co-pass">Нууц үг</label>
+              <input id="co-pass" type="password" required minLength={6} value={password}
+                onChange={(e) => setPassword(e.target.value)} autoComplete="new-password"
+                className="mt-2 w-full border-b border-line bg-transparent py-2 outline-none focus:border-ink" />
+            </div>
+            {error && <p className="text-sale">{error}</p>}
+            <button type="submit" disabled={busy} className="btn-solid w-full py-3.5">
+              {busy ? 'Түр хүлээнэ үү…' : 'Үргэлжлүүлэх'}
+            </button>
+          </form>
+        )}
+      </div>
     </div>
   )
 }
