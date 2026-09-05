@@ -10,6 +10,7 @@ export default function AdminLayout({ children }) {
         <nav className="flex gap-6">
           <Link href="/admin" className="label link-underline text-ink-soft">Захиалга</Link>
           <Link href="/admin/inventory" className="label link-underline text-ink-soft">Бараа</Link>
+          <Link href="/admin/images" className="label link-underline text-ink-soft">Зураг</Link>
           <Link href="/admin/settings" className="label link-underline text-ink-soft">Тохиргоо</Link>
         </nav>
         <Link href="/" className="label link-underline ml-auto text-ink-faint">Дэлгүүр →</Link>
