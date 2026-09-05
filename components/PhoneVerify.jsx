@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { supabaseBrowser } from '@/lib/supabase/browser'
+import { ensureSession, supabaseBrowser } from '@/lib/supabase/browser'
 
 const POLL_MS = 3000
 
@@ -49,6 +49,12 @@ export default function PhoneVerify({ onVerified, initialPhone = '' }) {
     setError(null)
     setStatus('starting')
     try {
+      // A visitor arriving straight at /login has no identity yet, and the
+      // session has to belong to someone. Mint the anonymous one first — the
+      // same identity the cart uses — and verification then converts it in
+      // place, so nothing is stranded.
+      await ensureSession()
+
       const res = await fetch('/api/verify/start', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },

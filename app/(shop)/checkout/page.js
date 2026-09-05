@@ -7,6 +7,7 @@ import { useApolloClient, useMutation, useQuery } from '@apollo/client/react'
 import { CHECKOUT_CONTEXT, CREATE_ADDRESS, MY_CART, PLACE_ORDER } from '@/lib/queries'
 import { copy, firstNode, formatMnt, nodes, toNumber } from '@/lib/format'
 import { useCart } from '@/components/useCart'
+import ProductImage from '@/components/ProductImage'
 import { useSession } from '@/components/useSession'
 import { useAuthUpgrade } from '@/components/useAuthUpgrade'
 import PhoneVerify from '@/components/PhoneVerify'
@@ -22,8 +23,16 @@ export default function CheckoutPage() {
   const { isAuthenticated, ready, user } = useSession()
 
   return (
-    <div className="mx-auto max-w-[1100px] px-5 py-12 sm:px-8">
-      <h1 className="display text-[clamp(1.8rem,4vw,2.75rem)]">Захиалга</h1>
+    <div className="mx-auto max-w-[1100px] px-5 py-10 lg:px-8">
+      {/* Progress rail, the shape a shopper expects from a checkout: they can
+          see how many steps remain before they commit. */}
+      <nav className="mb-8 flex flex-wrap items-center gap-2 text-[12px] text-ink-faint">
+        <Link href="/shop" className="hover:text-ink">Сагс</Link>
+        <span>›</span>
+        <span className={isAuthenticated ? '' : 'font-semibold text-ink'}>Баталгаажуулалт</span>
+        <span>›</span>
+        <span className={isAuthenticated ? 'font-semibold text-ink' : ''}>Хүргэлт, төлбөр</span>
+      </nav>
 
       {cartLoading || !ready ? (
         <p className="label mt-10 text-ink-faint">Ачааллаж байна…</p>
@@ -191,9 +200,12 @@ function CheckoutForm({ items, subtotal, profileId }) {
 
   return (
     <div className="mt-10 grid gap-12 lg:grid-cols-[1fr_380px]">
-      <div className="space-y-12">
-        <section>
-          <p className="label text-ink-faint">Хүргэлтийн хаяг</p>
+      <div className="space-y-6">
+        <section className="border border-line p-6">
+          <h2 className="mb-4 flex items-center gap-2.5 text-[15px] font-bold">
+            <span className="grid h-6 w-6 place-items-center rounded-full bg-ink text-[12px] text-paper">1</span>
+            Хүргэлтийн хаяг
+          </h2>
           {addresses.length > 0 && (
             <div className="mt-4 space-y-3">
               {addresses.map((a) => (
@@ -248,8 +260,11 @@ function CheckoutForm({ items, subtotal, profileId }) {
           </details>
         </section>
 
-        <section>
-          <p className="label text-ink-faint">Хүргэлт</p>
+        <section className="border border-line p-6">
+          <h2 className="mb-4 flex items-center gap-2.5 text-[15px] font-bold">
+            <span className="grid h-6 w-6 place-items-center rounded-full bg-ink text-[12px] text-paper">2</span>
+            Хүргэлтийн хэлбэр
+          </h2>
           <div className="mt-4 space-y-3">
             {methods.map((m) => (
               <label key={m.id}
@@ -267,27 +282,43 @@ function CheckoutForm({ items, subtotal, profileId }) {
           </div>
         </section>
 
-        <section className="grid gap-4 sm:grid-cols-2">
-          <Field label="Хөнгөлөлтийн код" value={discountCode} onChange={setDiscountCode} />
-          <Field label="Захиалгын тэмдэглэл" value={note} onChange={setNote} />
+        <section className="border border-line p-6">
+          <h2 className="mb-4 flex items-center gap-2.5 text-[15px] font-bold">
+            <span className="grid h-6 w-6 place-items-center rounded-full bg-ink text-[12px] text-paper">3</span>
+            Нэмэлт
+          </h2>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Хөнгөлөлтийн код" value={discountCode} onChange={setDiscountCode} />
+            <Field label="Захиалгын тэмдэглэл" value={note} onChange={setNote} />
+          </div>
         </section>
       </div>
 
       <aside className="lg:sticky lg:top-24 lg:self-start">
-        <div className="border border-line p-6">
-          <p className="label text-ink-faint">Захиалга</p>
-          <ul className="mt-4 space-y-3">
+        <div className="border border-line bg-shade p-6">
+          <p className="label text-ink-faint">Захиалгын хураангуй</p>
+          <ul className="mt-4 space-y-4">
             {items.map((i) => {
-              const title = copy(i.variant?.product).title
+              const product = i.variant?.product
+              const title = copy(product).title
+              const image = firstNode(product?.productImageCollection)
               return (
-                <li key={i.id} className="flex justify-between gap-3">
-                  <span className="min-w-0">
-                    <span className="block truncate">{title}</span>
-                    <span className="label text-ink-faint">
-                      {i.variant?.optionValue ? `${i.variant.optionValue} · ` : ''}{i.quantity} ш
+                <li key={i.id} className="flex items-center gap-3">
+                  {/* Thumbnail with the quantity as a badge: a checkout summary
+                      is scanned, not read, and the picture is the anchor. */}
+                  <span className="relative h-14 w-14 shrink-0 overflow-hidden border border-line bg-paper">
+                    <ProductImage filePath={image?.filePath} alt={title} seed={product?.slug} sizes="56px" />
+                    <span className="absolute -right-1.5 -top-1.5 grid h-5 min-w-5 place-items-center rounded-full bg-ink px-1 text-[11px] font-semibold text-paper">
+                      {i.quantity}
                     </span>
                   </span>
-                  <span className="shrink-0 tabular-nums">
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[13px] font-medium">{title}</span>
+                    {i.variant?.optionValue && (
+                      <span className="block text-[12px] text-ink-faint">{i.variant.optionValue}</span>
+                    )}
+                  </span>
+                  <span className="shrink-0 text-[13px] tabular-nums">
                     {formatMnt(toNumber(i.variant?.priceMnt) * i.quantity)}
                   </span>
                 </li>
@@ -312,9 +343,13 @@ function CheckoutForm({ items, subtotal, profileId }) {
             className="label mt-5 w-full bg-ink py-4 text-paper transition-opacity hover:opacity-85 disabled:opacity-30">
             {placing ? 'Илгээж байна…' : 'Захиалга баталгаажуулах'}
           </button>
-          <p className="label mt-3 text-ink-faint">
-            Дараагийн алхамд дансны мэдээлэл харагдана. Төлбөрөө шилжүүлсний дараа баталгаажна.
-          </p>
+          <div className="mt-4 border-t border-line pt-4">
+            <p className="text-[13px] font-semibold">Төлбөрийн хэлбэр</p>
+            <p className="mt-1 text-[13px] text-ink-soft">
+              Дансаар шилжүүлэн төлнө. Захиалга баталгаажсаны дараа дансны мэдээлэл
+              болон гүйлгээний утга харагдана.
+            </p>
+          </div>
         </div>
       </aside>
     </div>
