@@ -2,12 +2,18 @@
 
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Suspense, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useSession } from '@/components/useSession'
+import { useApolloClient } from '@apollo/client/react'
+import { REDEEM_CART_TRANSFER } from '@/lib/queries'
 import PhoneVerify from '@/components/PhoneVerify'
 import EmailOtp from '@/components/EmailOtp'
+import OAuthButtons from '@/components/OAuthButtons'
+import { CART_HANDOFF_KEY } from '@/components/OAuthButtons'
 
 function SignIn() {
+  useRedeemParkedCart()
+
   const router = useRouter()
   const params = useSearchParams()
   const next = params.get('next') || '/account'
@@ -36,6 +42,9 @@ function SignIn() {
       </p>
 
       <div className="mt-8">
+        <OAuthButtons next={next} />
+        <Divider />
+
         {method === 'phone' ? (
           <>
             <PhoneVerify onVerified={() => router.push(next)} />
@@ -61,6 +70,27 @@ function SignIn() {
       </p>
     </>
   )
+}
+
+/**
+ * OAuth navigates away and back, so the cart handoff token was parked in
+ * sessionStorage before the redirect. Redeem it once the visitor lands here
+ * signed in, then clear it so it is never replayed.
+ */
+function useRedeemParkedCart() {
+  const apollo = useApolloClient()
+  const { isAuthenticated } = useSession()
+
+  useEffect(() => {
+    if (!isAuthenticated) return
+    const token = sessionStorage.getItem(CART_HANDOFF_KEY)
+    if (!token) return
+    sessionStorage.removeItem(CART_HANDOFF_KEY)
+    apollo
+      .mutate({ mutation: REDEEM_CART_TRANSFER, variables: { token } })
+      .then(() => apollo.resetStore())
+      .catch(() => { /* expired or already redeemed */ })
+  }, [isAuthenticated, apollo])
 }
 
 const Divider = () => (
