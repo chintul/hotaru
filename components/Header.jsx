@@ -2,22 +2,27 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
+import { useQuery } from '@apollo/client/react'
+import { NAV_CATEGORIES } from '@/lib/queries'
+import { firstNode, nodes } from '@/lib/format'
 import { useUI } from './UIProvider'
 import { useCart } from './useCart'
 import { useSession } from './useSession'
-
-const NAV = [
-  { href: '/shop', label: 'Бүх бүтээгдэхүүн' },
-  { href: '/shop?c=earrings', label: 'Ээмэг' },
-  { href: '/shop?c=necklaces', label: 'Зүүлт' },
-  { href: '/shop?c=rings', label: 'Бөгж' },
-]
 
 export default function Header() {
   const { setCartOpen, setSearchOpen, navOpen, setNavOpen } = useUI()
   const { count } = useCart()
   const { isAuthenticated } = useSession()
   const [lifted, setLifted] = useState(false)
+
+  // Nav is data-driven: adding a category in the database puts it in the header,
+  // with no deploy and no list to keep in sync.
+  const { data } = useQuery(NAV_CATEGORIES)
+  const categories = nodes(data?.categoryCollection).map((c) => ({
+    href: `/shop?c=${c.slug}`,
+    label: firstNode(c.categoryTranslationCollection)?.name ?? c.slug,
+  }))
+  const nav = [{ href: '/shop', label: 'Бүгд' }, ...categories.slice(0, 5)]
 
   // The header is transparent over the hero and gains a hairline once the page
   // moves — the border appearing is what signals "sticky" without a shadow.
@@ -49,7 +54,7 @@ export default function Header() {
         </Link>
 
         <nav className="ml-6 hidden items-center gap-7 md:flex">
-          {NAV.map((item) => (
+          {nav.map((item) => (
             <Link key={item.href} href={item.href} className="label link-underline text-ink-soft hover:text-ink">
               {item.label}
             </Link>
@@ -71,7 +76,7 @@ export default function Header() {
 
       {navOpen && (
         <nav className="overlay-in border-t border-line bg-paper px-5 py-4 md:hidden">
-          {NAV.map((item) => (
+          {nav.map((item) => (
             <Link
               key={item.href}
               href={item.href}
