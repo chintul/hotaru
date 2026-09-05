@@ -4,16 +4,36 @@ import { useState } from 'react'
 import { useMutation, useQuery } from '@apollo/client/react'
 import { ADMIN_DISCOUNTS, ADMIN_UPSERT_DISCOUNT } from '@/lib/queries'
 import { formatMnt, nodes, toNumber } from '@/lib/format'
-import { Badge, Button, Card, EmptyState, Field, Input, PageHeader, Table, Td, Tr } from '@/components/admin/ui'
+import {
+  Button, Card, DataTable, EmptyState, Field, Input, PageHeader, Select, Status,
+} from '@/components/admin/ui'
+import { Plus } from '@/components/admin/icons'
 
 const KIND_LABEL = { percentage: 'Хувиар', fixed_amount: 'Тогтмол дүн', free_delivery: 'Үнэгүй хүргэлт' }
 
 export default function DiscountsPage() {
   const { data, loading, refetch } = useQuery(ADMIN_DISCOUNTS, { fetchPolicy: 'cache-and-network' })
   const [save, { loading: saving }] = useMutation(ADMIN_UPSERT_DISCOUNT)
-  const [form, setForm] = useState({ code: '', kind: 'percentage', value: '', minSubtotalMnt: '0', usageLimit: '' })
+  const [open, setOpen] = useState(false)
+  const [f, setF] = useState({ code: '', kind: 'percentage', value: '', minSubtotalMnt: '0', usageLimit: '' })
   const [error, setError] = useState(null)
   const codes = nodes(data?.discountCodeCollection)
+
+  const columns = [
+    { key: 'code', header: 'Код', render: (d) => <span className="font-medium">{d.code}</span> },
+    { key: 'kind', header: 'Төрөл', render: (d) => <span className="text-a-muted">{KIND_LABEL[d.kind] ?? d.kind}</span> },
+    { key: 'value', header: 'Утга', align: 'right', render: (d) => (
+      <span className="tabular-nums">
+        {d.kind === 'percentage' ? `${Number(d.value)}%` : d.kind === 'free_delivery' ? '—' : formatMnt(d.value)}
+      </span>) },
+    { key: 'min', header: 'Доод дүн', align: 'right', render: (d) => (
+      <span className="tabular-nums text-a-muted">{formatMnt(d.minSubtotalMnt)}</span>) },
+    { key: 'used', header: 'Ашигласан', align: 'right', render: (d) => (
+      <span className="tabular-nums">{d.timesUsed}{d.usageLimit ? ` / ${d.usageLimit}` : ''}</span>) },
+    { key: 'status', header: 'Төлөв', render: (d) => (
+      <Status tone={d.isActive ? 'green' : 'grey'}>{d.isActive ? 'идэвхтэй' : 'унтраасан'}</Status>) },
+    { key: 'action', header: '', align: 'right', render: (d) => <ToggleButton discount={d} onDone={refetch} /> },
+  ]
 
   if (loading && !data) return <p className="text-[13px] text-a-muted">Ачааллаж байна…</p>
 
@@ -21,104 +41,79 @@ export default function DiscountsPage() {
     <>
       <PageHeader
         title="Хөнгөлөлт"
-        description="Код нь захиалга үүсэх үед сервер дээр шалгагдаж, дүн нь тэндээ тооцогдоно."
+        subtitle="Код нь захиалга үүсэх үед сервер дээр шалгагдаж, дүн нь тэндээ тооцогдоно."
+        actions={<Button variant="primary" onClick={() => setOpen(!open)}><Plus /> Шинэ код</Button>}
       />
 
-      <Card title="Шинэ код" className="mb-6">
-        <form
-          className="grid gap-3 sm:grid-cols-5"
-          onSubmit={async (e) => {
-            e.preventDefault()
-            setError(null)
-            try {
-              await save({
-                variables: {
-                  code: form.code.trim().toUpperCase(),
-                  kind: form.kind,
-                  value: form.kind === 'free_delivery' ? '0' : String(toNumber(form.value)),
-                  minSubtotalMnt: String(toNumber(form.minSubtotalMnt)),
-                  usageLimit: form.usageLimit ? Number(form.usageLimit) : null,
-                  isActive: true,
-                  discountId: null,
-                },
-              })
-              setForm({ code: '', kind: 'percentage', value: '', minSubtotalMnt: '0', usageLimit: '' })
-              refetch()
-            } catch (e) { setError(e?.message ?? 'Алдаа гарлаа.') }
-          }}
-        >
-          <Field label="Код *">
-            <Input required value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} placeholder="NAMAR10" />
-          </Field>
-          <Field label="Төрөл">
-            <select value={form.kind} onChange={(e) => setForm({ ...form, kind: e.target.value })}
-              className="w-full rounded-md border border-a-line bg-white px-3 py-2 text-[13px]">
-              {Object.entries(KIND_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-            </select>
-          </Field>
-          <Field label={form.kind === 'percentage' ? 'Хувь (0–100)' : 'Дүн (₮)'}>
-            <Input value={form.value} disabled={form.kind === 'free_delivery'}
-              onChange={(e) => setForm({ ...form, value: e.target.value.replace(/\D/g, '') })} />
-          </Field>
-          <Field label="Доод дүн (₮)">
-            <Input value={form.minSubtotalMnt}
-              onChange={(e) => setForm({ ...form, minSubtotalMnt: e.target.value.replace(/\D/g, '') })} />
-          </Field>
-          <Field label="Хязгаар" hint="Хоосон = хязгааргүй">
-            <Input value={form.usageLimit}
-              onChange={(e) => setForm({ ...form, usageLimit: e.target.value.replace(/\D/g, '') })} />
-          </Field>
-          {error && <p className="sm:col-span-5 text-[13px] text-red-600">{error}</p>}
-          <div className="sm:col-span-5">
-            <Button type="submit" disabled={saving}>{saving ? 'Хадгалж байна…' : 'Үүсгэх'}</Button>
-          </div>
-        </form>
-      </Card>
+      {open && (
+        <div className="mb-4">
+          <Card title="Шинэ код">
+            <form className="grid gap-3 sm:grid-cols-5"
+              onSubmit={async (e) => {
+                e.preventDefault(); setError(null)
+                try {
+                  await save({ variables: {
+                    code: f.code.trim().toUpperCase(), kind: f.kind,
+                    value: f.kind === 'free_delivery' ? '0' : String(toNumber(f.value)),
+                    minSubtotalMnt: String(toNumber(f.minSubtotalMnt)),
+                    usageLimit: f.usageLimit ? Number(f.usageLimit) : null,
+                    isActive: true, discountId: null } })
+                  setF({ code: '', kind: 'percentage', value: '', minSubtotalMnt: '0', usageLimit: '' })
+                  setOpen(false); refetch()
+                } catch (e) { setError(e?.message ?? 'Алдаа гарлаа.') }
+              }}>
+              <Field label="Код" required>
+                <Input required value={f.code} onChange={(e) => setF({ ...f, code: e.target.value })} placeholder="NAMAR10" />
+              </Field>
+              <Field label="Төрөл">
+                <Select value={f.kind} onChange={(e) => setF({ ...f, kind: e.target.value })}>
+                  {Object.entries(KIND_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                </Select>
+              </Field>
+              <Field label={f.kind === 'percentage' ? 'Хувь (0–100)' : 'Дүн (₮)'}>
+                <Input value={f.value} disabled={f.kind === 'free_delivery'}
+                  onChange={(e) => setF({ ...f, value: e.target.value.replace(/\D/g, '') })} />
+              </Field>
+              <Field label="Доод дүн (₮)">
+                <Input value={f.minSubtotalMnt}
+                  onChange={(e) => setF({ ...f, minSubtotalMnt: e.target.value.replace(/\D/g, '') })} />
+              </Field>
+              <Field label="Хязгаар" hint="Хоосон = хязгааргүй">
+                <Input value={f.usageLimit}
+                  onChange={(e) => setF({ ...f, usageLimit: e.target.value.replace(/\D/g, '') })} />
+              </Field>
+              {error && <p className="text-[13px] text-red-600 sm:col-span-5">{error}</p>}
+              <div className="flex gap-2 sm:col-span-5">
+                <Button type="submit" variant="primary" disabled={saving}>{saving ? 'Хадгалж байна…' : 'Үүсгэх'}</Button>
+                <Button type="button" onClick={() => setOpen(false)}>Болих</Button>
+              </div>
+            </form>
+          </Card>
+        </div>
+      )}
 
       {codes.length === 0 ? (
-        <EmptyState title="Хөнгөлөлтийн код алга" body="Дээрх формоор эхний кодоо үүсгэнэ үү." />
+        <EmptyState title="Хөнгөлөлтийн код алга" body="Эхний кодоо үүсгэнэ үү."
+          action={<Button variant="primary" onClick={() => setOpen(true)}>Үүсгэх</Button>} />
       ) : (
-        <Card>
-          <Table head={['Код', 'Төрөл', { label: 'Утга', align: 'right' }, { label: 'Доод дүн', align: 'right' },
-                        { label: 'Ашигласан', align: 'right' }, 'Идэвхтэй', { label: '', align: 'right' }]}>
-            {codes.map((d) => <DiscountRow key={d.id} discount={d} onDone={refetch} />)}
-          </Table>
-        </Card>
+        <DataTable columns={columns} rows={codes} />
       )}
     </>
   )
 }
 
-function DiscountRow({ discount, onDone }) {
+function ToggleButton({ discount, onDone }) {
   const [save, { loading }] = useMutation(ADMIN_UPSERT_DISCOUNT)
-  const toggle = async () => {
-    await save({
-      variables: {
-        code: discount.code, kind: discount.kind, value: String(discount.value),
-        minSubtotalMnt: String(discount.minSubtotalMnt), usageLimit: discount.usageLimit,
-        isActive: !discount.isActive, discountId: discount.id,
-      },
-    })
-    onDone()
-  }
   return (
-    <Tr>
-      <Td className="font-medium">{discount.code}</Td>
-      <Td className="text-a-muted">{KIND_LABEL[discount.kind] ?? discount.kind}</Td>
-      <Td align="right" className="tabular-nums">
-        {discount.kind === 'percentage' ? `${Number(discount.value)}%`
-          : discount.kind === 'free_delivery' ? '—' : formatMnt(discount.value)}
-      </Td>
-      <Td align="right" className="tabular-nums">{formatMnt(discount.minSubtotalMnt)}</Td>
-      <Td align="right" className="tabular-nums">
-        {discount.timesUsed}{discount.usageLimit ? ` / ${discount.usageLimit}` : ''}
-      </Td>
-      <Td>{discount.isActive ? <Badge tone="green">идэвхтэй</Badge> : <Badge>унтраасан</Badge>}</Td>
-      <Td align="right">
-        <Button variant="secondary" disabled={loading} onClick={toggle}>
-          {discount.isActive ? 'Унтраах' : 'Идэвхжүүлэх'}
-        </Button>
-      </Td>
-    </Tr>
+    <Button size="sm" disabled={loading}
+      onClick={async () => {
+        await save({ variables: {
+          code: discount.code, kind: discount.kind, value: String(discount.value),
+          minSubtotalMnt: String(discount.minSubtotalMnt), usageLimit: discount.usageLimit,
+          isActive: !discount.isActive, discountId: discount.id } })
+        onDone()
+      }}>
+      {discount.isActive ? 'Унтраах' : 'Идэвхжүүлэх'}
+    </Button>
   )
 }

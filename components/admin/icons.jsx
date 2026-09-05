@@ -1,0 +1,21 @@
+/** 16px outline icons for the admin, matching Medusa's weight and geometry. */
+const s = { fill: 'none', stroke: 'currentColor', strokeWidth: 1.5, strokeLinecap: 'round', strokeLinejoin: 'round' }
+const I = (p) => ({ viewBox: '0 0 24 24', width: 16, height: 16, ...s, ...p })
+
+export const Orders = (p) => (<svg {...I(p)}><path d="M6 7h12l-1 12H7L6 7Z"/><path d="M9 7V5.5a3 3 0 0 1 6 0V7"/></svg>)
+export const Products = (p) => (<svg {...I(p)}><path d="m3 10 9-6 9 6v10H3V10Z"/><path d="M9 20v-6h6v6"/></svg>)
+export const Inventory = (p) => (<svg {...I(p)}><rect x="3" y="7" width="18" height="13" rx="1.5"/><path d="M3 11h18M9 7V4h6v3"/></svg>)
+export const ImageIcon = (p) => (<svg {...I(p)}><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.5"/><path d="m4 17 5-4 4 3 3-2 4 3"/></svg>)
+export const Tag = (p) => (<svg {...I(p)}><path d="M3 12V4h8l9 9-8 8-9-9Z"/><circle cx="7.5" cy="7.5" r="1.2"/></svg>)
+export const Star = (p) => (<svg {...I(p)}><path d="m12 4 2.3 4.9 5.2.7-3.8 3.6.9 5.3L12 16l-4.6 2.5.9-5.3L4.5 9.6l5.2-.7L12 4Z"/></svg>)
+export const Settings = (p) => (<svg {...I(p)}><circle cx="12" cy="12" r="3"/><path d="M12 3v2m0 14v2M3 12h2m14 0h2M5.6 5.6l1.4 1.4m10 10 1.4 1.4m0-12.8-1.4 1.4m-10 10-1.4 1.4"/></svg>)
+export const Search = (p) => (<svg {...I(p)}><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg>)
+export const Bell = (p) => (<svg {...I(p)}><path d="M18 15V10a6 6 0 1 0-12 0v5l-1.5 3h15L18 15Z"/><path d="M10 21h4"/></svg>)
+export const Panel = (p) => (<svg {...I(p)}><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></svg>)
+export const Dots = (p) => (<svg {...I(p)}><circle cx="6" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="18" cy="12" r="1.3"/></svg>)
+export const Copy = (p) => (<svg {...I(p)}><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>)
+export const Chevron = (p) => (<svg {...I(p)}><path d="m9 6 6 6-6 6"/></svg>)
+export const Plus = (p) => (<svg {...I(p)}><path d="M12 5v14M5 12h14"/></svg>)
+export const Check = (p) => (<svg {...I(p)}><path d="m5 13 4 4L19 7"/></svg>)
+export const Truck = (p) => (<svg {...I(p)}><path d="M3 6h11v9H3zM14 9h4l3 3v3h-7z"/><circle cx="7" cy="18" r="1.6"/><circle cx="17.5" cy="18" r="1.6"/></svg>)
+export const Back = (p) => (<svg {...I(p)}><path d="m15 6-6 6 6 6"/></svg>)

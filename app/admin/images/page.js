@@ -19,7 +19,7 @@ export default function AdminImagesPage() {
     <div>
       <PageHeader
         title="Зураг"
-        description={`${withImages}/${products.length} бүтээгдэхүүн зурагтай · эхний зураг карт дээр, хоёр дахь нь hover дээр`}
+        subtitle={`${withImages}/${products.length} бүтээгдэхүүн зурагтай · эхний зураг карт дээр, хоёр дахь нь hover дээр`}
       />
 
       {!configured && (
@@ -34,7 +34,7 @@ export default function AdminImagesPage() {
             key={p.id}
             title={<span className="flex items-center gap-2">{copy(p).title ?? p.slug}
               <span className="text-[12px] font-normal text-a-muted">{p.slug}</span></span>}
-            action={<span className="text-[12px] text-a-muted">{p.status}</span>}
+            actions={<span className="text-[12px] text-a-muted">{p.status}</span>}
           >
             <ProductImageManager product={p} />
           </Card>

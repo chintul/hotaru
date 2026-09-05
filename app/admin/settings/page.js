@@ -59,8 +59,8 @@ export default function SettingsPage() {
     <form onSubmit={onSubmit}>
       <PageHeader
         title="Тохиргоо"
-        description="Дансны мэдээлэл өгөгдлийн санд хадгалагдана — код дахин байршуулах шаардлагагүй."
-        action={<Button type="submit" disabled={saving}>{saving ? 'Хадгалж байна…' : 'Хадгалах'}</Button>}
+        subtitle="Дансны мэдээлэл өгөгдлийн санд хадгалагдана — код дахин байршуулах шаардлагагүй."
+        actions={<Button type="submit" variant="primary" disabled={saving}>{saving ? 'Хадгалж байна…' : 'Хадгалах'}</Button>}
       />
 
       {placeholders.length > 0 && (
