@@ -103,3 +103,19 @@ select test.ok(
 select test.ok(
   has_column_privilege('authenticated', 'public.store_settings', 'bank_account_number', 'SELECT'),
   'a signed-in customer can read the bank details to pay');
+
+-- ---- cart never trips the profile foreign key ------------------------------
+-- A JWT can outlive its user (deleted account, restored database). auth.uid()
+-- still resolves, so the cart insert used to fail on carts_profile_id_fkey.
+select test.as_user('88888888-8888-8888-8888-888888888888', true);   -- no such user
+select test.raises(
+  format($$select public.add_to_cart(%L, 1)$$, (select id from public.variants where sku='TEST-MUG-1')),
+  '28000', 'a cart for a non-existent account fails cleanly, not on the foreign key');
+
+-- A user that exists but somehow has no profile row gets one backfilled.
+insert into auth.users (id, email) values ('99999999-9999-9999-9999-999999999999','orphan@example.com');
+delete from public.profiles where id = '99999999-9999-9999-9999-999999999999';
+select test.as_user('99999999-9999-9999-9999-999999999999', false);
+select test.ok(public.current_cart_id() is not null, 'a missing profile is backfilled from auth.users');
+select test.eq((select count(*)::int from public.profiles where id='99999999-9999-9999-9999-999999999999'),
+               1, 'the backfilled profile exists');
