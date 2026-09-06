@@ -73,3 +73,37 @@ export const IconGrid = ({ cols = 3, ...p }) => (
     ))}
   </svg>
 )
+
+/* Order pages. Same 1.6px stroke as the rest so they sit next to IconBag
+   without looking borrowed. */
+export const IconQr = (p) => (
+  <svg viewBox="0 0 24 24" width="22" height="22" {...base} {...p}>
+    <rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" />
+    <rect x="3" y="14" width="7" height="7" rx="1.5" />
+    <path d="M14 14h3v3h-3zM20 14v1M14 20h3M20 19v2" />
+  </svg>
+)
+export const IconBank = (p) => (
+  <svg viewBox="0 0 24 24" width="22" height="22" {...base} {...p}>
+    <path d="M3 9.5 12 4l9 5.5M5 10v8M9.7 10v8M14.3 10v8M19 10v8M3 21h18" />
+  </svg>
+)
+export const IconCopy = (p) => (
+  <svg viewBox="0 0 24 24" width="16" height="16" {...base} {...p}>
+    <rect x="9" y="9" width="11" height="11" rx="2.5" /><path d="M5 15V6a2 2 0 0 1 2-2h8" />
+  </svg>
+)
+export const IconCheck = (p) => (
+  <svg viewBox="0 0 24 24" width="16" height="16" {...base} {...p}><path d="m5 12.5 4.5 4.5L19 7" /></svg>
+)
+export const IconClock = (p) => (
+  <svg viewBox="0 0 24 24" width="16" height="16" {...base} {...p}>
+    <circle cx="12" cy="12" r="8.5" /><path d="M12 7.5V12l3 1.8" />
+  </svg>
+)
+export const IconTruck = (p) => (
+  <svg viewBox="0 0 24 24" width="18" height="18" {...base} {...p}>
+    <path d="M3 16V6.5h11V16M14 9.5h3.6L21 13v3h-3" />
+    <circle cx="7.5" cy="17.5" r="1.8" /><circle cx="17" cy="17.5" r="1.8" />
+  </svg>
+)

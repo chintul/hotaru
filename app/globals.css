@@ -21,6 +21,24 @@
   --color-buy:        #2196c4;   /* "Buy it now" blue */
   --color-badge:      #8f8f8f;
 
+  /* Order pages. The shop is a stark gallery; an order page is the one place a
+     customer is anxious (did my money arrive?), so these surfaces are softer:
+     warm paper, rounded corners, one tinted accent per order state. Kept as
+     tokens rather than literals so the tints stay a set of nine, not ninety.
+
+     `paper-warm` was already used by /orders, /wishlist and the cart thumbs but
+     had never been declared, so `bg-paper-warm` emitted nothing. Declaring it
+     here is what those screens always meant. */
+  --color-paper-warm: #faf7f2;
+  --color-cream:      #fdf5e9;
+  --color-cream-ink:  #9a6b12;
+  --color-mint:       #e9f5ee;
+  --color-mint-ink:   #2c7a52;
+  --color-sky:        #eaf1fa;
+  --color-sky-ink:    #2b6098;
+  --color-blush:      #fdeef0;
+  --color-blush-ink:  #a63f4c;
+
   --font-sans: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
 
   /* Admin palette. Kept separate from the storefront tokens on purpose: the
@@ -61,6 +79,16 @@ body {
     font-weight: 700;
     letter-spacing: 1.2px;
     text-align: center;
+  }
+
+  /* Page-title face. Callers pass their own clamp() size; this only carries the
+     weight and tracking so every large heading agrees. It was being used by
+     /orders, /wishlist and the 404 before it existed, which left those titles
+     at the body weight — heavier than intended is the bug, not the fix. */
+  .display {
+    font-weight: 700;
+    letter-spacing: -0.4px;
+    line-height: 1.12;
   }
 
   /* Small uppercase label. Kept as a utility because checkout, account and admin
@@ -201,3 +229,81 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; marg
 input[type="number"] { -moz-appearance: textfield; }
 
 ::selection { background: var(--color-ink-strong); color: #fff; }
+
+/* ---------------------------------------------------------------------------
+   Order screens.
+
+   Deliberately a second vocabulary rather than a change to the one above. The
+   catalog is stark on purpose (hard 1px borders, zero radius); an order page is
+   read once, under stress, usually on a phone, and wants the opposite: soft
+   edges, warm ground, and colour that says at a glance which state the order is
+   in. Everything here is prefixed or order-specific so nothing leaks into the
+   shop.
+--------------------------------------------------------------------------- */
+@layer components {
+  /* The one card shape these pages use. */
+  .o-card {
+    border: 1px solid var(--color-line);
+    border-radius: 20px;
+    background: var(--color-paper);
+  }
+  .o-card-warm { background: var(--color-paper-warm); }
+
+  /* Rounded pill carrying an order/payment state. Colour comes from a
+     data-tone attribute so the caller maps status -> tone in one place. */
+  .o-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border-radius: 999px;
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: .3px;
+    background: var(--color-shade);
+    color: var(--color-ink-soft);
+  }
+  .o-chip[data-tone="wait"]  { background: var(--color-cream); color: var(--color-cream-ink); }
+  .o-chip[data-tone="good"]  { background: var(--color-mint);  color: var(--color-mint-ink); }
+  .o-chip[data-tone="move"]  { background: var(--color-sky);   color: var(--color-sky-ink); }
+  .o-chip[data-tone="stop"]  { background: var(--color-blush); color: var(--color-blush-ink); }
+
+  /* A choice card: QPay vs bank transfer, and the segmented switch inside the
+     modal. Hover lifts a little so it reads as pressable on desktop; the ring
+     on [data-active] is what marks the current choice. */
+  .o-pick {
+    border: 1px solid var(--color-line);
+    border-radius: 18px;
+    background: var(--color-paper);
+    padding: 18px;
+    text-align: left;
+    transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+  }
+  .o-pick:hover { border-color: var(--color-ink); transform: translateY(-2px); box-shadow: 0 8px 22px -14px rgba(0,0,0,.45); }
+  .o-pick[data-active="true"] { border-color: var(--color-ink); box-shadow: 0 0 0 1px var(--color-ink); }
+  .o-pick:focus-visible { outline: 2px solid var(--color-ink); outline-offset: 2px; }
+
+  /* Loading placeholder. A sweep rather than a pulse, because the skeleton
+     mirrors the real layout and a pulse on eight blocks at once flickers. */
+  .o-skeleton {
+    border-radius: 12px;
+    background: linear-gradient(90deg, var(--color-line-soft) 25%, var(--color-shade) 37%, var(--color-line-soft) 63%);
+    background-size: 400% 100%;
+    animation: o-sweep 1.4s ease infinite;
+  }
+}
+
+@keyframes o-sweep { from { background-position: 100% 50% } to { background-position: 0 50% } }
+
+/* The waiting-for-payment dot on the trail and in the modal. */
+@keyframes o-ping { 0% { transform: scale(1); opacity: .55 } 70%, 100% { transform: scale(2.1); opacity: 0 } }
+.o-ping { animation: o-ping 1.8s cubic-bezier(0,0,.2,1) infinite; }
+
+/* Modal: rises from slightly below and small, so dismissing feels reversible. */
+@keyframes o-modal-in { from { opacity: 0; transform: translateY(14px) scale(.97) } to { opacity: 1; transform: none } }
+.o-modal-in { animation: o-modal-in .28s cubic-bezier(.22,1,.36,1) both; }
+
+/* Payment confirmed. One overshoot, then settle — the single celebratory
+   moment on the page, and only ever fired once per order. */
+@keyframes o-pop { 0% { opacity: 0; transform: scale(.6) } 60% { opacity: 1; transform: scale(1.08) } 100% { transform: scale(1) } }
+.o-pop { animation: o-pop .5s cubic-bezier(.22,1,.36,1) both; }
