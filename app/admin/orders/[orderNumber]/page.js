@@ -127,6 +127,7 @@ function PaymentCard({ order, payment, onDone }) {
   const [cancel] = useMutation(CANCEL_ORDER)
   const [reference, setReference] = useState('')
   const [error, setError] = useState(null)
+  const [checkMessage, setCheckMessage] = useState('')
 
   const awaiting = order.paymentStatus !== 'confirmed' && order.paymentStatus !== 'refunded'
 
@@ -172,6 +173,30 @@ function PaymentCard({ order, payment, onDone }) {
           >
             Цуцлах
           </Button>
+          {/* For a callback that never landed. QPay forbids polling their check
+              endpoint on a schedule, so the retry is a button, not a cron. */}
+          <Button
+            onClick={async () => {
+              setCheckMessage('')
+              const res = await fetch('/api/payments/qpay/check', {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ orderId: order.id }),
+              })
+              const body = await res.json().catch(() => ({}))
+              setCheckMessage(
+                body.outcome === 'confirmed' ? 'QPay: төлбөр баталгаажлаа'
+                  : body.outcome === 'pending' ? 'QPay: төлбөр хараахан ороогүй байна'
+                    : body.outcome === 'mismatch' ? 'QPay: дүн зөрж байна — дотоод тэмдэглэлийг шалгана уу'
+                      : body.outcome === 'already' ? 'QPay: аль хэдийн баталгаажсан'
+                        : 'QPay: нэхэмжлэх олдсонгүй',
+              )
+              onDone()
+            }}
+          >
+            QPay шалгах
+          </Button>
+          {checkMessage && <p className="w-full text-[13px] text-a-muted">{checkMessage}</p>}
         </div>
       )}
 
