@@ -142,6 +142,12 @@ https://www.mongolbank.mn/file/files/documents/paymentsystems/codeofparticipants
 Khan Bank is `050000` and TDB is `040000`. Do **not** take them from
 `instasell-front/app/utils/banks.ts` — that table has Khan and TDB wrong.
 
+`bank_account` is **write-only** on QuickQR. Neither `/v2/merchant/list` nor
+`GET /v2/merchant/{id}` returns it, so a merchant's payout account cannot be
+read back or audited — it can only be overwritten with
+`PUT /v2/merchant/person/{id}`. Correcting one is therefore blind: send the
+account you want and trust the 200.
+
 The field is `register_number`. The `payment-sdks/qpayquick` SDK spells it
 `register_nubmer`; that is a typo in that SDK and must not be copied.
 `codify-org/qpay-go` and instasell both send `register_number` and both work.

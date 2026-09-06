@@ -1,6 +1,8 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { createPersonMerchant, listMerchants, resetTokenCache, updatePersonMerchant } from '../../lib/qpay/client.js'
+import {
+  createPersonMerchant, getMerchant, listMerchants, resetTokenCache, updatePersonMerchant,
+} from '../../lib/qpay/client.js'
 
 function setEnv() {
   Object.assign(process.env, {
@@ -128,4 +130,26 @@ test('an update sends only the fields it was given', async () => {
   await updatePersonMerchant('merch-9', { phone: '99001122' }, { fetchImpl })
 
   assert.deepEqual(body, { phone: '99001122' })
+})
+
+test('fetching one merchant is not namespaced by type', async () => {
+  setEnv()
+  let url
+  let method
+  const fetchImpl = async (u, init) => {
+    if (u.endsWith('/v2/auth/token')) return ok(TOKEN)
+    url = u
+    method = init.method
+    // Shaped like the real response: QuickQR never returns bank_account, from
+    // this endpoint or from /v2/merchant/list. It is write-only.
+    return ok({ id: 'merch-9', type: 'PERSON', name: 'hotaru' })
+  }
+
+  const m = await getMerchant('merch-9', { fetchImpl })
+
+  // Unlike create and update, GET takes no /person or /company segment.
+  assert.equal(url, 'https://quickqr.example/v2/merchant/merch-9')
+  assert.equal(method, 'GET')
+  assert.equal(m.id, 'merch-9')
+  assert.equal('bank_account' in m, false)
 })
