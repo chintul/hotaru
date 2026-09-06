@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { linkage, orphansOf, variantLabel } from '../../lib/admin/images.js'
+import { linkage, moveItem, orphansOf, variantLabel } from '../../lib/admin/images.js'
 
 test('variantLabel falls back through optionValue, sku, then a placeholder', () => {
   assert.equal(variantLabel({ optionValue: 'Cherry Jam', sku: 'HTR-1' }), 'Cherry Jam')
@@ -62,4 +62,25 @@ test('orphansOf names every variant that would lose its photo', () => {
   assert.deepEqual(orphansOf('i2', variants), ['Berry'])
   assert.deepEqual(orphansOf('i9', variants), [])
   assert.deepEqual(orphansOf('i1'), [])
+})
+
+test('moveItem moves an entry and leaves the input alone', () => {
+  const list = ['a', 'b', 'c', 'd']
+  assert.deepEqual(moveItem(list, 0, 2), ['b', 'c', 'a', 'd'])
+  assert.deepEqual(moveItem(list, 3, 0), ['d', 'a', 'b', 'c'])
+  assert.deepEqual(list, ['a', 'b', 'c', 'd'], 'the input array is untouched')
+})
+
+test('moveItem is a no-op for a move that changes nothing', () => {
+  const list = ['a', 'b', 'c']
+  assert.deepEqual(moveItem(list, 1, 1), ['a', 'b', 'c'])
+})
+
+test('moveItem ignores an out-of-range index instead of dropping an entry', () => {
+  // A dragend with no drop target reports -1, and splice(-1) would silently
+  // move the LAST item.
+  const list = ['a', 'b', 'c']
+  assert.deepEqual(moveItem(list, -1, 1), ['a', 'b', 'c'])
+  assert.deepEqual(moveItem(list, 0, 9), ['a', 'b', 'c'])
+  assert.deepEqual(moveItem(list, null, 1), ['a', 'b', 'c'])
 })

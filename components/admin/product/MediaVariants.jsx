@@ -3,9 +3,9 @@
 import { useRef, useState } from 'react'
 import { upload } from '@imagekit/next'
 import { useMutation } from '@apollo/client/react'
-import { ADMIN_ADD_IMAGE, ADMIN_DELETE_IMAGE, ADMIN_UPSERT_VARIANT } from '@/lib/queries'
+import { ADMIN_ADD_IMAGE, ADMIN_DELETE_IMAGE, ADMIN_REORDER_IMAGES, ADMIN_UPSERT_VARIANT } from '@/lib/queries'
 import { nodes, toNumber } from '@/lib/format'
-import { linkage, orphansOf } from '@/lib/admin/images'
+import { linkage, moveItem, orphansOf } from '@/lib/admin/images'
 import ProductImage from '@/components/ProductImage'
 import { Button, Card, Field, Input } from '@/components/admin/ui'
 import { Plus } from '@/components/admin/icons'
@@ -30,16 +30,34 @@ import VariantRow from './VariantRow'
 export default function MediaVariants({ product, refetch }) {
   const images = nodes(product.productImageCollection)
   const variants = nodes(product.variantCollection)
-  const { usage } = linkage(variants)
+  const { usage, positionStillRules } = linkage(variants)
 
   const inputRef = useRef(null)
   const [adding, setAdding] = useState(false)
   const [busy, setBusy] = useState(false)
   const [dragging, setDragging] = useState(false)
+  const [dragIndex, setDragIndex] = useState(null)
   const [error, setError] = useState(null)
 
   const [addImage] = useMutation(ADMIN_ADD_IMAGE)
   const [deleteImage] = useMutation(ADMIN_DELETE_IMAGE)
+  const [reorder] = useMutation(ADMIN_REORDER_IMAGES)
+
+  // `from` is a parameter rather than a read of dragIndex: the arrow buttons
+  // move a tile without a drag ever starting, and setDragIndex would not have
+  // applied by the time the handler ran.
+  const onDropAt = async (from, to) => {
+    const next = moveItem(images, from, to)
+    setDragIndex(null)
+    if (next.every((img, i) => img.id === images[i].id)) return
+    setError(null)
+    try {
+      await reorder({ variables: { productId: product.id, imageIds: next.map((i) => i.id) } })
+      await refetch()
+    } catch (e) {
+      setError(e?.message ?? 'Эрэмбэлэхэд алдаа гарлаа.')
+    }
+  }
 
   const configured = Boolean(process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT)
 
@@ -163,7 +181,13 @@ export default function MediaVariants({ product, refetch }) {
       )}
 
       <div
-        onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
+        // Only light up for a FILE drag. Reordering a tile is also a dragover on
+        // this container, and without the check the drop zone reads as armed
+        // while you are merely moving a photo within it.
+        onDragOver={(e) => {
+          e.preventDefault()
+          if (Array.from(e.dataTransfer?.types ?? []).includes('Files')) setDragging(true)
+        }}
         onDragLeave={() => setDragging(false)}
         onDrop={(e) => {
           e.preventDefault()
@@ -180,20 +204,52 @@ export default function MediaVariants({ product, refetch }) {
           </p>
         ) : (
           <ul className="flex flex-wrap gap-3">
-            {images.map((img) => (
-              <li key={img.id} className="w-24">
+            {images.map((img, i) => (
+              <li
+                key={img.id}
+                draggable
+                onDragStart={() => setDragIndex(i)}
+                onDragEnd={() => setDragIndex(null)}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => { e.preventDefault(); e.stopPropagation(); onDropAt(dragIndex, i) }}
+                className={`w-24 cursor-grab ${dragIndex === i ? 'opacity-40' : ''}`}
+              >
                 <div className="relative aspect-square overflow-hidden rounded-xl border border-a-line bg-a-hover">
                   <ProductImage filePath={img.filePath} alt={img.alt ?? ''} seed={img.id} sizes="96px" />
+                  {/* Position decides the card and hover photos ONLY while no
+                      variant carries an image of its own — ProductCard.jsx:35
+                      consults the variant first. The old images tab printed
+                      these labels unconditionally, which was false for every
+                      product that had been paired up. */}
+                  {positionStillRules && i < 2 && (
+                    <span className="absolute left-1 top-1 rounded bg-white/90 px-1.5 text-[11px] font-medium">
+                      {i === 0 ? 'карт' : 'hover'}
+                    </span>
+                  )}
                 </div>
                 <p className="mt-1 truncate text-[11px] text-a-muted" title={usage[img.id]?.join(', ') ?? 'галерей'}>
                   {usage[img.id]?.join(', ') ?? 'галерей'}
                 </p>
-                <button
-                  onClick={() => onDeleteImage(img)}
-                  className="mt-0.5 text-[11px] text-a-muted transition-colors hover:text-red-600"
-                >
-                  Устгах
-                </button>
+                <div className="mt-0.5 flex items-center gap-2">
+                  {/* The keyboard path. Native HTML5 drag has no equivalent, and
+                      dropping these would make reorder mouse-only. */}
+                  <button
+                    onClick={() => onDropAt(i, i - 1)}
+                    disabled={i === 0}
+                    aria-label="Урагш"
+                    className="text-[13px] text-a-muted disabled:opacity-25"
+                  >←</button>
+                  <button
+                    onClick={() => onDropAt(i, i + 1)}
+                    disabled={i === images.length - 1}
+                    aria-label="Хойш"
+                    className="text-[13px] text-a-muted disabled:opacity-25"
+                  >→</button>
+                  <button
+                    onClick={() => onDeleteImage(img)}
+                    className="ml-auto text-[11px] text-a-muted transition-colors hover:text-red-600"
+                  >Устгах</button>
+                </div>
               </li>
             ))}
           </ul>
