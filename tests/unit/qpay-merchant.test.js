@@ -18,7 +18,7 @@ const INPUT = {
   registerNumber: 'УБ99887766', firstName: 'Бат', lastName: 'Дорж',
   businessName: 'hotaru',
   city: 'Улаанбаатар', district: 'Сүхбаатар', address: '1-р хороо',
-  phone: '99001122', email: 'owner@hotaru.mn',
+  phone: '99001122', email: 'owner@hotaru.mn', mccCode: '5699',
   bankAccount: { bankCode: '150000', accountNumber: '2015', accountName: 'ДОРЖ БАТ' },
 }
 
@@ -46,12 +46,28 @@ test('a person merchant posts to /v2/merchant/person with register_number', asyn
   assert.equal(body.business_name, 'hotaru')
   assert.equal('name' in body, false)
   assert.equal('owner_register_no' in body, false)
-  assert.equal(body.mcc_code, '')
+  assert.equal(body.mcc_code, '5699')
   assert.deepEqual(body.bank_account, {
     account_bank_code: '150000', account_number: '2015',
     account_name: 'ДОРЖ БАТ', is_default: true,
   })
   assert.equal(out.merchantId, 'merch-9')
+})
+
+test('mcc_code is omitted rather than sent empty', async () => {
+  setEnv()
+  let body
+  const fetchImpl = async (url, init) => {
+    if (url.endsWith('/v2/auth/token')) return ok(TOKEN)
+    body = JSON.parse(init.body)
+    return ok({ id: 'merch-9' })
+  }
+
+  // Merchant creation rejects an empty mcc_code with
+  // {"mcc_code":{"type":"INVALID"}} — unlike invoice creation, where an empty
+  // string means "fill it from the terminal".
+  await createPersonMerchant({ ...INPUT, mccCode: '' }, { fetchImpl })
+  assert.equal('mcc_code' in body, false)
 })
 
 test('listMerchants pages with 1-based page_number', async () => {

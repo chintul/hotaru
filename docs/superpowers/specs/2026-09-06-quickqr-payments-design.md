@@ -123,8 +123,21 @@ on these credentials; every call is live.
 `amount` is a number in whole tugrik, which matches `orders.total_mnt` directly —
 MNT has no circulating minor unit, so no scaling is applied anywhere.
 
-`mcc_code` is sent empty and the terminal fills it (7372 on this terminal,
-verified live on 2026-09-03 during the fitbie integration).
+`mcc_code` is sent empty **on invoices** and the terminal fills it (7372 on this
+terminal, verified live 2026-09-03 and again 2026-09-07). **Merchant creation is
+the opposite**: an empty `mcc_code` is rejected with
+`{"mcc_code":{"type":"INVALID"}}`, so the field is omitted entirely when we have
+no code, and hotaru registers under 5699.
+
+`city` and `district` on merchant creation are QPay location **codes**, not
+names — a name answers `Хот код олдсонгүй`. `GET /v2/aimaghot` lists cities and
+`GET /v2/sumduureg/{cityCode}` lists districts; Ulaanbaatar is `11000` and
+Сүхбаатар дүүрэг is `14000`. The registration script resolves names to codes so
+neither has to be memorised.
+
+`GET /v2/bank/list` is documented by qpay-go but **404s on the QuickQR host** —
+it belongs to merchant.qpay.mn. Bank codes come from the list in
+`instasell-front/app/utils/banks.ts`; Khan Bank is `040000`.
 
 The field is `register_number`. The `payment-sdks/qpayquick` SDK spells it
 `register_nubmer`; that is a typo in that SDK and must not be copied.

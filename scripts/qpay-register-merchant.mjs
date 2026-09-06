@@ -12,7 +12,7 @@
  * live QPay merchant directory.
  */
 
-import { createPersonMerchant, listMerchants } from '../lib/qpay/client.js'
+import { createPersonMerchant, getCities, getDistricts, listMerchants } from '../lib/qpay/client.js'
 
 // QPay requires register_number, first_name, last_name and bank_account for a
 // person. The rest is asked for because a merchant record with no address or
@@ -37,6 +37,9 @@ const input = {
   firstName: process.env.HOTARU_FIRST_NAME,
   lastName: process.env.HOTARU_LAST_NAME,
   businessName: process.env.HOTARU_BUSINESS_NAME,
+  // Merchant category. 5699 = "Бусад эдлэл хэрэглэл, гоёл чимэглэлийн дэлгүүр",
+  // the closest QPay category for bags, accessories, cups and caps.
+  mccCode: process.env.HOTARU_MCC_CODE || '5699',
   city: process.env.HOTARU_CITY,
   district: process.env.HOTARU_DISTRICT,
   address: process.env.HOTARU_ADDRESS,
@@ -48,6 +51,40 @@ const input = {
     accountName: process.env.HOTARU_ACCOUNT_NAME,
   },
 }
+
+/**
+ * city and district are QPay location CODES, not names — registration answers
+ * "Хот код олдсонгүй" to a name. Accept either: anything non-numeric is looked
+ * up against QPay's own tables so nobody has to memorise the code list.
+ */
+async function resolveLocations(city, district) {
+  if (/^\d+$/.test(city) && /^\d+$/.test(district)) return { city, district }
+
+  const cities = await getCities()
+  const cityRow = /^\d+$/.test(city)
+    ? cities.find((c) => c.code === city)
+    : cities.find((c) => c.name?.toLowerCase().startsWith(city.toLowerCase()))
+  if (!cityRow) {
+    console.error(`city not found: ${city}. Options: ${cities.map((c) => `${c.code} ${c.name}`).join(', ')}`)
+    process.exit(1)
+  }
+
+  const districts = await getDistricts(cityRow.code)
+  const districtRow = /^\d+$/.test(district)
+    ? districts.find((d) => d.code === district)
+    : districts.find((d) => d.name?.toLowerCase().startsWith(district.toLowerCase()))
+  if (!districtRow) {
+    console.error(`district not found: ${district}. Options: ${districts.map((d) => `${d.code} ${d.name}`).join(', ')}`)
+    process.exit(1)
+  }
+
+  console.log(`city ${cityRow.code} (${cityRow.name}), district ${districtRow.code} (${districtRow.name})`)
+  return { city: cityRow.code, district: districtRow.code }
+}
+
+const located = await resolveLocations(input.city, input.district)
+input.city = located.city
+input.district = located.district
 
 function report(merchantId) {
   console.log(`\nmerchant_id: ${merchantId}\n`)

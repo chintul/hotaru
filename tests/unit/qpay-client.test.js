@@ -127,6 +127,29 @@ test('checkPayment posts invoice_id and normalises the status', async () => {
   assert.equal(res.status, 'PAID')
 })
 
+test('a structured error body is rendered readably, not [object Object]', async () => {
+  setEnv()
+  // QPay answers some failures with an object in `error` rather than a string.
+  // Interpolating that straight into a message loses the only diagnostic there
+  // is, and the caller is left with "[object Object]".
+  const fetchImpl = async (url) => url.endsWith('/v2/auth/token')
+    ? ok(TOKEN)
+    : ({ ok: false, status: 400, json: async () => ({ error: { code: 'MERCHANT_EXISTS', detail: 'duplicate' } }) })
+
+  await assert.rejects(
+    () => createInvoice({
+      merchantId: 'm', amountMnt: 1, description: 'd', callbackUrl: 'c', customerName: 'n',
+      bankAccount: { bankCode: '1', accountNumber: '2', accountName: '3' },
+    }, { fetchImpl }),
+    (e) => {
+      assert.equal(e.message.includes('[object Object]'), false, 'must not stringify to [object Object]')
+      assert.match(e.message, /MERCHANT_EXISTS/)
+      assert.equal(e.payload.error.detail, 'duplicate', 'the whole body is kept for diagnosis')
+      return true
+    },
+  )
+})
+
 test('an API error is raised with its status, not swallowed', async () => {
   setEnv()
   const fetchImpl = async (url) => url.endsWith('/v2/auth/token')
