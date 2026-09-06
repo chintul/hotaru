@@ -57,7 +57,7 @@ export default function CheckoutPage() {
 }
 
 function Shell({ step, children }) {
-  const crumbs = ['Сагс', 'Баталгаажуулалт', 'Хүргэлт, төлбөр']
+  const crumbs = ['Сагс', 'Баталгаажуулалт', 'Хүргэлт']
   return (
     <div className="mx-auto max-w-[1080px] px-5 py-8 lg:px-8">
       <nav className="mb-7 flex flex-wrap items-center gap-2 text-[12px] text-ink-faint">
@@ -105,7 +105,6 @@ function CheckoutForm({ items, subtotal, profileId }) {
 
   const addresses = nodes(data?.addressCollection)
   const methods = nodes(data?.deliveryMethodCollection)
-  const bank = nodes(data?.storeSettingsCollection)[0]
 
   const [addressId, setAddressId] = useState(null)
   const [methodId, setMethodId] = useState(null)
@@ -265,18 +264,8 @@ function CheckoutForm({ items, subtotal, profileId }) {
           </div>
         </Section>
 
-        <Section n={3} title="Төлбөр">
-          <p className="text-[13px] text-ink-soft">
-            {bank?.qpayEnabled
-              ? 'QPay QR эсвэл дансаар шилжүүлж төлнө. Захиалга баталгаажсаны дараа QR код, дансны мэдээлэл болон гүйлгээний утга харагдана.'
-              : 'Дансаар шилжүүлэн төлнө. Захиалга баталгаажсаны дараа дансны мэдээлэл болон гүйлгээний утга харагдана.'}
-          </p>
-          {bank?.bankName && !String(bank.bankName).includes('REPLACE_ME') && (
-            <p className="mt-2 text-[13px] font-semibold">{bank.bankName}</p>
-          )}
-          <div className="mt-5">
-            <Field label="Захиалгын тэмдэглэл (заавал биш)" value={note} onChange={setNote} />
-          </div>
+        <Section n={3} title="Захиалгын тэмдэглэл">
+          <Field label="Нэмэлт хүсэлт (заавал биш)" value={note} onChange={setNote} />
         </Section>
       </div>
 
