@@ -20,6 +20,41 @@ select test.raises(
   $$select public.admin_upsert_product(slug => 'x', title => '  ')$$,
   '22023', 'a product cannot be saved without a title');
 
+-- SEO copy travels with the rest of the product copy, in the same call. The
+-- columns existed from the first migration but nothing ever wrote them.
+create temp table t_seo as
+select * from public.admin_upsert_product(
+  slug => 'test-seo', title => 'Test Seo', status => 'draft',
+  seo_title => 'Seo Title', seo_description => 'Seo Description');
+
+select test.eq((select seo_title from public.product_translations
+                 where product_id = (select id from t_seo) and locale = 'mn'),
+               'Seo Title', 'seo_title is written by admin_upsert_product');
+select test.eq((select seo_description from public.product_translations
+                 where product_id = (select id from t_seo) and locale = 'mn'),
+               'Seo Description', 'seo_description is written too');
+
+-- Saving the details tab omits the SEO args; that must not wipe what the SEO
+-- tab wrote. null means "not supplied", never "clear it".
+select public.admin_upsert_product(
+  slug => 'test-seo', title => 'Test Seo Renamed', status => 'draft',
+  product_id => (select id from t_seo));
+select test.eq((select seo_title from public.product_translations
+                 where product_id = (select id from t_seo) and locale = 'mn'),
+               'Seo Title', 'a save without SEO args leaves the SEO copy alone');
+
+-- Only one function of this name may exist, or pg_graphql cannot reflect it.
+select test.eq(
+  (select count(*)::int from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public' and p.proname = 'admin_upsert_product'),
+  1, 'admin_upsert_product has exactly one signature');
+
+select test.ok(
+  not has_function_privilege('anon', p.oid, 'EXECUTE'),
+  'the recreated admin_upsert_product is not anon-executable')
+  from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+ where n.nspname = 'public' and p.proname = 'admin_upsert_product';
+
 -- ---- variants ------------------------------------------------------------
 create temp table t_v as
 select * from public.admin_upsert_variant(
