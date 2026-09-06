@@ -272,10 +272,19 @@ export function Field({ label, hint, required, children }) {
   )
 }
 
-export const Input = ({ className = '', ...props }) => (
+// `tone` rather than a bg-* class in className: the base already sets a
+// background, and Tailwind resolves two bg-* utilities by CSS source order, not
+// attribute order — so a caller-supplied tint silently lost. This emits exactly
+// one background class.
+const INPUT_TONE = {
+  mint: 'bg-mint text-mint-ink',
+  blush: 'bg-blush text-blush-ink',
+}
+
+export const Input = ({ className = '', tone, ...props }) => (
   <input
     {...props}
-    className={`w-full rounded-md border border-a-line bg-white px-3 py-[7px] text-[13px] text-a-ink outline-none transition-colors placeholder:text-a-muted focus:border-a-focus focus:ring-2 focus:ring-a-focus/15 ${className}`}
+    className={`w-full rounded-lg border border-a-line ${INPUT_TONE[tone] ?? 'bg-white text-a-ink'} px-3 py-2 text-[14px] outline-none transition-colors placeholder:text-a-muted focus:border-a-focus focus:ring-2 focus:ring-a-focus/15 ${className}`}
   />
 )
 
@@ -401,17 +410,17 @@ export function Thumb({ filePath, alt = '', count = 1, onClick, title }) {
       type="button"
       onClick={onClick}
       title={title}
-      className="relative block h-11 w-11 shrink-0 overflow-hidden rounded-xl border border-a-line bg-a-hover transition-colors hover:border-a-focus"
+      className="relative block h-16 w-16 shrink-0 overflow-hidden rounded-2xl border border-a-line bg-a-hover transition-all hover:border-a-focus hover:ring-4 hover:ring-a-focus/10"
     >
       {filePath ? (
-        <ProductImage filePath={filePath} alt={alt} seed={filePath} width={44} height={44} />
+        <ProductImage filePath={filePath} alt={alt} seed={filePath} width={64} height={64} />
       ) : (
-        <span className="grid h-full w-full place-items-center rounded-xl border border-dashed border-a-line text-a-muted">
+        <span className="grid h-full w-full place-items-center rounded-2xl border-2 border-dashed border-a-line text-a-muted">
           <ImageIcon />
         </span>
       )}
       {count > 1 && (
-        <span className="absolute -right-1 -top-1 grid h-4 w-4 place-items-center rounded-full bg-a-ink text-[10px] font-medium text-white">
+        <span className="absolute -right-1.5 -top-1.5 grid h-5 w-5 place-items-center rounded-full bg-a-ink text-[11px] font-semibold text-white shadow-sm">
           {count}
         </span>
       )}

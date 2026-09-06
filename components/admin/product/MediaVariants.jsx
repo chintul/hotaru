@@ -121,6 +121,14 @@ export default function MediaVariants({ product, refetch }) {
     }
   }
 
+  const captionOf = (img, i) => {
+    const used = usage[img.id]
+    if (used) return used.join(', ')
+    if (positionStillRules && i === 0) return 'карт'
+    if (positionStillRules && i === 1) return 'hover'
+    return 'галерей'
+  }
+
   return (
     <Card
       title="Зураг ба сонголт"
@@ -150,7 +158,21 @@ export default function MediaVariants({ product, refetch }) {
         onChange={(e) => e.target.files?.length && onFiles(Array.from(e.target.files))}
       />
 
-      <div className="overflow-x-auto">
+      {/* No overflow-x here. Any overflow-x other than visible also clips
+          overflow-y, which cut the image picker off at the row boundary. The
+          grid below fits the admin's content width without scrolling. */}
+      {variants.length > 0 && (
+        <div className="grid grid-cols-[64px_minmax(0,1fr)_128px_136px_104px_40px] items-center gap-4 border-b border-a-line px-6 pb-2 pt-1 text-[12px] font-medium uppercase tracking-[0.04em] text-a-muted">
+          <span />
+          <span>Сонголт</span>
+          <span>SKU</span>
+          <span className="text-right">Үнэ</span>
+          <span className="text-center">Үлдэгдэл</span>
+          <span />
+        </div>
+      )}
+
+      <div>
         <ul>
           {variants.map((v) => (
             <VariantRow
@@ -197,13 +219,13 @@ export default function MediaVariants({ product, refetch }) {
         }}
         className={`border-t px-6 py-4 transition-colors ${dragging ? 'border-a-focus bg-blue-50' : 'border-a-line'}`}
       >
-        <p className="mb-2 text-[12px] font-medium text-a-muted">Галерей</p>
+        <p className="mb-3 text-[12px] font-medium uppercase tracking-[0.04em] text-a-muted">Галерей</p>
         {images.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-a-line px-4 py-6 text-center text-[13px] text-a-muted">
+          <p className="rounded-2xl border-2 border-dashed border-a-line px-4 py-10 text-center text-[14px] text-a-muted">
             Зургаа энд чирж оруулна уу
           </p>
         ) : (
-          <ul className="flex flex-wrap gap-3">
+          <ul className="flex flex-wrap gap-4">
             {images.map((img, i) => (
               <li
                 key={img.id}
@@ -212,44 +234,45 @@ export default function MediaVariants({ product, refetch }) {
                 onDragEnd={() => setDragIndex(null)}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => { e.preventDefault(); e.stopPropagation(); onDropAt(dragIndex, i) }}
-                className={`w-24 cursor-grab ${dragIndex === i ? 'opacity-40' : ''}`}
+                className={`group w-32 cursor-grab ${dragIndex === i ? 'opacity-40' : ''}`}
               >
-                <div className="relative aspect-square overflow-hidden rounded-xl border border-a-line bg-a-hover">
-                  <ProductImage filePath={img.filePath} alt={img.alt ?? ''} seed={img.id} sizes="96px" />
-                  {/* Position decides the card and hover photos ONLY while no
-                      variant carries an image of its own — ProductCard.jsx:35
-                      consults the variant first. The old images tab printed
-                      these labels unconditionally, which was false for every
-                      product that had been paired up. */}
-                  {positionStillRules && i < 2 && (
-                    <span className="absolute left-1 top-1 rounded bg-white/90 px-1.5 text-[11px] font-medium">
-                      {i === 0 ? 'карт' : 'hover'}
-                    </span>
-                  )}
+                <div className="relative aspect-square overflow-hidden rounded-2xl border border-a-line bg-a-hover">
+                  <ProductImage filePath={img.filePath} alt={img.alt ?? ''} seed={img.id} sizes="128px" />
+
+                  {/* One control cluster, revealed on hover, so a shelf of
+                      photos reads as photos rather than as a wall of tiny links.
+                      The arrows are the keyboard path: native HTML5 drag has no
+                      equivalent, and dropping them would make reorder
+                      mouse-only. */}
+                  <div className="absolute inset-x-0 bottom-0 flex items-center gap-0.5 bg-gradient-to-t from-black/55 to-transparent p-1.5 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+                    <button
+                      onClick={() => onDropAt(i, i - 1)}
+                      disabled={i === 0}
+                      aria-label="Урагш"
+                      className="grid h-6 w-6 place-items-center rounded-lg text-[14px] text-white/90 hover:bg-white/20 disabled:opacity-30"
+                    >←</button>
+                    <button
+                      onClick={() => onDropAt(i, i + 1)}
+                      disabled={i === images.length - 1}
+                      aria-label="Хойш"
+                      className="grid h-6 w-6 place-items-center rounded-lg text-[14px] text-white/90 hover:bg-white/20 disabled:opacity-30"
+                    >→</button>
+                    <button
+                      onClick={() => onDeleteImage(img)}
+                      aria-label="Устгах"
+                      className="ml-auto grid h-6 w-6 place-items-center rounded-lg text-[13px] text-white/90 hover:bg-red-500"
+                    >✕</button>
+                  </div>
                 </div>
-                <p className="mt-1 truncate text-[11px] text-a-muted" title={usage[img.id]?.join(', ') ?? 'галерей'}>
-                  {usage[img.id]?.join(', ') ?? 'галерей'}
+
+                {/* ONE label. It used to print a `карт` badge over the image AND
+                    a `галерей` caption under it — two labels contradicting each
+                    other on the same tile. Position only names the card and
+                    hover slots while no variant carries an image of its own;
+                    ProductCard.jsx:35 consults the variant first. */}
+                <p className="mt-2 truncate text-[13px] text-a-muted" title={captionOf(img, i)}>
+                  {captionOf(img, i)}
                 </p>
-                <div className="mt-0.5 flex items-center gap-2">
-                  {/* The keyboard path. Native HTML5 drag has no equivalent, and
-                      dropping these would make reorder mouse-only. */}
-                  <button
-                    onClick={() => onDropAt(i, i - 1)}
-                    disabled={i === 0}
-                    aria-label="Урагш"
-                    className="text-[13px] text-a-muted disabled:opacity-25"
-                  >←</button>
-                  <button
-                    onClick={() => onDropAt(i, i + 1)}
-                    disabled={i === images.length - 1}
-                    aria-label="Хойш"
-                    className="text-[13px] text-a-muted disabled:opacity-25"
-                  >→</button>
-                  <button
-                    onClick={() => onDeleteImage(img)}
-                    className="ml-auto text-[11px] text-a-muted transition-colors hover:text-red-600"
-                  >Устгах</button>
-                </div>
               </li>
             ))}
           </ul>

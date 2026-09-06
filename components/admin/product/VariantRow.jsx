@@ -115,8 +115,8 @@ export default function VariantRow({ product, variant, images, sharedCount, refe
   const outOfStock = Number(f.quantity || 0) === 0
 
   return (
-    <li className="border-b border-a-line px-6 py-2.5 last:border-0">
-      <div className="grid min-w-[720px] grid-cols-[44px_minmax(0,1fr)_112px_120px_92px_auto] items-center gap-3">
+    <li className="border-b border-a-line px-6 py-4 last:border-0 hover:bg-a-bg/60">
+      <div className="grid grid-cols-[64px_minmax(0,1fr)_128px_136px_104px_40px] items-center gap-4">
         <div className="relative" ref={thumbRef}>
           <Thumb
             filePath={variant.image?.filePath}
@@ -137,33 +137,33 @@ export default function VariantRow({ product, variant, images, sharedCount, refe
         </div>
 
         <Input value={f.optionValue} onChange={set('optionValue')} placeholder="Өнгө / хэмжээ" />
-        <Input value={f.sku} onChange={set('sku')} placeholder="SKU" className="tabular-nums" />
-        <Input
-          value={f.priceMnt}
-          onChange={set('priceMnt', true)}
-          className="text-right tabular-nums"
-          aria-label="Үнэ"
-        />
+        <Input value={f.sku} onChange={set('sku')} placeholder="—" className="tabular-nums" />
+
+        <div className="relative">
+          <Input
+            value={f.priceMnt}
+            onChange={set('priceMnt', true)}
+            aria-label="Үнэ"
+            className="pr-7 text-right tabular-nums"
+          />
+          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[13px] text-a-muted">₮</span>
+        </div>
+
         <Input
           value={f.quantity}
           onChange={set('quantity', true)}
           aria-label="Үлдэгдэл"
-          className={`text-right tabular-nums ${outOfStock ? 'bg-blush text-blush-ink' : 'bg-mint text-mint-ink'}`}
+          tone={outOfStock ? 'blush' : 'mint'}
+          className="text-center font-medium tabular-nums"
         />
 
-        <div className="relative flex items-center justify-end gap-1.5" ref={menuRef}>
-          {dirty && (
-            <Button variant="primary" size="sm" disabled={saving || stocking} onClick={onSave}>
-              Хадгалах
-            </Button>
-          )}
-          {!variant.isActive && <span className="text-[12px] text-a-muted">идэвхгүй</span>}
+        <div className="relative flex justify-end" ref={menuRef}>
           <IconButton onClick={() => setMenu((v) => !v)} aria-label="Цэс"><Dots /></IconButton>
-          <Popover open={menu} onClose={() => setMenu(false)} anchorRef={menuRef} className="right-0 top-8 w-[176px] p-1">
+          <Popover open={menu} onClose={() => setMenu(false)} anchorRef={menuRef} className="right-0 top-9 w-[188px] p-1.5">
             <button
               type="button"
               onClick={toggleActive}
-              className="block w-full rounded-md px-2.5 py-1.5 text-left text-[13px] text-a-ink hover:bg-a-hover"
+              className="block w-full rounded-lg px-3 py-2 text-left text-[14px] text-a-ink hover:bg-a-hover"
             >
               {variant.isActive ? 'Идэвхгүй болгох' : 'Идэвхтэй болгох'}
             </button>
@@ -173,7 +173,7 @@ export default function VariantRow({ product, variant, images, sharedCount, refe
                 <button
                   type="button"
                   onClick={onDelete}
-                  className="block w-full rounded-md px-2.5 py-1.5 text-left text-[13px] text-red-600 hover:bg-red-50"
+                  className="block w-full rounded-lg px-3 py-2 text-left text-[14px] text-red-600 hover:bg-red-50"
                 >
                   Устгах
                 </button>
@@ -183,12 +183,22 @@ export default function VariantRow({ product, variant, images, sharedCount, refe
         </div>
       </div>
 
-      {!variant.image && (
-        <p className="mt-1 pl-[56px] text-[12px] text-a-muted">
-          зураггүй — картад эхний зураг харагдана
-        </p>
+      {(dirty || !variant.image || !variant.isActive || error) && (
+        <div className="mt-2.5 flex flex-wrap items-center gap-3 pl-20">
+          {dirty && (
+            <Button variant="primary" size="sm" disabled={saving || stocking} onClick={onSave}>
+              Хадгалах
+            </Button>
+          )}
+          {!variant.isActive && (
+            <span className="rounded-full bg-a-hover px-2.5 py-1 text-[12px] text-a-muted">идэвхгүй</span>
+          )}
+          {!variant.image && (
+            <span className="text-[13px] text-a-muted">зураггүй · картад эхний зураг харагдана</span>
+          )}
+          {error && <span className="text-[13px] text-red-600">{error}</span>}
+        </div>
       )}
-      {error && <p className="mt-1 pl-[56px] text-[12px] text-red-600">{error}</p>}
     </li>
   )
 }

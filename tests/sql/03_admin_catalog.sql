@@ -120,6 +120,39 @@ select test.raises(
   format($$select public.admin_set_review_approval(%L, true)$$, (select id from t_r)),
   '42501', 'a customer cannot moderate reviews');
 
+-- The form lets a customer edit what they wrote, which goes back through
+-- submit_review and upserts on (product_id, profile_id).
+select test.as_user('11111111-1111-1111-1111-111111111111', false);
+create temp table t_r2 as
+select * from public.submit_review(
+  product_id => (select id from public.products where slug='test-mug'),
+  rating => 3, title => 'Дахин бодлоо', body => 'Дунд зэрэг');
+
+select test.eq((select count(*)::int from public.reviews
+                where product_id = (select id from public.products where slug='test-mug')
+                  and profile_id = '11111111-1111-1111-1111-111111111111'),
+               1, 'a second review from the same customer edits the first');
+select test.eq((select rating from t_r2), 3, 'the edit takes the new rating');
+select test.ok(not (select is_approved from t_r2), 'an edited review returns to moderation');
+select test.eq((select rating_count from public.products where slug='test-mug'), 0,
+               'an edited review leaves the public rating until it is approved again');
+
+-- Reviewing without having bought is allowed; it just is not verified. The form
+-- offers itself to any signed-in customer on that basis.
+select test.as_user('44444444-4444-4444-4444-444444444444', false);
+select test.ok(
+  not (select is_verified_purchase from public.submit_review(
+    product_id => (select id from public.products where slug='test-mug'), rating => 4)),
+  'a customer who never bought may review, unverified');
+
+-- The cart identity is not an account. The form shows a sign-in prompt instead
+-- of a form for exactly this reason.
+select test.as_user('55555555-5555-5555-5555-555555555555', true);
+select test.raises(
+  format($$select public.submit_review(product_id => %L, rating => 5)$$,
+         (select id from public.products where slug='test-mug')),
+  '42501', 'an anonymous cart identity cannot review');
+
 -- ---- maintenance ---------------------------------------------------------
 select test.as_service();
 insert into auth.users (id, is_anonymous, created_at)
