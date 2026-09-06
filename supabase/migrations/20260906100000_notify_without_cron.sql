@@ -24,7 +24,7 @@ create extension if not exists pg_net;
 -- The kick
 -- ---------------------------------------------------------------------------
 -- URL and secret live in Vault, not here: a migration is committed to git and
--- the worker secret must not be. Create them once per environment with
+-- the worker secret must not be. Create them once per environment with:
 --
 --   select vault.create_secret('https://<domain>/api/cron/notifications',
 --                              'notification_worker_url');
