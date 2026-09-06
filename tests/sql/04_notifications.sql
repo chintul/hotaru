@@ -56,8 +56,16 @@ select test.eq(
   (select count(*)::int from public.notification_outbox
     where order_id = (select id from t_notify) and kind = 'payment_submitted_owner'),
   1, 'the transfer claim alerts the owner');
+
+-- The customer has just moved real money. Telling only the owner leaves them
+-- staring at a page with no acknowledgement that anyone knows.
+select test.eq(
+  (select count(*)::int from public.notification_outbox
+    where order_id = (select id from t_notify) and kind = 'payment_submitted_customer'),
+  1, 'the transfer claim is acknowledged to the customer too');
+
 select test.eq((select count(*)::int from net.sent_requests), 1,
-  'the transfer claim kicks the drain');
+  'the transfer claim kicks the drain, once, for both emails');
 
 -- Clicking the button again is the case that matters: the customer refreshes,
 -- double-clicks, or replays the mutation. payment_status is already 'submitted'
@@ -69,6 +77,10 @@ select test.eq(
   (select count(*)::int from public.notification_outbox
     where order_id = (select id from t_notify) and kind = 'payment_submitted_owner'),
   1, 'a second click cannot queue a second owner alert');
+select test.eq(
+  (select count(*)::int from public.notification_outbox
+    where order_id = (select id from t_notify) and kind = 'payment_submitted_customer'),
+  1, 'a second click cannot queue a second customer receipt');
 select test.eq((select count(*)::int from net.sent_requests), 0,
   'a second click does not kick the drain');
 

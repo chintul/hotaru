@@ -29,3 +29,16 @@ test('an email customer is still identified by email', () => {
   })
   assert.match(html, /buyer@example\.com/)
 })
+
+// Pressing "I have transferred" used to alert only the owner. The customer has
+// just moved real money; silence at that moment is the worst kind. What the
+// receipt must NOT do is read as a confirmation — nothing is verified yet.
+test('the transfer-claim receipt acknowledges without confirming', () => {
+  const { subject, html } = renderNotification('payment_submitted_customer', {
+    ...PHONE_ONLY, customer_email: 'buyer@example.com',
+  })
+  assert.match(subject, /HTR-000101/)
+  assert.equal(/\bnull\b|\bundefined\b/.test(html), false, 'claim receipt html leaks null')
+  assert.equal(/\bnull\b|\bundefined\b/.test(subject), false, 'claim receipt subject leaks null')
+  assert.match(html, /баталгаажсан\s+гэсэн үг биш/, 'must say it is not a confirmation')
+})

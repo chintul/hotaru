@@ -73,4 +73,5 @@ NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT=
 NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY=
 IMAGEKIT_PRIVATE_KEY=               # server only
 RESEND_API_KEY=                     # server only
+RESEND_FROM_DOMAIN=                 # verified Resend domain; the only source of the From address
 ```
