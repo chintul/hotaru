@@ -43,6 +43,12 @@ const ENABLED = (process.env.NEXT_PUBLIC_OAUTH_PROVIDERS ?? '')
   .map((p) => p.trim().toLowerCase())
   .filter(Boolean)
 
+/**
+ * Whether any provider is on, so the login page can drop the "эсвэл" divider
+ * instead of leaving it hanging over nothing.
+ */
+export const hasOAuth = ENABLED.length > 0
+
 export default function OAuthButtons({ next = '/account' }) {
   const apollo = useApolloClient()
   const [busy, setBusy] = useState(null)
@@ -84,30 +90,37 @@ export default function OAuthButtons({ next = '/account' }) {
     }
   }
 
+  // An un-enabled provider is not rendered at all, rather than rendered greyed
+  // out under a "(удахгүй)" label. A dead button is a worse answer than no
+  // button: it takes up the same room, invites the same click, and tells the
+  // shopper about a feature they cannot have. Adding the provider back to
+  // NEXT_PUBLIC_OAUTH_PROVIDERS brings the button back with no code change.
+  if (!hasOAuth) return null
+
   return (
     <div>
       <div className="space-y-2.5">
-        <button
-          onClick={() => start('google')}
-          disabled={busy !== null || !isEnabled('google')}
-          title={isEnabled('google') ? undefined : 'Удахгүй'}
-          className="flex w-full items-center justify-center gap-2.5 rounded-full border border-line bg-paper py-3.5 text-[14px] font-medium transition-colors hover:border-ink disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:border-line"
-        >
-          <GoogleMark />
-          {busy === 'google' ? 'Түр хүлээнэ үү…' : 'Google-ээр үргэлжлүүлэх'}
-          {!isEnabled('google') && <span className="text-[12px] text-ink-faint">(удахгүй)</span>}
-        </button>
+        {isEnabled('google') && (
+          <button
+            onClick={() => start('google')}
+            disabled={busy !== null}
+            className="flex w-full items-center justify-center gap-2.5 rounded-full border border-line bg-paper py-3.5 text-[14px] font-medium transition-colors hover:border-ink disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:border-line"
+          >
+            <GoogleMark />
+            {busy === 'google' ? 'Түр хүлээнэ үү…' : 'Google-ээр үргэлжлүүлэх'}
+          </button>
+        )}
 
-        <button
-          onClick={() => start('apple')}
-          disabled={busy !== null || !isEnabled('apple')}
-          title={isEnabled('apple') ? undefined : 'Удахгүй'}
-          className="flex w-full items-center justify-center gap-2.5 rounded-full bg-ink-strong py-3.5 text-[14px] font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-45"
-        >
-          <AppleMark />
-          {busy === 'apple' ? 'Түр хүлээнэ үү…' : 'Apple-ээр үргэлжлүүлэх'}
-          {!isEnabled('apple') && <span className="text-[12px] text-white/60">(удахгүй)</span>}
-        </button>
+        {isEnabled('apple') && (
+          <button
+            onClick={() => start('apple')}
+            disabled={busy !== null}
+            className="flex w-full items-center justify-center gap-2.5 rounded-full bg-ink-strong py-3.5 text-[14px] font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-45"
+          >
+            <AppleMark />
+            {busy === 'apple' ? 'Түр хүлээнэ үү…' : 'Apple-ээр үргэлжлүүлэх'}
+          </button>
+        )}
       </div>
 
       {error && <p className="mt-3 text-[13px] text-sale">{error}</p>}

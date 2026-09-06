@@ -6,7 +6,7 @@ import { Suspense, useState } from 'react'
 import { useSession } from '@/components/useSession'
 import PhoneVerify from '@/components/PhoneVerify'
 import EmailOtp from '@/components/EmailOtp'
-import OAuthButtons from '@/components/OAuthButtons'
+import OAuthButtons, { hasOAuth } from '@/components/OAuthButtons'
 import { useRedeemParkedCart } from '@/components/CartHandoff'
 
 function SignIn() {
@@ -48,34 +48,42 @@ function SignIn() {
         </p>
       )}
 
-      <div className="mt-8">
-        {/* Phone is the primary path: it is the identity Mongolian shoppers
-            actually carry, it proves possession rather than access to an
-            inbox, and it is the number the courier will ring. Social and email
-            sit below as alternatives. */}
+      <div className="mt-7">
+        {/* Both methods are named up front rather than one hiding behind a text
+            link under the fold. Phone stays the default: it is the identity
+            Mongolian shoppers actually carry, it proves possession rather than
+            access to an inbox, and it is the number the courier will ring. But
+            a shopper who wants email should not have to hunt for it, and
+            switching back must cost the same one click. */}
+        <div className="mb-6 grid grid-cols-2 gap-1 rounded-full bg-shade p-1">
+          {METHODS.map(([key, label]) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setMethod(key)}
+              aria-pressed={method === key}
+              className={`rounded-full py-2.5 text-[14px] font-medium transition-colors ${
+                method === key
+                  ? 'bg-paper text-ink shadow-[0_1px_2px_rgba(0,0,0,.08)]'
+                  : 'text-ink-soft hover:text-ink'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
         {method === 'phone' ? (
-          <>
-            <PhoneVerify onVerified={() => router.push(next)} />
-
-            <Divider />
-
-            <OAuthButtons next={next} />
-
-            <button onClick={() => setMethod('email')} className="secondary-action mt-2.5">
-              Имэйлээр үргэлжлүүлэх
-            </button>
-          </>
+          <PhoneVerify onVerified={() => router.push(next)} />
         ) : (
+          <EmailOtp onVerified={() => router.push(next)} next={next} />
+        )}
+
+        {/* No divider when there is nothing under it. */}
+        {hasOAuth && (
           <>
-            <EmailOtp onVerified={() => router.push(next)} next={next} />
-
             <Divider />
-
             <OAuthButtons next={next} />
-
-            <button onClick={() => setMethod('phone')} className="secondary-action mt-2.5">
-              Утсаар үргэлжлүүлэх
-            </button>
           </>
         )}
       </div>
@@ -87,6 +95,8 @@ function SignIn() {
     </>
   )
 }
+
+const METHODS = [['phone', 'Утас'], ['email', 'Имэйл']]
 
 const Divider = () => (
   <div className="my-6 flex items-center gap-3">
