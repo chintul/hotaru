@@ -22,7 +22,7 @@ const GROUPS = [
     title: 'QPay QuickQR',
     hint: 'QR-аар төлсөн мөнгө шууд энэ данс руу орно. Банкны код нь банкны нэрээс өөр — QPay-д тоон код хэрэгтэй.',
     fields: [
-      ['bankCode', 'Банкны код (жишээ нь 150000)'],
+      ['bankCode', 'Банкны код (Хаан 050000, ХХБ 040000, Голомт 150000)'],
       ['qpayMerchantId', 'QPay merchant id'],
       ['qpayEnabled', 'QPay-г идэвхжүүлэх', 'toggle'],
     ],

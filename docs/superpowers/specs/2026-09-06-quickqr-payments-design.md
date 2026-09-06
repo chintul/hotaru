@@ -136,8 +136,11 @@ names — a name answers `Хот код олдсонгүй`. `GET /v2/aimaghot` 
 neither has to be memorised.
 
 `GET /v2/bank/list` is documented by qpay-go but **404s on the QuickQR host** —
-it belongs to merchant.qpay.mn. Bank codes come from the list in
-`instasell-front/app/utils/banks.ts`; Khan Bank is `040000`.
+it belongs to merchant.qpay.mn. Bank codes come from Mongolbank's participant
+registry (`RTGS код` column of
+https://www.mongolbank.mn/file/files/documents/paymentsystems/codeofparticipants.pdf);
+Khan Bank is `050000` and TDB is `040000`. Do **not** take them from
+`instasell-front/app/utils/banks.ts` — that table has Khan and TDB wrong.
 
 The field is `register_number`. The `payment-sdks/qpayquick` SDK spells it
 `register_nubmer`; that is a typo in that SDK and must not be copied.
