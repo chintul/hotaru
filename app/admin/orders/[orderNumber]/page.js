@@ -20,6 +20,11 @@ const PAYMENT_LABEL = { unpaid: 'Төлөгдөөгүй', submitted: 'Төлсө
 
 const NEXT = { paid: ['packed', 'Бэлтгэсэн гэж тэмдэглэх'], packed: ['shipped', 'Илгээсэн гэж тэмдэглэх'], shipped: ['delivered', 'Хүргэгдсэн гэж тэмдэглэх'] }
 
+const PAYMENT_PROVIDER_LABEL = {
+  bank_transfer: 'Дансаар шилжүүлэг',
+  qpay_quickqr: 'QPay QR',
+}
+
 export default function AdminOrderPage({ params }) {
   const { orderNumber } = use(params)
   const { data, loading, refetch } = useQuery(ADMIN_ORDER_DETAIL, {
@@ -143,7 +148,7 @@ function PaymentCard({ order, payment, onDone }) {
       actions={<Status tone={PAYMENT_TONE[order.paymentStatus]}>{PAYMENT_LABEL[order.paymentStatus]}</Status>}
       padded={false}
     >
-      <Row label="Хэлбэр">{payment?.provider === 'bank_transfer' ? 'Дансаар шилжүүлэг' : payment?.provider ?? '—'}</Row>
+      <Row label="Хэлбэр">{PAYMENT_PROVIDER_LABEL[payment?.provider] ?? payment?.provider ?? '—'}</Row>
       <Row label="Дүн">{formatMnt(payment?.amountMnt ?? order.totalMnt)}</Row>
       {payment?.externalReference && <Row label="Гүйлгээний дугаар">{payment.externalReference}</Row>}
       {payment?.payerNote && <Row label="Төлөгчийн тэмдэглэл">{payment.payerNote}</Row>}

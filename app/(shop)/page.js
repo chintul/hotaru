@@ -93,7 +93,7 @@ export default async function HomePage() {
         <div className="mx-auto grid max-w-[1400px] gap-8 px-5 py-12 text-center sm:grid-cols-3 lg:px-8">
           {[
             ['Хурдан хүргэлт', 'Улаанбаатар хотод ажлын 1–2 хоногт'],
-            ['Дансаар төлөх', 'Захиалга өгсний дараа дансны мэдээлэл'],
+            ['QPay QR эсвэл данс', 'Захиалга өгсний дараа QR код харагдана'],
             ['Баталгаат чанар', 'Гэмтэлтэй бараа 100% солино'],
           ].map(([title, body]) => (
             <div key={title}>

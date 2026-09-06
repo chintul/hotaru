@@ -207,7 +207,7 @@ export default function ProductDetailClient({ product, copy }) {
 
           <div className="mt-8 border-t border-line pt-6 text-[13px] text-ink-soft">
             <p className="font-semibold text-ink">Хүргэлт ба төлбөр</p>
-            <p className="mt-2">Улаанбаатар хотод ажлын 1–2 хоногт. Дансаар шилжүүлж төлнө — захиалга өгсний дараа дансны мэдээлэл харагдана.</p>
+            <p className="mt-2">Улаанбаатар хотод ажлын 1–2 хоногт. QPay QR эсвэл дансаар төлнө — захиалга өгсний дараа QR код харагдана.</p>
           </div>
 
           {copy.description && (

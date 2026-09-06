@@ -61,7 +61,7 @@ export default function Footer() {
       <div className="border-t border-white/10">
         <div className="mx-auto flex max-w-[1400px] flex-wrap items-center justify-between gap-3 px-5 py-6 lg:px-8">
           <p className="text-[12px] text-white/50">© {new Date().getFullYear()} hotaru</p>
-          <p className="text-[12px] text-white/50">Дансаар шилжүүлж төлнө · Улаанбаатар</p>
+          <p className="text-[12px] text-white/50">QPay QR эсвэл дансаар · Улаанбаатар</p>
         </div>
       </div>
     </footer>
