@@ -40,10 +40,14 @@ const GROUPS = [
   },
   {
     title: 'Холбоо барих',
+    hint: 'Хоосон талбар хуудсан дээр огт харагдахгүй. Сошиал холбоосыг бүтнээр нь (https://…) бичнэ үү.',
     fields: [
       ['ownerAlertEmail', 'Мэдэгдэл очих имэйл'],
       ['storeEmail', 'Дэлгүүрийн имэйл'],
       ['storePhone', 'Дэлгүүрийн утас'],
+      ['storeAddress', 'Дэлгүүрийн хаяг'],
+      ['facebookUrl', 'Facebook хаяг'],
+      ['instagramUrl', 'Instagram хаяг'],
     ],
   },
 ]

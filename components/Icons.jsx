@@ -107,3 +107,33 @@ export const IconTruck = (p) => (
     <circle cx="7.5" cy="17.5" r="1.8" /><circle cx="17" cy="17.5" r="1.8" />
   </svg>
 )
+
+/* Social marks. Filled rather than stroked, because a brand glyph at 18px
+   reads as a smudge in 1.6px outline. */
+export const IconFacebook = (p) => (
+  <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" {...p}>
+    <path d="M13.5 21v-8h2.7l.4-3.1h-3.1V7.9c0-.9.25-1.5 1.55-1.5H16.7V3.6A21 21 0 0 0 14.3 3.5c-2.4 0-4 1.45-4 4.1v2.3H7.6V13h2.7v8z" />
+  </svg>
+)
+export const IconInstagram = (p) => (
+  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.7" {...p}>
+    <rect x="3.5" y="3.5" width="17" height="17" rx="5" />
+    <circle cx="12" cy="12" r="3.6" />
+    <circle cx="16.9" cy="7.1" r="1.05" fill="currentColor" stroke="none" />
+  </svg>
+)
+export const IconMail = (p) => (
+  <svg viewBox="0 0 24 24" width="18" height="18" {...base} {...p}>
+    <rect x="3" y="5.5" width="18" height="13" rx="2.5" /><path d="m3.8 7 8.2 6 8.2-6" />
+  </svg>
+)
+export const IconPhone = (p) => (
+  <svg viewBox="0 0 24 24" width="18" height="18" {...base} {...p}>
+    <path d="M6.2 3.5h3l1.5 4-2 1.4a12 12 0 0 0 6.4 6.4l1.4-2 4 1.5v3a2 2 0 0 1-2.2 2A16.8 16.8 0 0 1 4.2 5.7a2 2 0 0 1 2-2.2Z" />
+  </svg>
+)
+export const IconPin = (p) => (
+  <svg viewBox="0 0 24 24" width="18" height="18" {...base} {...p}>
+    <path d="M12 21s7-5.2 7-10.4A7 7 0 0 0 5 10.6C5 15.8 12 21 12 21Z" /><circle cx="12" cy="10.5" r="2.6" />
+  </svg>
+)

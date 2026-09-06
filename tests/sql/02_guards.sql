@@ -116,6 +116,21 @@ select test.ok(
   not has_column_privilege('anon', 'public.store_settings', 'bank_code', 'SELECT'),
   'anon cannot read the bank code');
 
+-- The footer and /contact are rendered for logged-out visitors, so the shop's
+-- own contact details and social links are public. Nothing else on the row is.
+select test.ok(
+  has_column_privilege('anon', 'public.store_settings', 'store_phone', 'SELECT'),
+  'anon can read the shop phone number');
+select test.ok(
+  has_column_privilege('anon', 'public.store_settings', 'store_address', 'SELECT'),
+  'anon can read the shop address');
+select test.ok(
+  has_column_privilege('anon', 'public.store_settings', 'facebook_url', 'SELECT'),
+  'anon can read the facebook link');
+select test.ok(
+  has_column_privilege('anon', 'public.store_settings', 'instagram_url', 'SELECT'),
+  'anon can read the instagram link');
+
 -- ---- cart never trips the profile foreign key ------------------------------
 -- A JWT can outlive its user (deleted account, restored database). auth.uid()
 -- still resolves, so the cart insert used to fail on carts_profile_id_fkey.
