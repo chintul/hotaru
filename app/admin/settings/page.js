@@ -19,6 +19,15 @@ const GROUPS = [
     ],
   },
   {
+    title: 'QPay QuickQR',
+    hint: 'QR-аар төлсөн мөнгө шууд энэ данс руу орно. Банкны код нь банкны нэрээс өөр — QPay-д тоон код хэрэгтэй.',
+    fields: [
+      ['bankCode', 'Банкны код (жишээ нь 150000)'],
+      ['qpayMerchantId', 'QPay merchant id'],
+      ['qpayEnabled', 'QPay-г идэвхжүүлэх', 'toggle'],
+    ],
+  },
+  {
     title: 'Нүүр хуудасны баннер',
     hint: 'Зургийг /admin/images-аас байршуулаад замыг нь энд оруулна.',
     fields: [
@@ -52,7 +61,9 @@ export default function SettingsPage() {
   if (loading && !data) return <p className="text-[13px] text-a-muted">Ачааллаж байна…</p>
 
   const allFields = GROUPS.flatMap((g) => g.fields)
-  const placeholders = allFields.filter(([k]) => String(form[k] ?? '').includes('REPLACE_ME'))
+  const placeholders = allFields
+    .filter(([, , kind]) => kind !== 'toggle')
+    .filter(([k]) => String(form[k] ?? '').includes('REPLACE_ME'))
 
   const onSubmit = async (e) => {
     e.preventDefault()
@@ -91,10 +102,22 @@ export default function SettingsPage() {
           <Card key={group.title} title={group.title}>
             {group.hint && <p className="mb-4 text-[13px] text-a-muted">{group.hint}</p>}
             <div className="space-y-4">
-              {group.fields.map(([key, label]) => (
-                <Field key={key} label={label}>
-                  <Input value={form[key] ?? ''} onChange={(e) => setForm({ ...form, [key]: e.target.value })} />
-                </Field>
+              {group.fields.map(([key, label, kind]) => (
+                kind === 'toggle' ? (
+                  <label key={key} className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(form[key])}
+                      onChange={(e) => setForm({ ...form, [key]: e.target.checked })}
+                      className="accent-black"
+                    />
+                    <span className="text-[13px]">{label}</span>
+                  </label>
+                ) : (
+                  <Field key={key} label={label}>
+                    <Input value={form[key] ?? ''} onChange={(e) => setForm({ ...form, [key]: e.target.value })} />
+                  </Field>
+                )
               ))}
             </div>
           </Card>

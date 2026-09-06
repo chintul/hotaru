@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { use, useState } from 'react'
+import { use, useEffect, useState } from 'react'
 import { useMutation, useQuery } from '@apollo/client/react'
 import { ORDER_DETAIL, SUBMIT_PAYMENT_PROOF } from '@/lib/queries'
 import { ORDER_STATUS_LABEL, formatAddress, formatDate, formatMnt, nodes, parseJson } from '@/lib/format'
@@ -18,12 +18,45 @@ export default function OrderPage({ params }) {
   const [submitProof, { loading: submitting }] = useMutation(SUBMIT_PAYMENT_PROOF)
   const [reference, setReference] = useState('')
   const [done, setDone] = useState(false)
+  const [qpay, setQpay] = useState(null)
+  const [qpayError, setQpayError] = useState(false)
 
   const order = nodes(data?.orderCollection)[0]
   const bank = nodes(data?.storeSettingsCollection)[0]
   const items = nodes(order?.orderItemCollection)
   // jsonb arrives as a JSON string from pg_graphql — parse before reading.
   const address = parseJson(order?.shippingAddress)
+
+  // Mint the invoice once, when the order is known to be awaiting payment and
+  // the owner has QPay switched on.
+  useEffect(() => {
+    if (!order || order.status !== 'awaiting_payment' || !bank?.qpayEnabled || qpay || qpayError) return
+    let cancelled = false
+    ;(async () => {
+      try {
+        const res = await fetch('/api/payments/qpay/invoice', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ orderId: order.id }),
+        })
+        if (!res.ok) throw new Error(String(res.status))
+        const data = await res.json()
+        if (!cancelled) setQpay(data)
+      } catch {
+        // QPay being down must not hide the bank details underneath.
+        if (!cancelled) setQpayError(true)
+      }
+    })()
+    return () => { cancelled = true }
+  }, [order, bank, qpay, qpayError])
+
+  // The callback confirms server-side; this only keeps an open page honest.
+  // It polls our own database, never QPay — their docs forbid polling them.
+  useEffect(() => {
+    if (!order || order.status !== 'awaiting_payment' || !qpay) return
+    const id = setInterval(() => { refetch() }, 5000)
+    return () => clearInterval(id)
+  }, [order, qpay, refetch])
 
   if (!ready || loading) {
     return <p className="label mx-auto max-w-[900px] px-5 py-20 text-ink-faint">Ачааллаж байна…</p>
@@ -66,6 +99,33 @@ export default function OrderPage({ params }) {
       {awaiting && bank && (
         <section className="mt-10 border border-ink p-6">
           <p className="label">Төлбөрөө шилжүүлнэ үү</p>
+
+          {qpay?.qrImage && (
+            <div className="mb-6 mt-5 border-b border-line pb-6">
+              <p className="text-[13px] text-ink-soft">
+                Банкны аппаараа QR-г уншуулж төлнө үү. Төлбөр орсон даруйд захиалга
+                автоматаар баталгаажна.
+              </p>
+              {/* eslint-disable-next-line @next/next/no-img-element -- a base64 QR from QPay, not an ImageKit asset */}
+              <img
+                src={qpay.qrImage.startsWith('data:') ? qpay.qrImage : `data:image/png;base64,${qpay.qrImage}`}
+                alt="QPay QR"
+                className="mt-4 h-[220px] w-[220px] border border-line bg-paper p-2"
+              />
+              {qpay.urls?.length > 0 && (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {qpay.urls.map((u) => (
+                    <a key={u.link} href={u.link}
+                      className="label border border-line px-3 py-2 transition-colors hover:border-ink">
+                      {u.name}
+                    </a>
+                  ))}
+                </div>
+              )}
+              <p className="label mt-4 text-ink-faint">Эсвэл доорх дансаар шилжүүлнэ үү.</p>
+            </div>
+          )}
+
           <dl className="mt-5 grid gap-3 sm:grid-cols-2">
             <Detail label="Банк" value={bank.bankName} />
             <Detail label="Данс" value={bank.bankAccountNumber} mono />
