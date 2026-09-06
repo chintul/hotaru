@@ -70,7 +70,7 @@ export default function AdminShell({ children }) {
       >
         <div className="flex items-center gap-2 px-4 py-3">
           {/* eslint-disable-next-line @next/next/no-img-element -- see ProductImage: no next/image here */}
-          <img src="/logo.png" alt="hotaru" width={1200} height={258} className="h-5 w-auto" />
+          <img src="/logo.png" alt="hotaru" width={591} height={113} className="h-5 w-auto" />
           <Link href="/" className="ml-auto grid h-6 w-6 place-items-center rounded-md text-a-muted hover:bg-a-hover hover:text-a-ink" title="Дэлгүүр">
             <Dots />
           </Link>

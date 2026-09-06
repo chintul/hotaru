@@ -49,8 +49,8 @@ export default function Header() {
         <Link href="/" className="shrink-0">
           {/* Plain <img>: next/image is unused project-wide (see ProductImage).
               width/height are the intrinsic size and only reserve the box. */}
-          {/* eslint-disable-next-line @next/next/no-img-element -- 10KB static PNG, no loader wanted */}
-          <img src="/logo.png" alt="hotaru" width={1200} height={258} className="h-7 w-auto lg:h-8" />
+          {/* eslint-disable-next-line @next/next/no-img-element -- 14KB static PNG, no loader wanted */}
+          <img src="/logo.png" alt="hotaru" width={591} height={113} className="h-7 w-auto lg:h-8" />
         </Link>
 
         <nav className="mx-auto hidden items-center gap-8 lg:flex">
