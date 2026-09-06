@@ -7,15 +7,18 @@ import { copy, firstNode } from '@/lib/format'
 import { Button, Card, Field, Input, Select, Textarea } from '@/components/admin/ui'
 
 /**
- * Form-shaped, so it saves explicitly. Variants and images apply immediately
- * because they already have their own per-row mutations; a Save button over
- * them would claim a transaction that does not exist.
+ * Details and SEO, in one form, over the one mutation they share.
+ *
+ * They used to be two tabs. `admin_upsert_product` upserts the translation row
+ * as a whole, so the SEO tab had to re-send `description` read from the Apollo
+ * cache (SeoTab.jsx:23-31) — and saving SEO after editing details clobbered the
+ * description with a stale copy. One form has no second copy to go stale.
  *
  * No slug auto-fill here on purpose: an existing product's slug is a live URL,
  * and re-deriving it from an edited title would silently break links. That
  * belongs to the create form alone.
  */
-export default function DetailsTab({ product, categories, refetch }) {
+export default function ProductForm({ product, categories, refetch }) {
   const c = copy(product)
   const initial = {
     slug: product.slug ?? '',
@@ -26,6 +29,8 @@ export default function DetailsTab({ product, categories, refetch }) {
     categorySlug: product.category?.slug ?? '',
     status: product.status ?? 'draft',
     isFeatured: product.isFeatured ?? false,
+    seoTitle: c.seoTitle ?? '',
+    seoDescription: c.seoDescription ?? '',
   }
 
   const [f, setF] = useState(initial)
@@ -36,8 +41,8 @@ export default function DetailsTab({ product, categories, refetch }) {
   const dirty = Object.keys(initial).some((k) => f[k] !== initial[k])
   const set = (k) => (e) => { setSaved(false); setF({ ...f, [k]: e.target.value }) }
 
-  // Leaving with unsaved edits loses them, and this tab is the only one that
-  // does not apply immediately — so it has to say so.
+  // This is the only part of the editor that does not apply immediately, so
+  // leaving it dirty is the only way to lose work here.
   useEffect(() => {
     if (!dirty) return undefined
     const warn = (e) => { e.preventDefault(); e.returnValue = '' }
@@ -60,10 +65,8 @@ export default function DetailsTab({ product, categories, refetch }) {
         status: f.status,
         isFeatured: f.isFeatured,
         sortOrder: product.position ?? 0,
-        // Omitted on purpose. The SQL coalesces null to the stored value, so
-        // saving details never wipes SEO copy written on the other tab.
-        seoTitle: null,
-        seoDescription: null,
+        seoTitle: f.seoTitle.trim() || null,
+        seoDescription: f.seoDescription.trim() || null,
       } })
       setSaved(true)
       await refetch()
@@ -72,20 +75,26 @@ export default function DetailsTab({ product, categories, refetch }) {
     }
   }
 
+  // The preview reads live form state, not the cache, so it tracks what the
+  // storefront will actually fall back to once this form is saved.
+  const shownTitle = f.seoTitle || f.title || product.slug
+  const shownDesc = f.seoDescription || f.description || ''
+
   return (
     <Card
       title="Мэдээлэл"
+      stickyHeader
       actions={
         <>
           {saved && !dirty && <span className="text-[12px] text-emerald-600">Хадгалсан</span>}
           {dirty && <span className="text-[12px] text-amber-600">Хадгалаагүй өөрчлөлт</span>}
-          <Button form="details-form" type="submit" variant="primary" disabled={!dirty || loading}>
+          <Button form="product-form" type="submit" variant="primary" disabled={!dirty || loading}>
             {loading ? 'Хадгалж байна…' : 'Хадгалах'}
           </Button>
         </>
       }
     >
-      <form id="details-form" className="grid gap-4 sm:grid-cols-2" onSubmit={onSubmit}>
+      <form id="product-form" className="grid gap-4 sm:grid-cols-2" onSubmit={onSubmit}>
         <Field label="Нэр" required><Input required value={f.title} onChange={set('title')} /></Field>
         <Field label="Slug" required hint="URL дээр харагдана">
           <Input required value={f.slug} onChange={set('slug')} />
@@ -123,6 +132,24 @@ export default function DetailsTab({ product, categories, refetch }) {
           />
           Онцлох
         </label>
+
+        <div className="border-t border-a-line pt-4 sm:col-span-2">
+          <h3 className="text-[13px] font-semibold text-a-ink">SEO</h3>
+          <p className="mt-0.5 text-[12px] text-a-muted">Хоосон бол дээрх нэр, тайлбарыг ашиглана.</p>
+        </div>
+        <Field label="SEO гарчиг" hint={`${f.seoTitle.length}/60 тэмдэгт`}>
+          <Input value={f.seoTitle} onChange={set('seoTitle')} />
+        </Field>
+        <Field label="SEO тайлбар" hint={`${f.seoDescription.length}/160 тэмдэгт`}>
+          <Input value={f.seoDescription} onChange={set('seoDescription')} />
+        </Field>
+        <div className="rounded-lg border border-a-line bg-a-bg px-4 py-3 sm:col-span-2">
+          <p className="mb-2 text-[12px] font-medium text-a-muted">Хайлтад ийм харагдана</p>
+          <p className="truncate text-[16px] text-blue-800">{shownTitle}</p>
+          <p className="text-[12px] text-emerald-700">hotaru.mn/shop/{product.slug}</p>
+          <p className="line-clamp-2 text-[13px] text-a-muted">{shownDesc}</p>
+        </div>
+
         {error && <p className="text-[13px] text-red-600 sm:col-span-2">{error}</p>}
       </form>
     </Card>

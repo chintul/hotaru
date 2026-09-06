@@ -71,7 +71,7 @@ export default function NewProductPage() {
         variantId: null,
       } })
 
-      router.replace(`/admin/products/${id}?tab=images`)
+      router.replace(`/admin/products/${id}`)
     } catch (err) {
       setError(err?.message ?? 'Үүсгэхэд алдаа гарлаа.')
     }
