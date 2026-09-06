@@ -2,10 +2,13 @@
 
 import { useRouter } from 'next/navigation'
 import { useMemo, useState } from 'react'
-import { useQuery } from '@apollo/client/react'
-import { ADMIN_ALL_ORDERS, ADMIN_PENDING } from '@/lib/queries'
+import { useMutation, useQuery } from '@apollo/client/react'
+import { ADMIN_ALL_ORDERS, ADMIN_PENDING, ADMIN_SET_ORDER_STATUS } from '@/lib/queries'
 import { formatDate, formatMnt, nodes } from '@/lib/format'
+import { runBulk } from '@/lib/admin/bulk'
 import { Button, DataTable, PageHeader, Status, TableToolbar } from '@/components/admin/ui'
+import { useSelection } from '@/components/admin/selection'
+import BulkResult from '@/components/admin/BulkResult'
 
 const PAYMENT_TONE = { unpaid: 'grey', submitted: 'amber', confirmed: 'green', failed: 'red', refunded: 'purple' }
 const PAYMENT_LABEL = { unpaid: 'Төлөгдөөгүй', submitted: 'Төлсөн гэсэн', confirmed: 'Баталгаажсан', failed: 'Амжилтгүй', refunded: 'Буцаасан' }
@@ -25,7 +28,7 @@ export default function AdminOrdersPage() {
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('all')
 
-  const { data, loading } = useQuery(ADMIN_ALL_ORDERS, {
+  const { data, loading, refetch } = useQuery(ADMIN_ALL_ORDERS, {
     variables: { first: 100 },
     fetchPolicy: 'cache-and-network',
   })
@@ -47,6 +50,44 @@ export default function AdminOrdersPage() {
     { key: 'total', header: 'Дүн', align: 'right', render: (o) => <span className="tabular-nums">{formatMnt(o.totalMnt)}</span> },
   ]
 
+  const sel = useSelection(orders)
+  const [setOrderStatus] = useMutation(ADMIN_SET_ORDER_STATUS)
+  const [result, setResult] = useState(null)
+  const [running, setRunning] = useState(false)
+
+  const byId = useMemo(
+    () => Object.fromEntries(orders.map((o) => [o.id, o.orderNumber])),
+    [orders])
+
+  // Orders cannot use a set-based SQL function. admin_set_order_status refuses
+  // fulfilment before payment is confirmed, so some rows must fail while the
+  // rest succeed — partial success is the correct answer here, not an error.
+  // Each success also emails the customer, hence the count in the confirm.
+  const runOrders = async (status, label) => {
+    if (!window.confirm(
+      `${sel.count} захиалгын төлөвийг "${label}" болгох уу?\n\n`
+      + 'Амжилттай болсон бүрд хэрэглэгчид имэйл илгээнэ.')) return
+
+    setRunning(true)
+    setResult(null)
+    const res = await runBulk(sel.ids, (orderId) =>
+      setOrderStatus({ variables: { orderId, status, trackingNumber: null, internalNote: null } }))
+    setRunning(false)
+    setResult(res)
+    if (res.ok.length > 0) sel.clear()
+    await refetch()
+  }
+
+  // `cancelled` is absent on purpose: admin_set_order_status refuses it
+  // outright so stock is returned through cancel_order. Offering an action
+  // that can only fail is worse than not offering it.
+  const bulkActions = [
+    { key: 'paid', label: 'Төлөгдсөн', run: () => runOrders('paid', 'Төлөгдсөн') },
+    { key: 'packed', label: 'Бэлтгэсэн', run: () => runOrders('packed', 'Бэлтгэсэн') },
+    { key: 'shipped', label: 'Илгээсэн', run: () => runOrders('shipped', 'Илгээсэн') },
+    { key: 'delivered', label: 'Хүргэгдсэн', run: () => runOrders('delivered', 'Хүргэгдсэн') },
+  ]
+
   return (
     <>
       <PageHeader
@@ -54,9 +95,14 @@ export default function AdminOrdersPage() {
         subtitle="Мөр дээр дарж дэлгэрэнгүйг харна. Дансаар шилжүүлсэн төлбөрийг тэндээс баталгаажуулна."
       />
 
+      <BulkResult result={result} labelFor={(id) => byId[id] ?? id} onDismiss={() => setResult(null)} />
+      {running && <p className="mb-3 text-[13px] text-a-muted">Гүйцэтгэж байна…</p>}
+
       <DataTable
         columns={columns}
         rows={orders}
+        selection={sel}
+        bulkActions={bulkActions}
         onRowClick={(o) => router.push(`/admin/orders/${o.orderNumber}`)}
         empty={loading ? 'Ачааллаж байна…' : 'Захиалга алга'}
         toolbar={
