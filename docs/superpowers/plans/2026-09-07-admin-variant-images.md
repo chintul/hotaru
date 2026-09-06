@@ -1376,7 +1376,10 @@ export default function VariantRow({ product, variant, images, sharedCount, refe
       priceMnt: String(toNumber(f.priceMnt)),
       quantity: Number(f.quantity || 0),
       sku: f.sku || null,
-      optionLabel: variant.optionLabel ?? (f.optionValue ? 'Өнгө' : null),
+      // Both halves or neither — variants_option_pair_ck
+      // (20260904120100:173) rejects a label with a null value, which is
+      // exactly what clearing a colour name in this row would otherwise send.
+      optionLabel: f.optionValue ? (variant.optionLabel || 'Өнгө') : null,
       optionValue: f.optionValue || null,
       compareAtPriceMnt: variant.compareAtPriceMnt ?? null,
       allowBackorder: variant.allowBackorder ?? false,
