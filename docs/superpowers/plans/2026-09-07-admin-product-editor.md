@@ -195,6 +195,18 @@ begin
   return v_product;
 end;
 $$;
+
+-- Dropping the old signature threw away its grants, and the new function
+-- arrives with EXECUTE granted to PUBLIC (which anon inherits). Both halves
+-- have to be restored or tests/sql/02_guards.sql fails — it asserts that no
+-- unreviewed SECURITY DEFINER function is anon-executable.
+revoke execute on function
+  public.admin_upsert_product(text, text, text, text, text, text, text, boolean, int, uuid, text, text)
+from public, anon;
+
+grant execute on function
+  public.admin_upsert_product(text, text, text, text, text, text, text, boolean, int, uuid, text, text)
+to authenticated;
 ```
 
 - [ ] **Step 4: Run the suite to verify it passes**

@@ -423,6 +423,36 @@ begin
 end;
 $$;
 
+-- Admin-gated inside each function; granted to `authenticated` so the mutation
+-- is reflected into a signed-in session's schema. A non-admin gets 42501.
+--
+-- The revoke is NOT optional. Postgres grants EXECUTE to PUBLIC on every new
+-- function and anon inherits PUBLIC. tests/sql/02_guards.sql asserts that no
+-- unreviewed SECURITY DEFINER function is anon-executable and WILL fail here
+-- if this block is omitted.
+
+revoke execute on function
+  public.admin_bulk_set_product_status(uuid[], text),
+  public.admin_bulk_set_product_featured(uuid[], boolean),
+  public.admin_bulk_set_product_category(uuid[], text),
+  public.admin_bulk_delete_products(uuid[]),
+  public.admin_bulk_set_review_approval(uuid[], boolean),
+  public.admin_bulk_delete_reviews(uuid[]),
+  public.admin_bulk_set_discount_active(uuid[], boolean),
+  public.admin_bulk_delete_discounts(uuid[])
+from public, anon;
+
+grant execute on function
+  public.admin_bulk_set_product_status(uuid[], text),
+  public.admin_bulk_set_product_featured(uuid[], boolean),
+  public.admin_bulk_set_product_category(uuid[], text),
+  public.admin_bulk_delete_products(uuid[]),
+  public.admin_bulk_set_review_approval(uuid[], boolean),
+  public.admin_bulk_delete_reviews(uuid[]),
+  public.admin_bulk_set_discount_active(uuid[], boolean),
+  public.admin_bulk_delete_discounts(uuid[])
+to authenticated;
+
 comment on function public.admin_bulk_set_product_status is
   'Set status on many products at once. Atomic: these rows have no per-row guard, so partial success would mean a bug.';
 comment on function public.admin_bulk_delete_products is
