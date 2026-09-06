@@ -95,7 +95,13 @@ export default function AdminOrderPage({ params }) {
 
         <div className="space-y-4">
           <Card title="Худалдан авагч" padded={false}>
-            <Row label="Имэйл" copy={order.email}>{order.email}</Row>
+            {/* Phone sign-ins have no email at all; an empty row reads as
+                missing data rather than as a customer who reaches you by phone. */}
+            {order.email
+              ? <Row label="Имэйл" copy={order.email}>{order.email}</Row>
+              : <Row label="Имэйл">
+                  <span className="text-a-muted">Утсаар бүртгүүлсэн — имэйлгүй</span>
+                </Row>}
             <Row label="Утас" copy={order.phone}>{order.phone}</Row>
             <Row label="Хүргэх хаяг" copy={`${address.recipient_name}, ${formatAddress(address)}`}>
               {address.recipient_name}<br />
