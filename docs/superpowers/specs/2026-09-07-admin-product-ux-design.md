@@ -256,9 +256,17 @@ order:
 - **Track B — the product editor.** Routes, tabs, image move, slug helper,
   `CommandPalette` href, deletion of `/admin/inventory` and `/admin/images`.
 
-Track A first: it is the smaller surface, its migration is the only database
-change in the whole design, and Track B's new `/admin/products` list wants the
-selection props to already exist rather than being retrofitted.
+Track A first: it is the smaller surface, and Track B's new `/admin/products`
+list wants the selection props to already exist rather than being retrofitted.
+
+Track B carries a second, smaller migration. `product_translations.seo_title`
+and `.seo_description` have existed since the first migration and are read by
+the storefront, but **no write path reaches them** — `admin_upsert_product` does
+not take them, and the only values in the table came from a one-off data fix
+(`20260905150000_seo_title_no_brand.sql`). The SEO tab needs `admin_upsert_product`
+extended, and because adding parameters creates an overload rather than
+replacing the function, the old signature must be dropped explicitly or
+pg_graphql's reflection turns ambiguous.
 
 ## Risks and open items
 
