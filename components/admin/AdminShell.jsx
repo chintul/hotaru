@@ -10,14 +10,13 @@ import { useSession } from '@/components/useSession'
 import { useAuthUpgrade } from '@/components/useAuthUpgrade'
 import CommandPalette from './CommandPalette'
 import {
-  Bell, Chevron, Dots, ImageIcon, Inventory, Orders, Panel, Products,
+  Bell, Chevron, Dots, Orders, Panel, Products,
   Search as SearchIcon, Settings, Star, Tag,
 } from './icons'
 
 const NAV = [
   { href: '/admin', label: 'Захиалга', icon: Orders, exact: true, badge: 'pending' },
-  { href: '/admin/inventory', label: 'Бараа', icon: Products },
-  { href: '/admin/images', label: 'Зураг', icon: ImageIcon },
+  { href: '/admin/products', label: 'Бараа', icon: Products },
   { href: '/admin/discounts', label: 'Хөнгөлөлт', icon: Tag },
   { href: '/admin/reviews', label: 'Сэтгэгдэл', icon: Star },
   { href: '/admin/settings', label: 'Тохиргоо', icon: Settings },

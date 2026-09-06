@@ -49,7 +49,7 @@ export default function CommandPalette({ open, onClose, nav }) {
       .map((p) => ({
         id: `p-${p.id}`, group: 'Бараа',
         label: copy(p).title ?? p.slug, hint: formatMnt(p.minPriceMnt),
-        href: '/admin/inventory',
+        href: `/admin/products/${p.id}`,
       }))
 
     return [...pages, ...orders, ...products]
