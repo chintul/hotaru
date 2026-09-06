@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Copy as CopyIcon, Dots, Search as SearchIcon } from './icons'
+import { SelectAllCell, SelectCell } from './selection'
 
 /**
  * Admin UI kit, built to match Medusa's admin.
@@ -101,14 +102,100 @@ export const Dropdown = (props) => <IconButton {...props}><Dots /></IconButton>
 
 /* --------------------------------- table --------------------------------- */
 
-export function DataTable({ columns, rows, empty, onRowClick, toolbar }) {
+/**
+ * The strip that replaces a toolbar while rows are selected.
+ *
+ * Lives here rather than in ./selection because it needs Button, and ./ui must
+ * not depend on ./selection in both directions. An action either runs (`run`)
+ * or opens a popover (`render`) — assigning a category needs a value, so it
+ * cannot be a plain menu item.
+ */
+export function BulkBar({ count, actions, onClear }) {
+  const [open, setOpen] = useState(false)
+  const [popover, setPopover] = useState(null)
+  const ref = useRef(null)
+
+  useEffect(() => {
+    const onDoc = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) { setOpen(false); setPopover(null) }
+    }
+    const onEsc = (e) => { if (e.key === 'Escape') { setOpen(false); setPopover(null) } }
+    document.addEventListener('mousedown', onDoc)
+    document.addEventListener('keydown', onEsc)
+    return () => {
+      document.removeEventListener('mousedown', onDoc)
+      document.removeEventListener('keydown', onEsc)
+    }
+  }, [])
+
+  const close = () => { setOpen(false); setPopover(null) }
+  const active = actions.find((a) => a.key === popover)
+
+  return (
+    <div className="flex flex-wrap items-center gap-2 border-b border-a-line bg-a-hover px-4 py-2.5">
+      <span className="text-[13px] font-medium text-a-ink">{count} сонгосон</span>
+
+      <div className="relative ml-auto" ref={ref}>
+        <Button onClick={() => setOpen((v) => !v)} aria-expanded={open}>
+          Үйлдэл <span className="text-a-muted">▾</span>
+        </Button>
+
+        {open && !popover && (
+          <div className="absolute right-0 top-full z-20 mt-1 w-[220px] overflow-hidden rounded-lg border border-a-line bg-white py-1 shadow-lg">
+            {actions.map((a) => (
+              <div key={a.key}>
+                {a.separatorBefore && <div className="my-1 border-t border-a-line" />}
+                <button
+                  onClick={() => {
+                    if (a.render) { setPopover(a.key); return }
+                    close()
+                    a.run()
+                  }}
+                  className={`block w-full px-3 py-1.5 text-left text-[13px] transition-colors hover:bg-a-hover ${
+                    a.tone === 'danger' ? 'text-red-600' : 'text-a-ink'
+                  }`}
+                >
+                  {a.label}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {popover && active && (
+          <div className="absolute right-0 top-full z-20 mt-1 w-[260px] rounded-lg border border-a-line bg-white p-3 shadow-lg">
+            {active.render(close)}
+          </div>
+        )}
+      </div>
+
+      <Button variant="ghost" onClick={onClear}>Цуцлах</Button>
+    </div>
+  )
+}
+
+export function DataTable({ columns, rows, empty, onRowClick, toolbar, selection, bulkActions }) {
+  const selectable = Boolean(selection)
+  const span = columns.length + (selectable ? 1 : 0)
+
   return (
     <div className="rounded-xl border border-a-line bg-white shadow-[0_1px_2px_rgba(0,0,0,.04)]">
-      {toolbar}
+      {selectable && selection.count > 0
+        ? <BulkBar count={selection.count} actions={bulkActions ?? []} onClear={selection.clear} />
+        : toolbar}
       <div className="overflow-x-auto">
         <table className="w-full min-w-[700px] border-collapse">
           <thead>
             <tr className="border-y border-a-line">
+              {selectable && (
+                <th className="w-10 px-4 py-2.5">
+                  <SelectAllCell
+                    checked={selection.allSelected}
+                    indeterminate={selection.someSelected && !selection.allSelected}
+                    onChange={selection.toggleAllRows}
+                  />
+                </th>
+              )}
               {columns.map((c) => (
                 <th
                   key={c.key}
@@ -122,7 +209,7 @@ export function DataTable({ columns, rows, empty, onRowClick, toolbar }) {
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={columns.length} className="px-4 py-16 text-center text-[13px] text-a-muted">
+                <td colSpan={span} className="px-4 py-16 text-center text-[13px] text-a-muted">
                   {empty ?? 'Мэдээлэл алга'}
                 </td>
               </tr>
@@ -131,8 +218,18 @@ export function DataTable({ columns, rows, empty, onRowClick, toolbar }) {
                 <tr
                   key={row.id}
                   onClick={onRowClick ? () => onRowClick(row) : undefined}
-                  className={`border-b border-a-line last:border-0 ${onRowClick ? 'cursor-pointer hover:bg-a-hover' : ''}`}
+                  className={`border-b border-a-line last:border-0 ${onRowClick ? 'cursor-pointer hover:bg-a-hover' : ''} ${
+                    selectable && selection.isSelected(row) ? 'bg-a-hover' : ''
+                  }`}
                 >
+                  {selectable && (
+                    <td className="w-10 px-4 py-3">
+                      <SelectCell
+                        checked={selection.isSelected(row)}
+                        onChange={() => selection.toggleRow(row)}
+                      />
+                    </td>
+                  )}
                   {columns.map((c) => (
                     <td
                       key={c.key}

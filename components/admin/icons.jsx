@@ -17,5 +17,6 @@ export const Copy = (p) => (<svg {...I(p)}><rect x="9" y="9" width="11" height="
 export const Chevron = (p) => (<svg {...I(p)}><path d="m9 6 6 6-6 6"/></svg>)
 export const Plus = (p) => (<svg {...I(p)}><path d="M12 5v14M5 12h14"/></svg>)
 export const Check = (p) => (<svg {...I(p)}><path d="m5 13 4 4L19 7"/></svg>)
+export const Minus = (p) => (<svg {...I(p)}><path d="M6 12h12"/></svg>)
 export const Truck = (p) => (<svg {...I(p)}><path d="M3 6h11v9H3zM14 9h4l3 3v3h-7z"/><circle cx="7" cy="18" r="1.6"/><circle cx="17.5" cy="18" r="1.6"/></svg>)
 export const Back = (p) => (<svg {...I(p)}><path d="m15 6-6 6 6 6"/></svg>)
