@@ -125,9 +125,15 @@ body {
      appeared to do nothing. Keep the pair together. */
   .card-media img, .card-media .ph { transition: opacity .45s ease, transform 1s cubic-bezier(.22,1,.36,1); }
   .card-media .media-hover { opacity: 0; }
-  .card-media:hover .media-hover { opacity: 1; }
-  .card-media:hover .media-primary { opacity: 0; }
-  .card-media:hover img, .card-media:hover .ph { transform: scale(1.03); }
+  /* Guarded by (hover: hover). A tap on a touch screen can latch :hover, and
+     the preview image is no longer rendered there — so unguarded, the rule
+     below would fade the only picture out and leave the card blank until the
+     next tap elsewhere. */
+  @media (hover: hover) {
+    .card-media:hover .media-hover { opacity: 1; }
+    .card-media:hover .media-primary { opacity: 0; }
+    .card-media:hover img, .card-media:hover .ph { transform: scale(1.03); }
+  }
 
   /* Variant name pill sitting over the image, with its little circular knob. */
   .badge-pill {

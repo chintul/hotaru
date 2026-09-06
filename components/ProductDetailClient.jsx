@@ -10,9 +10,14 @@ import { useUI } from './UIProvider'
 import ProductImage from './ProductImage'
 import { IconHeart, IconMinus, IconPlus, IconShare } from './Icons'
 
-function swatchTone(name = '') {
+function swatchTone(name) {
+  // `= ''` only covers undefined. option_value is nullable — a product with one
+  // option-less variant stores null — and null sailed past the default straight
+  // into null.length. The call sites already wrote `v.optionValue ?? ''` for
+  // title and aria-label; this one was missed, and it crashed the whole page.
+  const text = String(name ?? '')
   let h = 0
-  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) % 360
+  for (let i = 0; i < text.length; i++) h = (h * 31 + text.charCodeAt(i)) % 360
   return `hsl(${h} 38% 72%)`
 }
 

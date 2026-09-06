@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { copy, formatMnt, nodes, toNumber } from '@/lib/format'
 import ProductImage from './ProductImage'
+import { useCanHover } from './useCanHover'
 
 /**
  * Deterministic swatch colour from the option name.
@@ -12,9 +13,14 @@ import ProductImage from './ProductImage'
  * the actual colourway as the reference does; this hue is what a variant with
  * no image of its own gets, and it stays stable across renders.
  */
-function swatchTone(name = '') {
+function swatchTone(name) {
+  // `= ''` only covers undefined. option_value is nullable — a product with one
+  // option-less variant stores null — and null sailed past the default straight
+  // into null.length. The call sites already wrote `v.optionValue ?? ''` for
+  // title and aria-label; this one was missed, and it crashed the whole page.
+  const text = String(name ?? '')
   let h = 0
-  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) % 360
+  for (let i = 0; i < text.length; i++) h = (h * 31 + text.charCodeAt(i)) % 360
   return `hsl(${h} 38% 72%)`
 }
 
@@ -28,6 +34,9 @@ export default function ProductCard({ product, priority = false }) {
   const images = nodes(product.productImageCollection)
   const variants = nodes(product.variantCollection)
   const [active, setActive] = useState(0)
+  // On a phone the preview can never be seen, and it was half of every card's
+  // image payload: 27 cards were downloading 53 pictures at 390px wide.
+  const canHover = useCanHover()
 
   const variant = variants[active] ?? variants[0]
 
@@ -68,7 +77,7 @@ export default function ProductCard({ product, priority = false }) {
               priority={priority}
             />
           </div>
-          {hoverImage && (
+          {canHover && hoverImage && (
             <div className="media-hover absolute inset-0">
               <ProductImage
                 filePath={hoverImage.filePath}
