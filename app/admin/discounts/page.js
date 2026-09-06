@@ -2,11 +2,15 @@
 
 import { useState } from 'react'
 import { useMutation, useQuery } from '@apollo/client/react'
-import { ADMIN_DISCOUNTS, ADMIN_UPSERT_DISCOUNT } from '@/lib/queries'
+import {
+  ADMIN_BULK_DELETE_DISCOUNTS, ADMIN_BULK_SET_DISCOUNT_ACTIVE,
+  ADMIN_DISCOUNTS, ADMIN_UPSERT_DISCOUNT,
+} from '@/lib/queries'
 import { formatMnt, nodes, toNumber } from '@/lib/format'
 import {
   Button, Card, DataTable, EmptyState, Field, Input, PageHeader, Select, Status,
 } from '@/components/admin/ui'
+import { useSelection } from '@/components/admin/selection'
 import { Plus } from '@/components/admin/icons'
 
 const KIND_LABEL = { percentage: 'Хувиар', fixed_amount: 'Тогтмол дүн', free_delivery: 'Үнэгүй хүргэлт' }
@@ -33,6 +37,37 @@ export default function DiscountsPage() {
     { key: 'status', header: 'Төлөв', render: (d) => (
       <Status tone={d.isActive ? 'green' : 'grey'}>{d.isActive ? 'идэвхтэй' : 'унтраасан'}</Status>) },
     { key: 'action', header: '', align: 'right', render: (d) => <ToggleButton discount={d} onDone={refetch} /> },
+  ]
+
+  const sel = useSelection(codes)
+  const [setActive] = useMutation(ADMIN_BULK_SET_DISCOUNT_ACTIVE)
+  const [bulkDelete] = useMutation(ADMIN_BULK_DELETE_DISCOUNTS)
+  const [bulkError, setBulkError] = useState(null)
+
+  const run = async (confirmText, fn) => {
+    if (!window.confirm(confirmText)) return
+    setBulkError(null)
+    const ids = sel.ids
+    try {
+      await fn(ids)
+      sel.clear()
+      await refetch()
+    } catch (e) {
+      setBulkError(e?.message ?? 'Үйлдэл амжилтгүй боллоо.')
+    }
+  }
+
+  const n = sel.count
+  const bulkActions = [
+    { key: 'on', label: 'Идэвхжүүлэх',
+      run: () => run(`${n} кодыг идэвхжүүлэх үү?`,
+        (ids) => setActive({ variables: { discountIds: ids, isActive: true } })) },
+    { key: 'off', label: 'Идэвхгүй болгох',
+      run: () => run(`${n} кодыг идэвхгүй болгох уу?`,
+        (ids) => setActive({ variables: { discountIds: ids, isActive: false } })) },
+    { key: 'delete', label: 'Устгах', tone: 'danger', separatorBefore: true,
+      run: () => run(`${n} кодыг устгах уу? Буцаах боломжгүй.`,
+        (ids) => bulkDelete({ variables: { discountIds: ids } })) },
   ]
 
   if (loading && !data) return <p className="text-[13px] text-a-muted">Ачааллаж байна…</p>
@@ -96,7 +131,14 @@ export default function DiscountsPage() {
         <EmptyState title="Хөнгөлөлтийн код алга" body="Эхний кодоо үүсгэнэ үү."
           action={<Button variant="primary" onClick={() => setOpen(true)}>Үүсгэх</Button>} />
       ) : (
-        <DataTable columns={columns} rows={codes} />
+        <>
+          {bulkError && (
+            <p className="mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-[13px] text-red-700">
+              {bulkError}
+            </p>
+          )}
+          <DataTable columns={columns} rows={codes} selection={sel} bulkActions={bulkActions} />
+        </>
       )}
     </>
   )
