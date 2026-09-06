@@ -46,7 +46,6 @@ export default function ProductsPage() {
     } },
     { key: 'title', header: 'Бүтээгдэхүүн', render: (p) => (
       <span className="font-medium">{copy(p).title ?? p.slug}</span>) },
-    { key: 'slug', header: 'Slug', render: (p) => <span className="text-a-muted">{p.slug}</span> },
     { key: 'variants', header: 'Сонголт', render: (p) => `${nodes(p.variantCollection).length}` },
     { key: 'stock', header: 'Үлдэгдэл', align: 'right', render: (p) => {
       const total = nodes(p.variantCollection).reduce((s, v) => s + v.quantity, 0)
