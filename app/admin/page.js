@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery } from '@apollo/client/react'
 import { ADMIN_ALL_ORDERS, ADMIN_PENDING, ADMIN_SET_ORDER_STATUS } from '@/lib/queries'
 import { formatDate, formatMnt, nodes } from '@/lib/format'
@@ -23,23 +23,55 @@ const FILTERS = [
   ['oversold', 'Нөөцгүй'],
 ]
 
+const PAGE = 50
+
+// What the admin types goes into an ilike pattern, so % and _ have to stop
+// being wildcards — otherwise typing "%" matches every order and reads as a
+// broken filter.
+const escapeLike = (t) => t.replace(/[\\%_]/g, (c) => `\\${c}`)
+
 export default function AdminOrdersPage() {
   const router = useRouter()
-  const [search, setSearch] = useState('')
+  const [search, setSearch] = useState('')   // what is in the box
+  const [term, setTerm] = useState('')       // what has been sent to Postgres
   const [filter, setFilter] = useState('all')
+  const [limit, setLimit] = useState(PAGE)
+  const debounce = useRef(null)
+
+  // Debounced in the event handler rather than in an effect: the repo's lint
+  // rejects setState inside useEffect, and a keystroke is already an event.
+  const onSearch = (value) => {
+    setSearch(value)
+    clearTimeout(debounce.current)
+    debounce.current = setTimeout(() => { setTerm(value); setLimit(PAGE) }, 300)
+  }
+
+  const onFilter = (value) => { setFilter(value); setLimit(PAGE) }
+
+  // Postgres does the filtering. Anything done here would only ever see the
+  // rows already fetched, which is what made the old search unreliable.
+  const queryFilter = useMemo(() => {
+    const f = {}
+    if (filter !== 'all') f.status = { eq: filter }
+    const t = term.trim()
+    if (t) {
+      const like = `%${escapeLike(t)}%`
+      f.or = [{ orderNumber: { ilike: like } }, { email: { ilike: like } }]
+    }
+    return Object.keys(f).length > 0 ? f : null
+  }, [term, filter])
 
   const { data, loading, refetch } = useQuery(ADMIN_ALL_ORDERS, {
-    variables: { first: 100 },
+    variables: { first: limit, filter: queryFilter },
     fetchPolicy: 'cache-and-network',
   })
   const { data: counts } = useQuery(ADMIN_PENDING, { fetchPolicy: 'cache-and-network' })
 
-  const orders = useMemo(() => {
-    const term = search.trim().toLowerCase()
-    return nodes(data?.orderCollection)
-      .filter((o) => (filter === 'all' ? true : o.status === filter))
-      .filter((o) => !term || o.orderNumber.toLowerCase().includes(term) || (o.email ?? '').toLowerCase().includes(term))
-  }, [data, search, filter])
+  const orders = nodes(data?.orderCollection)
+  const matched = data?.orderCollection?.totalCount ?? 0
+  // Widening `first` rather than walking cursors: one variable, no cache
+  // merging to get wrong, and an admin list is hundreds of rows, not millions.
+  const hasMore = Boolean(data?.orderCollection?.pageInfo?.hasNextPage)
 
   const columns = [
     { key: 'order', header: 'Захиалга', render: (o) => <span className="font-medium tabular-nums">{o.orderNumber}</span> },
@@ -104,9 +136,9 @@ export default function AdminOrdersPage() {
         selection={sel}
         bulkActions={bulkActions}
         onRowClick={(o) => router.push(`/admin/orders/${o.orderNumber}`)}
-        empty={loading ? 'Ачааллаж байна…' : 'Захиалга алга'}
+        empty={loading ? 'Ачааллаж байна…' : term ? `"${term}" олдсонгүй` : 'Захиалга алга'}
         toolbar={
-          <TableToolbar search={search} onSearch={setSearch} placeholder="Дугаар, имэйл">
+          <TableToolbar search={search} onSearch={onSearch} placeholder="Дугаар, имэйл">
             {FILTERS.map(([value, label]) => {
               const n = value === 'awaiting_payment' ? counts?.awaiting?.totalCount
                 : value === 'oversold' ? counts?.oversold?.totalCount : null
@@ -115,7 +147,7 @@ export default function AdminOrdersPage() {
                   key={value}
                   size="sm"
                   variant={filter === value ? 'primary' : 'secondary'}
-                  onClick={() => setFilter(value)}
+                  onClick={() => onFilter(value)}
                 >
                   {label}{n ? ` (${n})` : ''}
                 </Button>
@@ -124,6 +156,21 @@ export default function AdminOrdersPage() {
           </TableToolbar>
         }
       />
+
+      {orders.length > 0 && (
+        <div className="mt-3 flex flex-wrap items-center gap-3">
+          <p className="text-[13px] text-a-muted">
+            {term || filter !== 'all'
+              ? `${matched} илэрцээс ${orders.length}`
+              : `${matched} захиалгаас ${orders.length}`}
+          </p>
+          {hasMore && (
+            <Button size="sm" disabled={loading} onClick={() => setLimit((n) => n + PAGE)}>
+              {loading ? 'Ачааллаж байна…' : `Дараагийн ${PAGE}`}
+            </Button>
+          )}
+        </div>
+      )}
     </>
   )
 }

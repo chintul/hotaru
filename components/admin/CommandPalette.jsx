@@ -16,9 +16,26 @@ export default function CommandPalette({ open, onClose, nav }) {
   const router = useRouter()
   const [q, setQ] = useState('')
   const inputRef = useRef(null)
-  const [cursor, setCursor] = useState(0)
+  const [rawCursor, setCursor] = useState(0)
 
-  const { data: orderData } = useQuery(ADMIN_ALL_ORDERS, { variables: { first: 50 }, skip: !open })
+  const term = q.trim()
+
+  // Orders are matched by Postgres. The palette exists to jump straight to an
+  // order number, and filtering a 50-row window in memory meant the 51st order
+  // onwards simply did not exist as far as the palette was concerned.
+  const orderFilter = useMemo(() => {
+    if (!term) return null
+    const like = `%${term.replace(/[\\%_]/g, (c) => `\\${c}`)}%`
+    return { or: [{ orderNumber: { ilike: like } }, { email: { ilike: like } }] }
+  }, [term])
+
+  const { data: orderData } = useQuery(ADMIN_ALL_ORDERS, {
+    variables: { first: 6, filter: orderFilter },
+    skip: !open || !term,
+  })
+  // Products stay client-side: a title lives in productTranslationCollection
+  // and pg_graphql cannot filter a parent by a child's column, so server-side
+  // matching would only see the slug. The window covers the whole catalog.
   const { data: productData } = useQuery(ADMIN_PRODUCTS, { variables: { first: 100 }, skip: !open })
 
   useEffect(() => {
@@ -27,16 +44,15 @@ export default function CommandPalette({ open, onClose, nav }) {
   }, [open])
 
   const results = useMemo(() => {
-    const term = q.trim().toLowerCase()
+    const lower = term.toLowerCase()
     const pages = nav
-      .filter((n) => !term || n.label.toLowerCase().includes(term))
+      .filter((n) => !lower || n.label.toLowerCase().includes(lower))
       .map((n) => ({ id: `nav-${n.href}`, group: 'Хуудас', label: n.label, href: n.href }))
 
-    if (!term) return pages
+    if (!lower) return pages
 
+    // Already filtered and capped by the query above.
     const orders = nodes(orderData?.orderCollection)
-      .filter((o) => o.orderNumber.toLowerCase().includes(term) || (o.email ?? '').toLowerCase().includes(term))
-      .slice(0, 6)
       .map((o) => ({
         id: `o-${o.id}`, group: 'Захиалга',
         label: `${o.orderNumber} · ${o.email}`, hint: formatMnt(o.totalMnt),
@@ -44,7 +60,7 @@ export default function CommandPalette({ open, onClose, nav }) {
       }))
 
     const products = nodes(productData?.productCollection)
-      .filter((p) => (copy(p).title ?? p.slug).toLowerCase().includes(term) || p.slug.includes(term))
+      .filter((p) => (copy(p).title ?? p.slug).toLowerCase().includes(lower) || p.slug.includes(lower))
       .slice(0, 6)
       .map((p) => ({
         id: `p-${p.id}`, group: 'Бараа',
@@ -53,9 +69,13 @@ export default function CommandPalette({ open, onClose, nav }) {
       }))
 
     return [...pages, ...orders, ...products]
-  }, [q, nav, orderData, productData])
+  }, [term, nav, orderData, productData])
 
-  useEffect(() => { setCursor(0) }, [q])
+  // Clamped during render rather than reset from an effect. Order results now
+  // arrive from the server, so the list can shrink under a cursor that is
+  // already past the end — and Enter on a missing row does nothing at all.
+  const cursor = Math.min(rawCursor, Math.max(0, results.length - 1))
+
   if (!open) return null
 
   const go = (item) => { if (item) { router.push(item.href); onClose() } }

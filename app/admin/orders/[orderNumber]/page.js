@@ -135,12 +135,33 @@ export default function AdminOrderPage({ params }) {
 function PaymentCard({ order, payment, onDone }) {
   const [confirm, { loading }] = useMutation(CONFIRM_PAYMENT)
   const [markRefunded, { loading: refunding }] = useMutation(ADMIN_MARK_REFUNDED)
-  const [cancel] = useMutation(CANCEL_ORDER)
+  const [cancel, { loading: cancelling }] = useMutation(CANCEL_ORDER)
   const [reference, setReference] = useState('')
   const [error, setError] = useState(null)
   const [checkMessage, setCheckMessage] = useState('')
+  const [checking, setChecking] = useState(false)
 
   const awaiting = order.paymentStatus !== 'confirmed' && order.paymentStatus !== 'refunded'
+
+  /**
+   * Confirm, then run, then report.
+   *
+   * Both actions below are irreversible and were a single click away, while
+   * every bulk action on the list page asks first — the protection was on the
+   * rarer path. They also swallowed failures: `await mutate(); onDone()` with
+   * no catch means a refusal from Postgres rejects the promise, onDone never
+   * runs, and the admin sees an unchanged screen with no error.
+   */
+  const guarded = async (question, mutate) => {
+    if (!window.confirm(question)) return
+    setError(null)
+    try {
+      await mutate()
+      onDone()
+    } catch (e) {
+      setError(e?.message ?? 'Алдаа гарлаа.')
+    }
+  }
 
   return (
     <Card
@@ -180,32 +201,60 @@ function PaymentCard({ order, payment, onDone }) {
           </Button>
           <Button
             variant="danger"
-            onClick={async () => { await cancel({ variables: { orderId: order.id, reason: 'admin cancelled' } }); onDone() }}
+            disabled={cancelling}
+            onClick={() => guarded(
+              `${order.orderNumber} захиалгыг цуцлах уу?\n\n`
+              + 'Нөөц агуулах руу буцаж, энэ үйлдлийг буцаах боломжгүй.',
+              () => cancel({ variables: { orderId: order.id, reason: 'admin cancelled' } }),
+            )}
           >
-            Цуцлах
+            {cancelling ? 'Цуцалж байна…' : 'Цуцлах'}
           </Button>
           {/* For a callback that never landed. QPay forbids polling their check
               endpoint on a schedule, so the retry is a button, not a cron. */}
           <Button
+            disabled={checking}
             onClick={async () => {
+              // Disabled while in flight: QPay's docs forbid polling /check, and
+              // an undisabled button invites exactly that on a slow response.
+              setChecking(true)
               setCheckMessage('')
-              const res = await fetch('/api/payments/qpay/check', {
-                method: 'POST',
-                headers: { 'content-type': 'application/json' },
-                body: JSON.stringify({ orderId: order.id }),
-              })
-              const body = await res.json().catch(() => ({}))
-              setCheckMessage(
-                body.outcome === 'confirmed' ? 'QPay: төлбөр баталгаажлаа'
-                  : body.outcome === 'pending' ? 'QPay: төлбөр хараахан ороогүй байна'
-                    : body.outcome === 'mismatch' ? 'QPay: дүн зөрж байна — дотоод тэмдэглэлийг шалгана уу'
-                      : body.outcome === 'already' ? 'QPay: аль хэдийн баталгаажсан'
-                        : 'QPay: нэхэмжлэх олдсонгүй',
-              )
-              onDone()
+              try {
+                const res = await fetch('/api/payments/qpay/check', {
+                  method: 'POST',
+                  headers: { 'content-type': 'application/json' },
+                  body: JSON.stringify({ orderId: order.id }),
+                })
+                const body = await res.json().catch(() => ({}))
+
+                // A failed REQUEST is not an answer about the invoice. Reporting
+                // a 503 as "нэхэмжлэх олдсонгүй" told the admin the invoice was
+                // missing when QPay was simply unreachable.
+                if (!res.ok) {
+                  setCheckMessage(
+                    body.error === 'qpay_unavailable' ? 'QPay тохируулагдаагүй байна.'
+                      : body.error === 'forbidden' ? 'Админ эрх шаардлагатай.'
+                        : `QPay-тай холбогдож чадсангүй (${res.status}). Дахин оролдоно уу.`,
+                  )
+                  return
+                }
+
+                setCheckMessage(
+                  body.outcome === 'confirmed' ? 'QPay: төлбөр баталгаажлаа'
+                    : body.outcome === 'pending' ? 'QPay: төлбөр хараахан ороогүй байна'
+                      : body.outcome === 'mismatch' ? 'QPay: дүн зөрж байна — дотоод тэмдэглэлийг шалгана уу'
+                        : body.outcome === 'already' ? 'QPay: аль хэдийн баталгаажсан'
+                          : 'QPay: нэхэмжлэх олдсонгүй',
+                )
+                onDone()
+              } catch {
+                setCheckMessage('Сүлжээний алдаа. Дахин оролдоно уу.')
+              } finally {
+                setChecking(false)
+              }
             }}
           >
-            QPay шалгах
+            {checking ? 'Шалгаж байна…' : 'QPay шалгах'}
           </Button>
           {checkMessage && <p className="w-full text-[13px] text-a-muted">{checkMessage}</p>}
         </div>
@@ -219,9 +268,13 @@ function PaymentCard({ order, payment, onDone }) {
           <Button
             variant="danger"
             disabled={refunding}
-            onClick={async () => { await markRefunded({ variables: { orderId: order.id, note: 'refunded from admin' } }); onDone() }}
+            onClick={() => guarded(
+              `${formatMnt(order.totalMnt)} буцаасныг баталгаажуулах уу?\n\n`
+              + 'Мөнгийг банкаар нь буцаасны ДАРАА тэмдэглэнэ. Захиалга "Буцаагдсан" болно.',
+              () => markRefunded({ variables: { orderId: order.id, note: 'refunded from admin' } }),
+            )}
           >
-            Буцаалт хийсэн
+            {refunding ? 'Тэмдэглэж байна…' : 'Буцаалт хийсэн'}
           </Button>
         </div>
       )}

@@ -105,7 +105,8 @@ export default function ReviewsPage() {
 
 function ReviewCard({ review, selected, onToggle, onDone }) {
   const [setApproval, { loading }] = useMutation(ADMIN_SET_REVIEW_APPROVAL)
-  const [remove] = useMutation(ADMIN_DELETE_REVIEW)
+  const [remove, { loading: removing }] = useMutation(ADMIN_DELETE_REVIEW)
+  const [error, setError] = useState(null)
   const title = copy(review.product).title ?? review.product?.slug
 
   return (
@@ -130,21 +131,37 @@ function ReviewCard({ review, selected, onToggle, onDone }) {
       {review.title && <p className="text-[13px] font-medium text-a-ink">{review.title}</p>}
       {review.body && <p className="mt-1 text-[13px] text-a-muted">{review.body}</p>}
 
-      <div className="mt-4 flex gap-2">
+      <div className="mt-4 flex flex-wrap items-center gap-2">
         <Button
           variant={review.isApproved ? 'secondary' : 'primary'}
           disabled={loading}
           onClick={async () => {
-            await setApproval({ variables: { reviewId: review.id, approved: !review.isApproved } })
-            onDone()
+            setError(null)
+            try {
+              await setApproval({ variables: { reviewId: review.id, approved: !review.isApproved } })
+              onDone()
+            } catch (e) { setError(e?.message ?? 'Алдаа гарлаа.') }
           }}
         >
           {review.isApproved ? 'Нуух' : 'Зөвшөөрөх'}
         </Button>
-        <Button variant="danger"
-          onClick={async () => { await remove({ variables: { reviewId: review.id } }); onDone() }}>
-          Устгах
+        {/* Bulk delete already warned that this cannot be undone; deleting one
+            review was the unguarded path, and it is the one used daily. */}
+        <Button
+          variant="danger"
+          disabled={removing}
+          onClick={async () => {
+            if (!window.confirm('Энэ сэтгэгдлийг устгах уу? Буцаах боломжгүй.')) return
+            setError(null)
+            try {
+              await remove({ variables: { reviewId: review.id } })
+              onDone()
+            } catch (e) { setError(e?.message ?? 'Устгаж чадсангүй.') }
+          }}
+        >
+          {removing ? 'Устгаж байна…' : 'Устгах'}
         </Button>
+        {error && <span className="text-[13px] text-red-600">{error}</span>}
       </div>
     </Card>
   )

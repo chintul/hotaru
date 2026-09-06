@@ -146,14 +146,22 @@ export default function DiscountsPage() {
 
 function ToggleButton({ discount, onDone }) {
   const [save, { loading }] = useMutation(ADMIN_UPSERT_DISCOUNT)
+  const [failed, setFailed] = useState(false)
   return (
     <Button size="sm" disabled={loading}
+      // Not destructive, so no confirm — but a refused write used to leave the
+      // row looking unchanged with nothing said. The title carries the reason.
+      title={failed ? 'Хадгалж чадсангүй. Дахин оролдоно уу.' : undefined}
+      className={failed ? 'border-red-200 text-red-600' : ''}
       onClick={async () => {
-        await save({ variables: {
-          code: discount.code, kind: discount.kind, value: String(discount.value),
-          minSubtotalMnt: String(discount.minSubtotalMnt), usageLimit: discount.usageLimit,
-          isActive: !discount.isActive, discountId: discount.id } })
-        onDone()
+        setFailed(false)
+        try {
+          await save({ variables: {
+            code: discount.code, kind: discount.kind, value: String(discount.value),
+            minSubtotalMnt: String(discount.minSubtotalMnt), usageLimit: discount.usageLimit,
+            isActive: !discount.isActive, discountId: discount.id } })
+          onDone()
+        } catch { setFailed(true) }
       }}>
       {discount.isActive ? 'Унтраах' : 'Идэвхжүүлэх'}
     </Button>

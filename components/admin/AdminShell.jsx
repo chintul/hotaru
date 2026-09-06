@@ -14,22 +14,49 @@ import {
   Search as SearchIcon, Settings, Star, Tag,
 } from './icons'
 
+// `owns` decides both the sidebar highlight and the breadcrumb. Orders need it:
+// the list lives at /admin but its detail pages live at /admin/orders/:number,
+// so neither an exact match nor a prefix match covers the section on its own.
 const NAV = [
-  { href: '/admin', label: 'Захиалга', icon: Orders, exact: true, badge: 'pending' },
+  { href: '/admin', label: 'Захиалга', icon: Orders, badge: 'pending',
+    owns: (p) => p === '/admin' || p.startsWith('/admin/orders') },
   { href: '/admin/products', label: 'Бараа', icon: Products },
   { href: '/admin/discounts', label: 'Хөнгөлөлт', icon: Tag },
   { href: '/admin/reviews', label: 'Сэтгэгдэл', icon: Star },
   { href: '/admin/settings', label: 'Тохиргоо', icon: Settings },
 ]
 
-/** Human breadcrumb from the path, so the top bar always says where you are. */
+const owns = (item, pathname) =>
+  item.owns ? item.owns(pathname) : pathname.startsWith(item.href)
+
+/** The section this path belongs to, longest prefix first so /admin loses. */
+function sectionFor(pathname) {
+  return [...NAV].sort((a, b) => b.href.length - a.href.length).find((n) => owns(n, pathname))
+}
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+const LEAF = { new: 'Шинэ' }
+
+/**
+ * Human breadcrumb from the path, so the top bar always says where you are.
+ *
+ * The previous version could not: its second crumb was gated on
+ * `match.exact && pathname !== '/admin'`, which needs the path to equal and not
+ * equal /admin at once. So an order page — the most-visited screen here — fell
+ * through to the "Админ" fallback and named neither the section nor the order.
+ *
+ * A record id is shown as "Засварлах" rather than as a raw uuid: the page's own
+ * <h1> already carries the product name, and a uuid in a breadcrumb is noise.
+ */
 function useCrumbs(pathname) {
-  const match = NAV.find((n) => (n.exact ? pathname === n.href : pathname.startsWith(n.href)))
-  const crumbs = [{ label: match?.label ?? 'Админ', href: match?.href ?? '/admin' }]
-  if (match && !match.exact && pathname !== match.href) crumbs.push({ label: '…' })
-  if (match?.exact && pathname !== '/admin') {
-    crumbs.push({ label: decodeURIComponent(pathname.split('/').pop()) })
-  }
+  const section = sectionFor(pathname)
+  if (!section) return [{ label: 'Админ', href: '/admin' }]
+
+  const crumbs = [{ label: section.label, href: section.href }]
+  if (pathname === section.href) return crumbs
+
+  const leaf = decodeURIComponent(pathname.split('/').filter(Boolean).pop() ?? '')
+  if (leaf) crumbs.push({ label: LEAF[leaf] ?? (UUID.test(leaf) ? 'Засварлах' : leaf) })
   return crumbs
 }
 
@@ -88,7 +115,7 @@ export default function AdminShell({ children }) {
 
         <nav className="mt-1 px-2">
           {NAV.map((item) => {
-            const active = item.exact ? pathname === item.href : pathname.startsWith(item.href)
+            const active = owns(item, pathname)
             const Icon = item.icon
             return (
               <Link

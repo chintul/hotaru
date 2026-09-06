@@ -4,8 +4,7 @@ import { useState } from 'react'
 import { useApolloClient } from '@apollo/client/react'
 import { ISSUE_CART_TRANSFER } from '@/lib/queries'
 import { ensureSession, supabaseBrowser } from '@/lib/supabase/browser'
-
-const CART_HANDOFF_KEY = 'hotaru.cart-handoff'
+import { CART_HANDOFF_KEY } from './CartHandoff'
 
 const GoogleMark = () => (
   <svg viewBox="0 0 18 18" width="18" height="18" aria-hidden="true">
@@ -63,9 +62,14 @@ export default function OAuthButtons({ next = '/account' }) {
         if (token) sessionStorage.setItem(CART_HANDOFF_KEY, token)
       } catch { /* empty cart, nothing to carry */ }
 
+      // Back through /auth/callback, not straight to `next`: PKCE returns a
+      // code that has to be exchanged for a session by something that can
+      // write cookies. The destination rides along as a query param.
       const { error } = await supabaseBrowser().auth.signInWithOAuth({
         provider,
-        options: { redirectTo: `${window.location.origin}${next}` },
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
+        },
       })
       if (error) throw error
       // On success the browser navigates away; nothing after this runs.
@@ -110,5 +114,3 @@ export default function OAuthButtons({ next = '/account' }) {
     </div>
   )
 }
-
-export { CART_HANDOFF_KEY }
