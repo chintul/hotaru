@@ -16,7 +16,7 @@ function swatchTone(name = '') {
   return `hsl(${h} 38% 72%)`
 }
 
-export default function ProductDetailClient({ product, copy }) {
+export default function ProductDetailClient({ product, copy, payNote }) {
   const variants = nodes(product.variantCollection)
   const images = nodes(product.productImageCollection)
   const { add, adding } = useCart()
@@ -207,7 +207,7 @@ export default function ProductDetailClient({ product, copy }) {
 
           <div className="mt-8 border-t border-line pt-6 text-[13px] text-ink-soft">
             <p className="font-semibold text-ink">Хүргэлт ба төлбөр</p>
-            <p className="mt-2">Улаанбаатар хотод ажлын 1–2 хоногт. QPay QR эсвэл дансаар төлнө — захиалга өгсний дараа QR код харагдана.</p>
+            <p className="mt-2">{`Улаанбаатар хотод ажлын 1–2 хоногт. ${payNote}`}</p>
           </div>
 
           {copy.description && (

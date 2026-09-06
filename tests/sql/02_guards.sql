@@ -104,6 +104,18 @@ select test.ok(
   has_column_privilege('authenticated', 'public.store_settings', 'bank_account_number', 'SELECT'),
   'a signed-in customer can read the bank details to pay');
 
+-- The storefront tells logged-out visitors how they will be able to pay, so the
+-- flag is public. The merchant id and bank code behind it are not.
+select test.ok(
+  has_column_privilege('anon', 'public.store_settings', 'qpay_enabled', 'SELECT'),
+  'anon can read whether qpay is on');
+select test.ok(
+  not has_column_privilege('anon', 'public.store_settings', 'qpay_merchant_id', 'SELECT'),
+  'anon cannot read the qpay merchant id');
+select test.ok(
+  not has_column_privilege('anon', 'public.store_settings', 'bank_code', 'SELECT'),
+  'anon cannot read the bank code');
+
 -- ---- cart never trips the profile foreign key ------------------------------
 -- A JWT can outlive its user (deleted account, restored database). auth.uid()
 -- still resolves, so the cart insert used to fail on carts_profile_id_fkey.

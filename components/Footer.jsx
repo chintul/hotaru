@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import NewsletterForm from './NewsletterForm'
+import { paymentCopy } from '@/lib/payment-copy'
 
 const COLUMNS = [
   {
@@ -30,7 +31,9 @@ const COLUMNS = [
   },
 ]
 
-export default function Footer() {
+export default async function Footer() {
+  const pay = await paymentCopy()
+
   return (
     <footer className="mt-20 bg-footer text-white">
       <div className="mx-auto grid max-w-[1400px] gap-10 px-5 py-16 lg:grid-cols-4 lg:px-8">
@@ -61,7 +64,7 @@ export default function Footer() {
       <div className="border-t border-white/10">
         <div className="mx-auto flex max-w-[1400px] flex-wrap items-center justify-between gap-3 px-5 py-6 lg:px-8">
           <p className="text-[12px] text-white/50">© {new Date().getFullYear()} hotaru</p>
-          <p className="text-[12px] text-white/50">QPay QR эсвэл дансаар · Улаанбаатар</p>
+          <p className="text-[12px] text-white/50">{pay.short} · Улаанбаатар</p>
         </div>
       </div>
     </footer>

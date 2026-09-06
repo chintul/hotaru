@@ -267,8 +267,9 @@ function CheckoutForm({ items, subtotal, profileId }) {
 
         <Section n={3} title="Төлбөр">
           <p className="text-[13px] text-ink-soft">
-            QPay QR эсвэл дансаар шилжүүлж төлнө. Захиалга баталгаажсаны дараа QR код,
-            дансны мэдээлэл болон гүйлгээний утга харагдана.
+            {bank?.qpayEnabled
+              ? 'QPay QR эсвэл дансаар шилжүүлж төлнө. Захиалга баталгаажсаны дараа QR код, дансны мэдээлэл болон гүйлгээний утга харагдана.'
+              : 'Дансаар шилжүүлэн төлнө. Захиалга баталгаажсаны дараа дансны мэдээлэл болон гүйлгээний утга харагдана.'}
           </p>
           {bank?.bankName && !String(bank.bankName).includes('REPLACE_ME') && (
             <p className="mt-2 text-[13px] font-semibold">{bank.bankName}</p>

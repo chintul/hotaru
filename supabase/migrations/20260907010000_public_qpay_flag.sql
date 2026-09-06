@@ -1,0 +1,13 @@
+-- Whether QPay is switched on is public; everything behind it is not.
+--
+-- The storefront tells visitors how they will be able to pay — the footer, the
+-- product page, the home tiles. That copy was hardcoded to "bank transfer", so
+-- turning QPay on left it lying, and turning QPay off would leave it lying the
+-- other way. To read the flag instead, a logged-out visitor has to be able to
+-- see it: the pages render server-side with the anon key.
+--
+-- Same split as the hero (migration 17): the row policy stays open, and COLUMN
+-- grants decide what anon sees. qpay_enabled is a boolean about the shop, not
+-- about the money — the merchant id and bank code stay invisible to anon, and
+-- pg_graphql does not even put them in an anonymous session's schema.
+grant select (qpay_enabled) on public.store_settings to anon;

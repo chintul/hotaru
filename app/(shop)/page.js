@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { safeQuery } from '@/lib/apollo/safeQuery'
 import { FEATURED_PRODUCTS, HERO, NAV_CATEGORIES, NEW_ARRIVALS } from '@/lib/queries'
 import { firstNode, nodes } from '@/lib/format'
+import { paymentCopy } from '@/lib/payment-copy'
 import ProductImage from '@/components/ProductImage'
 import ProductGrid from '@/components/ProductGrid'
 import SectionHeading from '@/components/SectionHeading'
@@ -17,6 +18,7 @@ export default async function HomePage() {
       safeQuery(NEW_ARRIVALS, { first: 8 }),
       safeQuery(HERO),
     ])
+  const pay = await paymentCopy()
 
   const hero = firstNode(heroData?.storeSettingsCollection) ?? {}
 
@@ -93,7 +95,7 @@ export default async function HomePage() {
         <div className="mx-auto grid max-w-[1400px] gap-8 px-5 py-12 text-center sm:grid-cols-3 lg:px-8">
           {[
             ['Хурдан хүргэлт', 'Улаанбаатар хотод ажлын 1–2 хоногт'],
-            ['QPay QR эсвэл данс', 'Захиалга өгсний дараа QR код харагдана'],
+            pay.tile,
             ['Баталгаат чанар', 'Гэмтэлтэй бараа 100% солино'],
           ].map(([title, body]) => (
             <div key={title}>

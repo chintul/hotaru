@@ -1,8 +1,10 @@
 import Prose, { Block } from '../_components/Prose'
+import { paymentCopy } from '@/lib/payment-copy'
 
 export const metadata = { title: 'Хүргэлтийн нөхцөл' }
 
-export default function ShippingPage() {
+export default async function ShippingPage() {
+  const pay = await paymentCopy()
   return (
     <Prose title="Хүргэлт" lead="Улаанбаатар хотод ажлын 1–2 хоногт хүргэнэ.">
       <Block heading="Хүргэлтийн төрөл">
@@ -14,8 +16,10 @@ export default function ShippingPage() {
       </Block>
       <Block heading="Хэзээ илгээх вэ">
         <p>
-          Төлбөр баталгаажсаны дараа бэлтгэж эхэлнэ. QPay QR-аар төлсөн төлбөр шууд,
-          дансаар шилжүүлсэн төлбөр ажлын цагт ихэвчлэн нэг өдрийн дотор баталгаажна.
+          Төлбөр баталгаажсаны дараа бэлтгэж эхэлнэ.{' '}
+          {pay.qpay
+            ? 'QPay QR-аар төлсөн төлбөр шууд, дансаар шилжүүлсэн төлбөр ажлын цагт ихэвчлэн нэг өдрийн дотор баталгаажна.'
+            : 'Дансаар шилжүүлсэн төлбөр ажлын цагт ихэвчлэн нэг өдрийн дотор баталгаажна.'}
         </p>
       </Block>
       <Block heading="Хаяг">

@@ -3,6 +3,7 @@ import { safeQuery } from '@/lib/apollo/safeQuery'
 import { PRODUCT_DETAIL } from '@/lib/queries'
 import { copy as productCopy, nodes } from '@/lib/format'
 import ProductDetailClient from '@/components/ProductDetailClient'
+import { paymentCopy } from '@/lib/payment-copy'
 
 export const revalidate = 60
 
@@ -25,6 +26,7 @@ export async function generateMetadata({ params }) {
 export default async function ProductPage({ params }) {
   const { slug } = await params
   const { data, error } = await safeQuery(PRODUCT_DETAIL, { slug })
+  const pay = await paymentCopy()
   const product = nodes(data?.productCollection)[0]
 
   if (error) {
@@ -47,7 +49,7 @@ export default async function ProductPage({ params }) {
         <span className="px-2">/</span>
         <span className="text-ink">{productCopy(product).title}</span>
       </nav>
-      <ProductDetailClient product={product} copy={productCopy(product)} />
+      <ProductDetailClient product={product} copy={productCopy(product)} payNote={pay.long} />
 
       {/* Reviews section stays hidden until a product actually has one — an
           empty review block on a new store reads worse than none at all. */}
