@@ -8,11 +8,27 @@
  *
  *   node --env-file=.env.local scripts/qpay-register-merchant.mjs
  *
+ * To correct an already-registered merchant — a wrong bank code, a changed
+ * phone — patch it rather than registering again:
+ *
+ *   node --env-file=.env.local scripts/qpay-register-merchant.mjs --update
+ *
+ * That sends PUT /v2/merchant/person/{id} with the env values. The merchant id
+ * comes from --update=<id>, or is looked up by register number. Deleting and
+ * re-registering would hand out a new merchant id and strand every stored
+ * invoice against the old one.
+ *
  * WARNING: there is no sandbox host on these credentials. This writes to the
  * live QPay merchant directory.
  */
 
-import { createPersonMerchant, getCities, getDistricts, listMerchants } from '../lib/qpay/client.js'
+import {
+  createPersonMerchant, getCities, getDistricts, listMerchants, updatePersonMerchant,
+} from '../lib/qpay/client.js'
+
+const updateArg = process.argv.find((a) => a === '--update' || a.startsWith('--update='))
+const UPDATING = Boolean(updateArg)
+const GIVEN_MERCHANT_ID = updateArg?.includes('=') ? updateArg.split('=')[1] : null
 
 // QPay requires register_number, first_name, last_name and bank_account for a
 // person. The rest is asked for because a merchant record with no address or
@@ -104,6 +120,25 @@ async function findExisting(registerNumber) {
     if (rows.length < 100) return null
   }
   return null
+}
+
+if (UPDATING) {
+  // Deliberately NOT falling back to QPAY_MERCHANT_ID: that is the terminal
+  // holder's merchant, not hotaru's sub-merchant, and patching it would rewrite
+  // someone else's payout account. hotaru's id lives in
+  // store_settings.qpay_merchant_id — pass it as --update=<id>, or let the
+  // register number find it.
+  const merchantId = GIVEN_MERCHANT_ID || (await findExisting(input.registerNumber))?.id
+  if (!merchantId) {
+    console.error(`no merchant found for register number ${input.registerNumber} — register first`)
+    process.exit(1)
+  }
+  await updatePersonMerchant(merchantId, input)
+  console.log(`updated merchant ${merchantId}: bank ${input.bankAccount.bankCode} / ${input.bankAccount.accountNumber}`)
+  console.log('\nThe bank account on an INVOICE comes from store_settings.bank_code, not from')
+  console.log('this record — correct it in /admin → QPay QuickQR too, or:\n')
+  console.log(`  update public.store_settings set bank_code = '${input.bankAccount.bankCode}';\n`)
+  process.exit(0)
 }
 
 try {

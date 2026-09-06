@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { createPersonMerchant, listMerchants, resetTokenCache } from '../../lib/qpay/client.js'
+import { createPersonMerchant, listMerchants, resetTokenCache, updatePersonMerchant } from '../../lib/qpay/client.js'
 
 function setEnv() {
   Object.assign(process.env, {
@@ -82,4 +82,50 @@ test('listMerchants pages with 1-based page_number', async () => {
   const out = await listMerchants({ pageNumber: 1, pageLimit: 100 }, { fetchImpl })
   assert.deepEqual(body, { page_number: 1, page_limit: 100 })
   assert.equal(out.rows[0].register_number, 'УБ99887766')
+})
+
+test('a wrong bank account is patched in place, not re-registered', async () => {
+  setEnv()
+  let url
+  let method
+  let body
+  const fetchImpl = async (u, init) => {
+    if (u.endsWith('/v2/auth/token')) return ok(TOKEN)
+    url = u
+    method = init.method
+    body = JSON.parse(init.body)
+    return ok({ id: 'merch-9' })
+  }
+
+  const out = await updatePersonMerchant('merch-9', {
+    bankAccount: { bankCode: '050000', accountNumber: '2015', accountName: 'ДОРЖ БАТ' },
+  }, { fetchImpl })
+
+  // Update is namespaced by merchant type exactly as create is. A bare
+  // PUT /v2/merchant/merch-9 is an Express 404, not a QPay error.
+  assert.equal(url, 'https://quickqr.example/v2/merchant/person/merch-9')
+  assert.equal(method, 'PUT')
+  assert.deepEqual(body.bank_account, {
+    account_bank_code: '050000', account_number: '2015',
+    account_name: 'ДОРЖ БАТ', is_default: true,
+  })
+  // Fixed at registration: sending them back is at best ignored, at worst a
+  // validation error on fields nobody asked to change.
+  assert.equal('register_number' in body, false)
+  assert.equal('first_name' in body, false)
+  assert.equal(out.merchantId, 'merch-9')
+})
+
+test('an update sends only the fields it was given', async () => {
+  setEnv()
+  let body
+  const fetchImpl = async (u, init) => {
+    if (u.endsWith('/v2/auth/token')) return ok(TOKEN)
+    body = JSON.parse(init.body)
+    return ok({ id: 'merch-9' })
+  }
+
+  await updatePersonMerchant('merch-9', { phone: '99001122' }, { fetchImpl })
+
+  assert.deepEqual(body, { phone: '99001122' })
 })
