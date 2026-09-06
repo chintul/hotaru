@@ -8,8 +8,7 @@ import { ADMIN_PRODUCT_DETAIL } from '@/lib/queries'
 import { copy, firstNode, nodes } from '@/lib/format'
 import { Card, PageHeader, Status } from '@/components/admin/ui'
 import ProductForm from '@/components/admin/product/ProductForm'
-import VariantsTab from '@/components/admin/product/VariantsTab'
-import ImagesTab from '@/components/admin/product/ImagesTab'
+import MediaVariants from '@/components/admin/product/MediaVariants'
 
 const STATUS_TONE = { active: 'green', draft: 'amber', archived: 'grey' }
 
@@ -62,8 +61,7 @@ function Editor() {
 
       <div className="space-y-4">
         <ProductForm {...shared} categories={categories} />
-        <VariantsTab {...shared} />
-        <ImagesTab {...shared} />
+        <MediaVariants {...shared} />
       </div>
     </>
   )
