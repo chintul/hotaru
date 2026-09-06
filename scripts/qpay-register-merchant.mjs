@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * One-time: register hotaru as a QuickQR sub-merchant.
+ * One-time: register hotaru as a QuickQR sub-merchant (individual, not company).
  *
  * Run it once, put the merchant id it prints into /admin → QPay QuickQR, and
  * never run it again. It is idempotent anyway: if QPay says the register number
@@ -12,11 +12,14 @@
  * live QPay merchant directory.
  */
 
-import { createCompanyMerchant, listMerchants } from '../lib/qpay/client.js'
+import { createPersonMerchant, listMerchants } from '../lib/qpay/client.js'
 
+// QPay requires register_number, first_name, last_name and bank_account for a
+// person. The rest is asked for because a merchant record with no address or
+// contact is a support call waiting to happen.
 const REQUIRED = [
-  'HOTARU_REGISTER_NUMBER', 'HOTARU_NAME',
-  'HOTARU_OWNER_REGISTER_NO', 'HOTARU_OWNER_FIRST_NAME', 'HOTARU_OWNER_LAST_NAME',
+  'HOTARU_REGISTER_NUMBER', 'HOTARU_FIRST_NAME', 'HOTARU_LAST_NAME',
+  'HOTARU_BUSINESS_NAME',
   'HOTARU_CITY', 'HOTARU_DISTRICT', 'HOTARU_ADDRESS',
   'HOTARU_PHONE', 'HOTARU_EMAIL',
   'HOTARU_BANK_CODE', 'HOTARU_ACCOUNT_NUMBER', 'HOTARU_ACCOUNT_NAME',
@@ -29,11 +32,11 @@ if (missing.length) {
 }
 
 const input = {
+  // The owner's personal register number, not a company one.
   registerNumber: process.env.HOTARU_REGISTER_NUMBER,
-  name: process.env.HOTARU_NAME,
-  ownerRegisterNo: process.env.HOTARU_OWNER_REGISTER_NO,
-  ownerFirstName: process.env.HOTARU_OWNER_FIRST_NAME,
-  ownerLastName: process.env.HOTARU_OWNER_LAST_NAME,
+  firstName: process.env.HOTARU_FIRST_NAME,
+  lastName: process.env.HOTARU_LAST_NAME,
+  businessName: process.env.HOTARU_BUSINESS_NAME,
   city: process.env.HOTARU_CITY,
   district: process.env.HOTARU_DISTRICT,
   address: process.env.HOTARU_ADDRESS,
@@ -67,7 +70,7 @@ async function findExisting(registerNumber) {
 }
 
 try {
-  const { merchantId } = await createCompanyMerchant(input)
+  const { merchantId } = await createPersonMerchant(input)
   report(merchantId)
 } catch (e) {
   // A duplicate is a success that happened earlier, not a failure.

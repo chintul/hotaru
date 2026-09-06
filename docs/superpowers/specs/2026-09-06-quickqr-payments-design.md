@@ -21,7 +21,7 @@ balance.
 | # | Decision | Why |
 |---|----------|-----|
 | 1 | QuickQR, not QPay merchant v2 | The credentials in hand (`terminal_id` + `merchant_id` + `account_number`, host `quickqr.qpay.mn`, no `invoice_code`) name QuickQR. The two APIs are not interchangeable |
-| 2 | hotaru registered as a sub-merchant under the existing Codify terminal | `POST /v2/merchant/company` exists for exactly this. hotaru gets its own `merchant_id` and its own `bank_account`; Codify's terminal only routes. Money never passes through a Codify account |
+| 2 | hotaru registered as a sub-merchant under the existing Codify terminal, as an **individual** | `POST /v2/merchant/person` exists for exactly this. hotaru gets its own `merchant_id` and its own `bank_account`; Codify's terminal only routes. Money never passes through a Codify account. Registered as a person rather than a company (owner's call, 2026-09-07): the personal register number and name identify the merchant, and the trading name goes in `business_name` |
 | 3 | Registration is a one-time script, not app runtime code | It runs once in the store's life. An admin form would be more code, more validation, more error surfacing, for a single use |
 | 4 | Machine confirmation via a split core + two wrappers | One copy of the oversell logic, two explicit authorization stories. The admin path is not widened |
 | 5 | Callback is a wake-up signal, never evidence | Mirrors `app/api/verify/callback/route.js`, already in this repo. The authoritative answer comes from `POST /v2/payment/check` |
@@ -52,7 +52,7 @@ Three properties of QuickQR shape the design and are not negotiable:
 | Unit | Responsibility | Depends on |
 |---|---|---|
 | `lib/qpay/config.js` | Read and validate env. A partial `QPAY_*` set throws | — |
-| `lib/qpay/client.js` | Token cache, `createInvoice`, `checkPayment`, `createCompanyMerchant`, `listMerchants`. Injectable `fetchImpl`. No domain knowledge | config |
+| `lib/qpay/client.js` | Token cache, `createInvoice`, `checkPayment`, `createPersonMerchant`, `listMerchants`. Injectable `fetchImpl`. No domain knowledge | config |
 | `lib/qpay/callback-token.js` | HMAC sign/verify for the order id in the callback URL | `QPAY_CALLBACK_SECRET` |
 | `app/api/payments/qpay/invoice/route.js` | POST `{orderId}`; caller must own the order; creates the invoice and stashes it on `payments` | client, supabase |
 | `app/api/payments/qpay/callback/route.js` | Verify HMAC, re-check with QPay, confirm. Always answers 200 | client, service_role |
@@ -109,11 +109,16 @@ on these credentials; every call is live.
       { invoice_id }
       -> { invoice_status: "OPEN" | "PAID", ... }
 
-    POST /v2/merchant/company
-      { owner_register_no, owner_first_name, owner_last_name, register_number,
-        name, mcc_code, city, district, address, phone, email,
+    POST /v2/merchant/person
+      required: register_number, first_name, last_name, bank_account
+      { register_number, first_name, last_name, business_name, mcc_code,
+        city, district, address, phone, email,
         bank_account: { account_bank_code, account_number, account_name, is_default } }
       -> { id, vendor_id, register_number, ... }
+
+    The company endpoint (POST /v2/merchant/company) takes a different shape
+    entirely — owner_* fields plus `name` instead of `business_name` — and is
+    not used here.
 
 `amount` is a number in whole tugrik, which matches `orders.total_mnt` directly —
 MNT has no circulating minor unit, so no scaling is applied anywhere.
@@ -189,11 +194,11 @@ Database, owner-editable in /admin: `bank_code`, `bank_account_number`,
 ## Merchant registration
 
 `scripts/qpay-register-merchant.mjs` reads the business data from env
-(`HOTARU_REGISTER_NUMBER`, `HOTARU_NAME`, `HOTARU_OWNER_REGISTER_NO`,
-`HOTARU_OWNER_FIRST_NAME`, `HOTARU_OWNER_LAST_NAME`, `HOTARU_CITY`,
+(`HOTARU_REGISTER_NUMBER` — the owner's personal register number,
+`HOTARU_FIRST_NAME`, `HOTARU_LAST_NAME`, `HOTARU_BUSINESS_NAME`, `HOTARU_CITY`,
 `HOTARU_DISTRICT`, `HOTARU_ADDRESS`, `HOTARU_PHONE`, `HOTARU_EMAIL`,
 `HOTARU_BANK_CODE`, `HOTARU_ACCOUNT_NUMBER`, `HOTARU_ACCOUNT_NAME`), calls
-`POST /v2/merchant/company`, and prints the resulting `merchant_id` and the SQL
+`POST /v2/merchant/person`, and prints the resulting `merchant_id` and the SQL
 to store it.
 
 It is idempotent: on a duplicate-registration error it calls
@@ -238,6 +243,10 @@ than failing, the same recovery instasell uses
 - **Sub-merchant registration under another entity's terminal** is the documented
   reseller pattern, but the commercial side of it belongs in the Codify–QPay
   contract, not in this code.
+- **The merchant is an individual, so the bank account should be the owner's
+  personal account** and `account_name` must match the name on it. QPay rejects
+  a mismatch, and an individual merchant crediting a company account is the kind
+  of thing a bank asks about later.
 
 ## Prior art consulted
 

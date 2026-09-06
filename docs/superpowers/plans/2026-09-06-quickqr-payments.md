@@ -28,7 +28,7 @@
 | File | Responsibility |
 |---|---|
 | `lib/qpay/config.js` | Read + validate `QPAY_*` env. All-or-nothing. |
-| `lib/qpay/client.js` | Token cache, `createInvoice`, `checkPayment`, `createCompanyMerchant`, `listMerchants`. Injectable `fetchImpl`. |
+| `lib/qpay/client.js` | Token cache, `createInvoice`, `checkPayment`, `createPersonMerchant`, `listMerchants`. Injectable `fetchImpl`. |
 | `lib/qpay/callback-token.js` | HMAC sign/verify of the order id carried in the callback URL. |
 | `lib/supabase/admin.js` | Service-role client, extracted from `lib/verify/store.js` so two features can share it. |
 | `lib/qpay/store.js` | The database reads and writes this feature needs, one function each. |
@@ -1683,7 +1683,7 @@ git commit -m "feat: show a QuickQR code on the order page"
 
 ---
 
-### Task 7: One-time sub-merchant registration
+### Task 7: One-time sub-merchant registration (individual)
 
 **Files:**
 - Modify: `lib/qpay/client.js` (add two functions)
@@ -1694,7 +1694,7 @@ git commit -m "feat: show a QuickQR code on the order page"
 **Interfaces:**
 - Consumes: `qpayConfig`, the token cache, and `request` behaviour from Task 1.
 - Produces:
-  - `createCompanyMerchant(input, { fetchImpl }): Promise<{ merchantId, raw }>`
+  - `createPersonMerchant(input, { fetchImpl }): Promise<{ merchantId, raw }>` — `POST /v2/merchant/person`; required fields `register_number`, `first_name`, `last_name`, `bank_account`, with the trading name in `business_name`
   - `listMerchants({ pageNumber, pageLimit }, { fetchImpl }): Promise<{ count, rows }>`
 
 - [ ] **Step 1: Write the failing test**
@@ -1704,7 +1704,7 @@ Create `tests/unit/qpay-merchant.test.js`:
 ```js
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { createCompanyMerchant, listMerchants, resetTokenCache } from '../../lib/qpay/client.js'
+import { createPersonMerchant, listMerchants, resetTokenCache } from '../../lib/qpay/client.js'
 
 function setEnv() {
   Object.assign(process.env, {
@@ -1719,33 +1719,41 @@ const ok = (body) => ({ ok: true, status: 200, json: async () => body })
 const TOKEN = { access_token: 'tok', expires_in: 3600 }
 
 const INPUT = {
-  registerNumber: '1234567', name: 'HOTARU LLC',
-  ownerRegisterNo: 'УБ99887766', ownerFirstName: 'Бат', ownerLastName: 'Дорж',
+  registerNumber: 'УБ99887766', firstName: 'Бат', lastName: 'Дорж',
+  businessName: 'hotaru',
   city: 'Улаанбаатар', district: 'Сүхбаатар', address: '1-р хороо',
   phone: '99001122', email: 'owner@hotaru.mn',
-  bankAccount: { bankCode: '150000', accountNumber: '2015', accountName: 'HOTARU LLC' },
+  bankAccount: { bankCode: '150000', accountNumber: '2015', accountName: 'ДОРЖ БАТ' },
 }
 
-test('the register field is spelled register_number', async () => {
+test('a person merchant posts to /v2/merchant/person with register_number', async () => {
   setEnv()
+  let url
   let body
-  const fetchImpl = async (url, init) => {
-    if (url.endsWith('/v2/auth/token')) return ok(TOKEN)
+  const fetchImpl = async (u, init) => {
+    if (u.endsWith('/v2/auth/token')) return ok(TOKEN)
+    url = u
     body = JSON.parse(init.body)
-    return ok({ id: 'merch-9', register_number: '1234567' })
+    return ok({ id: 'merch-9', register_number: 'УБ99887766' })
   }
 
-  const out = await createCompanyMerchant(INPUT, { fetchImpl })
+  const out = await createPersonMerchant(INPUT, { fetchImpl })
 
+  assert.equal(url, 'https://quickqr.example/v2/merchant/person')
   // payment-sdks/qpayquick spells this register_nubmer. That is a typo in that
   // SDK; qpay-go and instasell both send register_number and both work.
-  assert.equal(body.register_number, '1234567')
+  assert.equal(body.register_number, 'УБ99887766')
   assert.equal('register_nubmer' in body, false)
-  assert.equal(body.owner_register_no, 'УБ99887766')
+  assert.equal(body.first_name, 'Бат')
+  assert.equal(body.last_name, 'Дорж')
+  // A person merchant has no company name; the storefront name goes here.
+  assert.equal(body.business_name, 'hotaru')
+  assert.equal('name' in body, false)
+  assert.equal('owner_register_no' in body, false)
   assert.equal(body.mcc_code, '')
   assert.deepEqual(body.bank_account, {
     account_bank_code: '150000', account_number: '2015',
-    account_name: 'HOTARU LLC', is_default: true,
+    account_name: 'ДОРЖ БАТ', is_default: true,
   })
   assert.equal(out.merchantId, 'merch-9')
 })
@@ -1756,19 +1764,19 @@ test('listMerchants pages with 1-based page_number', async () => {
   const fetchImpl = async (url, init) => {
     if (url.endsWith('/v2/auth/token')) return ok(TOKEN)
     body = JSON.parse(init.body)
-    return ok({ count: 1, rows: [{ id: 'merch-9', register_number: '1234567' }] })
+    return ok({ count: 1, rows: [{ id: 'merch-9', register_number: 'УБ99887766' }] })
   }
 
   const out = await listMerchants({ pageNumber: 1, pageLimit: 100 }, { fetchImpl })
   assert.deepEqual(body, { page_number: 1, page_limit: 100 })
-  assert.equal(out.rows[0].register_number, '1234567')
+  assert.equal(out.rows[0].register_number, 'УБ99887766')
 })
 ```
 
 - [ ] **Step 2: Run the test and watch it fail**
 
 Run: `node --test tests/unit/qpay-merchant.test.js`
-Expected: FAIL — `createCompanyMerchant is not a function`.
+Expected: FAIL — `createPersonMerchant is not a function`.
 
 - [ ] **Step 3: Add the two client functions**
 
@@ -1776,23 +1784,29 @@ Append to `lib/qpay/client.js`:
 
 ```js
 /**
- * Register a company as a sub-merchant under this terminal.
+ * Register an individual as a sub-merchant under this terminal.
  *
  * This is what makes payments land in hotaru's own account rather than the
  * terminal holder's: the merchant carries its own bank_account, and invoices
  * created against its merchant_id credit that account.
+ *
+ * The person and company endpoints are not interchangeable. A person has a
+ * personal register_number and first/last name where a company has a company
+ * register number plus owner_*, and the trading name lives in business_name
+ * rather than name. QPay required fields: register_number, first_name,
+ * last_name, bank_account.
  */
-export async function createCompanyMerchant(input, { fetchImpl = fetch } = {}) {
+export async function createPersonMerchant(input, { fetchImpl = fetch } = {}) {
   const token = await accessToken(fetchImpl)
-  const payload = await request('/v2/merchant/company', {
+  const payload = await request('/v2/merchant/person', {
     token,
     fetchImpl,
     body: {
-      owner_register_no: input.ownerRegisterNo,
-      owner_first_name: input.ownerFirstName,
-      owner_last_name: input.ownerLastName,
+      // register_number, not register_nubmer. The qpayquick SDK misspells it.
       register_number: input.registerNumber,
-      name: input.name,
+      first_name: input.firstName,
+      last_name: input.lastName,
+      business_name: input.businessName,
       mcc_code: '',
       city: input.city,
       district: input.district,
@@ -1832,7 +1846,7 @@ Create `scripts/qpay-register-merchant.mjs`:
 ```js
 #!/usr/bin/env node
 /**
- * One-time: register hotaru as a QuickQR sub-merchant.
+ * One-time: register hotaru as a QuickQR sub-merchant (individual, not company).
  *
  * Run it once, put the merchant id it prints into /admin → QPay QuickQR, and
  * never run it again. It is idempotent anyway: if QPay says the register number
@@ -1844,11 +1858,14 @@ Create `scripts/qpay-register-merchant.mjs`:
  * live QPay merchant directory.
  */
 
-import { createCompanyMerchant, listMerchants } from '../lib/qpay/client.js'
+import { createPersonMerchant, listMerchants } from '../lib/qpay/client.js'
 
+// QPay requires register_number, first_name, last_name and bank_account for a
+// person. The rest is asked for because a merchant record with no address or
+// contact is a support call waiting to happen.
 const REQUIRED = [
-  'HOTARU_REGISTER_NUMBER', 'HOTARU_NAME',
-  'HOTARU_OWNER_REGISTER_NO', 'HOTARU_OWNER_FIRST_NAME', 'HOTARU_OWNER_LAST_NAME',
+  'HOTARU_REGISTER_NUMBER', 'HOTARU_FIRST_NAME', 'HOTARU_LAST_NAME',
+  'HOTARU_BUSINESS_NAME',
   'HOTARU_CITY', 'HOTARU_DISTRICT', 'HOTARU_ADDRESS',
   'HOTARU_PHONE', 'HOTARU_EMAIL',
   'HOTARU_BANK_CODE', 'HOTARU_ACCOUNT_NUMBER', 'HOTARU_ACCOUNT_NAME',
@@ -1861,11 +1878,11 @@ if (missing.length) {
 }
 
 const input = {
+  // The owner's personal register number, not a company one.
   registerNumber: process.env.HOTARU_REGISTER_NUMBER,
-  name: process.env.HOTARU_NAME,
-  ownerRegisterNo: process.env.HOTARU_OWNER_REGISTER_NO,
-  ownerFirstName: process.env.HOTARU_OWNER_FIRST_NAME,
-  ownerLastName: process.env.HOTARU_OWNER_LAST_NAME,
+  firstName: process.env.HOTARU_FIRST_NAME,
+  lastName: process.env.HOTARU_LAST_NAME,
+  businessName: process.env.HOTARU_BUSINESS_NAME,
   city: process.env.HOTARU_CITY,
   district: process.env.HOTARU_DISTRICT,
   address: process.env.HOTARU_ADDRESS,
@@ -1876,6 +1893,16 @@ const input = {
     accountNumber: process.env.HOTARU_ACCOUNT_NUMBER,
     accountName: process.env.HOTARU_ACCOUNT_NAME,
   },
+}
+
+function report(merchantId) {
+  console.log(`\nmerchant_id: ${merchantId}\n`)
+  console.log('Put it in /admin → QPay QuickQR, or apply directly:\n')
+  console.log(`  update public.store_settings set
+    qpay_merchant_id = '${merchantId}',
+    bank_code        = '${input.bankAccount.bankCode}',
+    qpay_enabled     = true
+  where id;\n`)
 }
 
 async function findExisting(registerNumber) {
@@ -1889,7 +1916,7 @@ async function findExisting(registerNumber) {
 }
 
 try {
-  const { merchantId } = await createCompanyMerchant(input)
+  const { merchantId } = await createPersonMerchant(input)
   report(merchantId)
 } catch (e) {
   // A duplicate is a success that happened earlier, not a failure.
@@ -1900,16 +1927,6 @@ try {
     process.exit(1)
   }
   report(existing.id)
-}
-
-function report(merchantId) {
-  console.log(`\nmerchant_id: ${merchantId}\n`)
-  console.log('Put it in /admin → QPay QuickQR, or apply directly:\n')
-  console.log(`  update public.store_settings set
-    qpay_merchant_id = '${merchantId}',
-    bank_code        = '${input.bankAccount.bankCode}',
-    qpay_enabled     = true
-  where id;\n`)
 }
 ```
 
@@ -1929,11 +1946,12 @@ QPAY_MERCHANT_ID=
 QPAY_CALLBACK_SECRET=
 
 # Only for scripts/qpay-register-merchant.mjs, which runs once. Not read at runtime.
+# Registered as an individual, so this is the owner's personal register number
+# and name; HOTARU_BUSINESS_NAME is the trading name shown on the QR.
 HOTARU_REGISTER_NUMBER=
-HOTARU_NAME=
-HOTARU_OWNER_REGISTER_NO=
-HOTARU_OWNER_FIRST_NAME=
-HOTARU_OWNER_LAST_NAME=
+HOTARU_FIRST_NAME=
+HOTARU_LAST_NAME=
+HOTARU_BUSINESS_NAME=hotaru
 HOTARU_CITY=
 HOTARU_DISTRICT=
 HOTARU_ADDRESS=
@@ -2076,7 +2094,7 @@ git commit -m "feat: admin check-now for a QPay invoice whose callback never lan
 
 ## Go-live checklist (not code)
 
-1. Run `scripts/qpay-register-merchant.mjs` with hotaru's real business data. Keep the merchant id.
+1. Run `scripts/qpay-register-merchant.mjs` with the owner's real details — it registers an individual, so `HOTARU_REGISTER_NUMBER` is the owner's personal register number and the bank account should be theirs, with `account_name` matching the name on it. Keep the merchant id.
 2. Set the six `QPAY_*` variables in the deployment environment. `NEXT_PUBLIC_SITE_URL` must be the public https origin — QPay cannot reach a localhost callback, so local end-to-end testing needs a tunnel.
 3. In /admin → QPay QuickQR, fill the bank code and merchant id, then switch QPay on.
 4. Place a real order for a small amount, pay it, and confirm the order flips to paid on its own.
