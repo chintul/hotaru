@@ -99,7 +99,11 @@ export default function OrderPage({ params }) {
     return () => clearInterval(id)
   }, [watching, refetch])
 
-  if (!ready || loading) return <OrderSkeleton />
+  // `loading && !order`, not bare `loading`: Apollo Client 4 flipped
+  // notifyOnNetworkStatusChange to default true, so the 5s poll below emits
+  // loading:true on every tick. Guarding on `loading` alone swapped the whole
+  // page — open payment modal included — for the skeleton once per poll.
+  if (!ready || (loading && !order)) return <OrderSkeleton />
 
   if (!isAuthenticated) {
     return (

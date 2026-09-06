@@ -106,7 +106,10 @@ export default function PaymentModal({
                   : <BankPanel bank={bank} order={order} />}
 
                 <div className="mt-5 border-t border-line pt-4">
-                  {submitted ? (
+                  {/* QPay confirms itself through the callback, so the manual
+                      "I paid" form only belongs on the bank tab — there it is
+                      the sole signal that a transfer happened. */}
+                  {method === 'qpay' ? null : submitted ? (
                     <p className="rounded-2xl bg-mint px-4 py-3 text-[13px] text-mint-ink">
                       Мэдэгдэл хүлээн авлаа. Төлбөр баталгаажмагц танд имэйл илгээнэ.
                     </p>
