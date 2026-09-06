@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { drainNotifications } from '@/lib/email/drain'
 
 export const dynamic = 'force-dynamic'
 
 /**
- * Daily housekeeping: sweep stale anonymous users and expire abandoned carts.
+ * Daily housekeeping: sweep stale anonymous users and expire abandoned carts,
+ * then drain any notification the trigger's kick failed to deliver.
  * Anonymous sign-in is the cart identity, so auth.users grows with every
  * visitor; without this it never stops growing.
  */
@@ -27,9 +29,16 @@ export async function GET(request) {
     supabase.rpc('expire_stale_carts', { older_than: '30 days' }),
   ])
 
+  // Safety net. Postgres kicks the drain the instant a row is queued, so this
+  // normally finds nothing. It exists for the cases the kick cannot cover: the
+  // route was down, Resend was failing, or the Vault secrets were not yet set.
+  // Without it those rows would wait for the next order instead of a day.
+  const notifications = await drainNotifications(supabase)
+
   return NextResponse.json({
     anonymousUsersRemoved: users.data ?? 0,
     cartsExpired: carts.data ?? 0,
-    errors: [users.error?.message, carts.error?.message].filter(Boolean),
+    notifications,
+    errors: [users.error?.message, carts.error?.message, notifications.error].filter(Boolean),
   })
 }

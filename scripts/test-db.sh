@@ -23,11 +23,12 @@ psql "$DB" -v ON_ERROR_STOP=1 -q -c \
   'create role anon nologin; create role authenticated nologin; create role service_role nologin bypassrls;'
 psql "$DB" -v ON_ERROR_STOP=1 -q -f "$ROOT/tests/helpers/00_supabase_stub.sql"
 
-# pg_graphql is absent from plain Postgres and is not needed to exercise the DDL
-# or the write path; strip only that one line.
+# pg_graphql and pg_net are absent from plain Postgres and neither is needed to
+# exercise the DDL or the write path; strip only those lines. net.http_post is
+# stubbed in 00_supabase_stub.sql so the notification kick stays testable.
 WORK="$(mktemp -d)"
 for f in "$ROOT"/supabase/migrations/*.sql; do
-  sed 's/^create extension if not exists pg_graphql;/-- pg_graphql not available locally/' "$f" > "$WORK/$(basename "$f")"
+  sed -E 's/^create extension if not exists (pg_graphql|pg_net);/-- \1 not available locally/' "$f" > "$WORK/$(basename "$f")"
 done
 for f in "$WORK"/*.sql; do
   if ! out=$(psql "$DB" -v ON_ERROR_STOP=1 -q -f "$f" 2>&1); then
