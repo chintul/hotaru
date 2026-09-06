@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Copy as CopyIcon, Dots, Search as SearchIcon } from './icons'
+import { Copy as CopyIcon, Dots, ImageIcon, Search as SearchIcon } from './icons'
+import ProductImage from '@/components/ProductImage'
 import { SelectAllCell, SelectCell } from './selection'
 
 /**
@@ -13,11 +14,17 @@ import { SelectAllCell, SelectCell } from './selection'
  * coloured dot plus plain text, never a loud pill.
  */
 
-export function Card({ title, subtitle, actions, children, padded = true, className = '' }) {
+export function Card({ title, subtitle, actions, children, padded = true, className = '', stickyHeader = false }) {
   return (
     <section className={`rounded-xl border border-a-line bg-white shadow-[0_1px_2px_rgba(0,0,0,.04)] ${className}`}>
       {(title || actions) && (
-        <header className="flex items-start justify-between gap-3 px-6 py-4">
+        // AdminShell's own bar is h-[52px] at z-20 (AdminShell.jsx:139), so a
+        // sticky card header parks directly under it and stays below it.
+        <header
+          className={`flex items-start justify-between gap-3 px-6 py-4 ${
+            stickyHeader ? 'sticky top-[52px] z-10 rounded-t-xl border-b border-a-line bg-white/95 backdrop-blur' : ''
+          }`}
+        >
           <div className="min-w-0">
             {title && <h2 className="text-[15px] font-semibold text-a-ink">{title}</h2>}
             {subtitle && <p className="mt-0.5 text-[13px] text-a-muted">{subtitle}</p>}
@@ -26,7 +33,7 @@ export function Card({ title, subtitle, actions, children, padded = true, classN
         </header>
       )}
       {children != null && (
-        <div className={title || actions ? 'border-t border-a-line' : ''}>
+        <div className={(title || actions) && !stickyHeader ? 'border-t border-a-line' : ''}>
           <div className={padded ? 'px-6 py-4' : ''}>{children}</div>
         </div>
       )}
@@ -115,19 +122,6 @@ export function BulkBar({ count, actions, onClear }) {
   const [popover, setPopover] = useState(null)
   const ref = useRef(null)
 
-  useEffect(() => {
-    const onDoc = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) { setOpen(false); setPopover(null) }
-    }
-    const onEsc = (e) => { if (e.key === 'Escape') { setOpen(false); setPopover(null) } }
-    document.addEventListener('mousedown', onDoc)
-    document.addEventListener('keydown', onEsc)
-    return () => {
-      document.removeEventListener('mousedown', onDoc)
-      document.removeEventListener('keydown', onEsc)
-    }
-  }, [])
-
   const close = () => { setOpen(false); setPopover(null) }
   const active = actions.find((a) => a.key === popover)
 
@@ -140,33 +134,30 @@ export function BulkBar({ count, actions, onClear }) {
           Үйлдэл <span className="text-a-muted">▾</span>
         </Button>
 
-        {open && !popover && (
-          <div className="absolute right-0 top-full z-20 mt-1 w-[220px] overflow-hidden rounded-lg border border-a-line bg-white py-1 shadow-lg">
-            {actions.map((a) => (
-              <div key={a.key}>
-                {a.separatorBefore && <div className="my-1 border-t border-a-line" />}
-                <button
-                  onClick={() => {
-                    if (a.render) { setPopover(a.key); return }
-                    close()
-                    a.run()
-                  }}
-                  className={`block w-full px-3 py-1.5 text-left text-[13px] transition-colors hover:bg-a-hover ${
-                    a.tone === 'danger' ? 'text-red-600' : 'text-a-ink'
-                  }`}
-                >
-                  {a.label}
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {popover && active && (
-          <div className="absolute right-0 top-full z-20 mt-1 w-[260px] rounded-lg border border-a-line bg-white p-3 shadow-lg">
-            {active.render(close)}
-          </div>
-        )}
+        <Popover
+          open={open}
+          onClose={close}
+          anchorRef={ref}
+          className={popover && active ? 'right-0 top-full w-[260px] p-3' : 'right-0 top-full w-[220px] overflow-hidden py-1'}
+        >
+          {popover && active ? active.render(close) : actions.map((a) => (
+            <div key={a.key}>
+              {a.separatorBefore && <div className="my-1 border-t border-a-line" />}
+              <button
+                onClick={() => {
+                  if (a.render) { setPopover(a.key); return }
+                  close()
+                  a.run()
+                }}
+                className={`block w-full px-3 py-1.5 text-left text-[13px] transition-colors hover:bg-a-hover ${
+                  a.tone === 'danger' ? 'text-red-600' : 'text-a-ink'
+                }`}
+              >
+                {a.label}
+              </button>
+            </div>
+          ))}
+        </Popover>
       </div>
 
       <Button variant="ghost" onClick={onClear}>Цуцлах</Button>
@@ -341,5 +332,89 @@ export function Activity({ items }) {
         </li>
       ))}
     </ol>
+  )
+}
+
+/* -------------------------------- overlays -------------------------------- */
+
+/**
+ * Anchored popover with click-outside and Escape dismissal.
+ *
+ * `anchorRef` is not optional in practice: the trigger sits outside this
+ * element, so without it a mousedown on the trigger reads as "outside", closes
+ * the popover, and the click that follows immediately reopens it — the trigger
+ * stops being able to close what it opened. Pass the ref of the `relative`
+ * wrapper holding both.
+ *
+ * `onClose` is held in a ref rather than listed as an effect dependency, so an
+ * inline arrow from the caller does not re-subscribe the listeners every render.
+ *
+ * No padding in the base class: Tailwind resolves `p-2` against `p-3` by CSS
+ * source order, not attribute order, so a base padding could not be overridden
+ * reliably. Callers supply their own.
+ */
+export function Popover({ open, onClose, anchorRef, children, className = '' }) {
+  const ref = useRef(null)
+  const close = useRef(onClose)
+  // Assigned in an effect, not during render: writing a ref while rendering is
+  // a react-hooks error, and after-render is soon enough — the listeners below
+  // only fire on user interaction.
+  useEffect(() => { close.current = onClose })
+
+  useEffect(() => {
+    if (!open) return undefined
+    const inside = (target) =>
+      (ref.current && ref.current.contains(target)) ||
+      (anchorRef?.current && anchorRef.current.contains(target))
+    const onDoc = (e) => { if (!inside(e.target)) close.current() }
+    const onEsc = (e) => { if (e.key === 'Escape') close.current() }
+    document.addEventListener('mousedown', onDoc)
+    document.addEventListener('keydown', onEsc)
+    return () => {
+      document.removeEventListener('mousedown', onDoc)
+      document.removeEventListener('keydown', onEsc)
+    }
+  }, [open, anchorRef])
+
+  if (!open) return null
+  return (
+    <div
+      ref={ref}
+      className={`absolute z-10 mt-1 rounded-xl border border-a-line bg-white shadow-[0_8px_24px_rgba(0,0,0,.10)] ${className}`}
+    >
+      {children}
+    </div>
+  )
+}
+
+/**
+ * A variant's photograph, or a dashed square when it has none.
+ *
+ * `count` marks a photo more than one variant points at. That is legal, but
+ * ProductCard.jsx:41-49 then hunts forward for a *different* picture to show on
+ * hover, and if none differs the hover renders dead — so the badge puts the
+ * cause where it can be fixed.
+ */
+export function Thumb({ filePath, alt = '', count = 1, onClick, title }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={title}
+      className="relative block h-11 w-11 shrink-0 overflow-hidden rounded-xl border border-a-line bg-a-hover transition-colors hover:border-a-focus"
+    >
+      {filePath ? (
+        <ProductImage filePath={filePath} alt={alt} seed={filePath} width={44} height={44} />
+      ) : (
+        <span className="grid h-full w-full place-items-center rounded-xl border border-dashed border-a-line text-a-muted">
+          <ImageIcon />
+        </span>
+      )}
+      {count > 1 && (
+        <span className="absolute -right-1 -top-1 grid h-4 w-4 place-items-center rounded-full bg-a-ink text-[10px] font-medium text-white">
+          {count}
+        </span>
+      )}
+    </button>
   )
 }
