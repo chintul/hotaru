@@ -12,3 +12,8 @@ next-env.d.ts
 npm-debug.log*
 .playwright-mcp/
 *.png
+
+# *.png above keeps stray screenshots out; the brand assets still have to ship.
+!/public/logo.png
+!/public/logo-mark.png
+!/app/apple-icon.png

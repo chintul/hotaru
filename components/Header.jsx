@@ -11,7 +11,7 @@ import { useSession } from './useSession'
 import { IconBag, IconClose, IconHeart, IconMenu, IconSearch, IconUser } from './Icons'
 
 /**
- * Header laid out like the reference: wordmark left, centred uppercase nav,
+ * Header laid out like the reference: logo left, centred uppercase nav,
  * icon cluster right (search, account, wishlist, cart with a count badge).
  */
 export default function Header() {
@@ -46,8 +46,11 @@ export default function Header() {
           {navOpen ? <IconClose /> : <IconMenu />}
         </button>
 
-        <Link href="/" className="shrink-0 text-[30px] font-bold leading-none tracking-tight">
-          hotaru<span className="text-ink-faint">.</span>
+        <Link href="/" className="shrink-0">
+          {/* Plain <img>: next/image is unused project-wide (see ProductImage).
+              width/height are the intrinsic size and only reserve the box. */}
+          {/* eslint-disable-next-line @next/next/no-img-element -- 10KB static PNG, no loader wanted */}
+          <img src="/logo.png" alt="hotaru" width={1200} height={258} className="h-7 w-auto lg:h-8" />
         </Link>
 
         <nav className="mx-auto hidden items-center gap-8 lg:flex">

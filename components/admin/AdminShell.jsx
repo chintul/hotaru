@@ -69,9 +69,9 @@ export default function AdminShell({ children }) {
         }`}
       >
         <div className="flex items-center gap-2 px-4 py-3">
-          <span className="grid h-6 w-6 place-items-center rounded-md bg-a-ink text-[11px] font-semibold text-white">h</span>
-          <span className="flex-1 truncate text-[14px] font-semibold">hotaru</span>
-          <Link href="/" className="grid h-6 w-6 place-items-center rounded-md text-a-muted hover:bg-a-hover hover:text-a-ink" title="Дэлгүүр">
+          {/* eslint-disable-next-line @next/next/no-img-element -- see ProductImage: no next/image here */}
+          <img src="/logo.png" alt="hotaru" width={1200} height={258} className="h-5 w-auto" />
+          <Link href="/" className="ml-auto grid h-6 w-6 place-items-center rounded-md text-a-muted hover:bg-a-hover hover:text-a-ink" title="Дэлгүүр">
             <Dots />
           </Link>
         </div>

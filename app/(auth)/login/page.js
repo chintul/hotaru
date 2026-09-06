@@ -116,8 +116,9 @@ export default function LoginPage() {
     // chrome gone there is no reason for the form to sit under a band of
     // empty space.
     <div className="flex min-h-screen flex-col items-center justify-center px-5 py-12">
-      <Link href="/" className="mb-10 text-[30px] font-bold tracking-tight">
-        hotaru<span className="text-ink-faint">.</span>
+      <Link href="/" className="mb-10">
+        {/* eslint-disable-next-line @next/next/no-img-element -- see ProductImage: no next/image here */}
+        <img src="/logo.png" alt="hotaru" width={1200} height={258} className="h-10 w-auto" />
       </Link>
 
       <div className="w-full max-w-[400px] bg-paper px-7 py-9 shadow-[0_1px_3px_rgba(0,0,0,.06)] sm:px-9 sm:py-10">
