@@ -36,6 +36,31 @@ export default function ProductDetailClient({ product, copy, payNote }) {
     const idx = images.findIndex((img) => img.filePath === v.image?.filePath)
     if (idx >= 0) setActiveImage(idx)
   }
+  // Read ?v= from the URL after hydration rather than with useSearchParams:
+  // this page is prerendered (generateStaticParams + revalidate), and
+  // useSearchParams would opt the whole subtree out of that static render,
+  // trading a first-paint win for a preselected swatch. Reading
+  // window.location in an effect is invisible to Next, so the page stays
+  // static and the choice is applied a frame after hydration.
+  //
+  // The URL is the external system being read, which is what an effect is for.
+  // Both alternatives are worse: useSearchParams opts this prerendered route
+  // out of its static render, and a lazy useState initializer reading
+  // window.location produces a real hydration mismatch, because the server
+  // already rendered variants[0] as the pressed one.
+  useEffect(() => {
+    const wanted = new URLSearchParams(window.location.search).get('v')
+    if (!wanted) return
+    const v = variants.find((x) => x.id === wanted)
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- see above
+    if (v) selectVariant(v)
+    // Empty deps on purpose: variants comes from a prop that does not change on
+    // this route, and selectVariant is redefined every render, so depending on
+    // either would re-run this and fight a shopper who has since picked
+    // something else.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const [qty, setQty] = useState(1)
   const [justAdded, setJustAdded] = useState(false)
   const addedTimer = useRef(null)

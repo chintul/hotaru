@@ -40,6 +40,16 @@ export default function ProductCard({ product, priority = false }) {
 
   const variant = variants[active] ?? variants[0]
 
+  // Carry the chosen colourway to the product page. Tapping Berry on a card
+  // and then the photo used to open on Cream White, because the link dropped
+  // the choice and the PDP defaults to variants[0] — so the swatch row cost 58
+  // tap targets on this grid and recorded nothing. Only added once the shopper
+  // has actually moved off the default, so the common URL stays clean and
+  // matches the prerendered one.
+  const href = active > 0 && variant?.id
+    ? `/shop/${product.slug}?v=${variant.id}`
+    : `/shop/${product.slug}`
+
   // Each variant carries its own photo (variants.image_id).
   const primaryImage = variant?.image ?? images[0]
 
@@ -67,7 +77,7 @@ export default function ProductCard({ product, priority = false }) {
 
   return (
     <div className="group">
-      <Link href={`/shop/${product.slug}`} className="block">
+      <Link href={href} className="block">
         <div className="card-media relative aspect-square overflow-hidden bg-shade">
           <div className="media-primary absolute inset-0">
             {/* The default sizes claims 100vw below 640px, but the grid is
@@ -118,7 +128,7 @@ export default function ProductCard({ product, priority = false }) {
       </Link>
 
       <div className="mt-3 text-center">
-        <Link href={`/shop/${product.slug}`} className="block">
+        <Link href={href} className="block">
           {/* Reserve both lines whether or not the title needs them, so the
               price and swatch rows line up across a row of cards instead of
               stepping up and down with title length. */}
