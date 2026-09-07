@@ -1,5 +1,6 @@
 'use client'
 
+import { useTransition } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { IconGrid } from './Icons'
 
@@ -13,16 +14,20 @@ const SORTS = [
 export default function ShopToolbar({ total, cols }) {
   const router = useRouter()
   const params = useSearchParams()
+  // Sorting is a server round trip. Without a pending state the control looks
+  // ignored until the new page streams in, which on a slow connection is long
+  // enough to click again.
+  const [pending, startTransition] = useTransition()
 
   const set = (key, value) => {
     const next = new URLSearchParams(params.toString())
     if (value === null) next.delete(key)
     else next.set(key, value)
-    router.push(`/shop?${next.toString()}`)
+    startTransition(() => router.push(`/shop?${next.toString()}`))
   }
 
   return (
-    <div className="mb-6 flex flex-wrap items-center gap-4 border-b border-line pb-4">
+    <div className={`mb-6 flex flex-wrap items-center gap-4 border-b border-line pb-4 transition-opacity duration-200 ${pending ? 'opacity-60' : ''}`}>
       <div className="flex items-center gap-2">
         <span className="text-[12px] uppercase tracking-[0.6px] text-ink-soft">Харах</span>
         {[2, 3, 4].map((n) => (

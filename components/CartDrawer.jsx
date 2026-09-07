@@ -8,7 +8,7 @@ import ProductImage from './ProductImage'
 import { IconClose, IconMinus, IconPlus } from './Icons'
 
 export default function CartDrawer() {
-  const { cartOpen, setCartOpen } = useUI()
+  const { cartOpen, setCartOpen, addPending } = useUI()
   const { items, subtotal, count, loading, setQuantity, clear } = useCart()
 
   if (!cartOpen) return null
@@ -31,9 +31,25 @@ export default function CartDrawer() {
         </div>
 
         <div className="flex-1 overflow-y-auto px-6">
-          {loading && <p className="label py-10 text-ink-faint">Ачааллаж байна…</p>}
+          {loading && !addPending && <p className="label py-10 text-ink-faint">Ачааллаж байна…</p>}
 
-          {!loading && items.length === 0 && (
+          {/* The drawer now opens on the click, not on the server's answer, so
+              for the length of one round trip there is a line on its way that
+              nothing can show yet. A skeleton says "this is arriving" where an
+              empty basket would say "that did nothing" — which is exactly the
+              wrong answer to a tap that just worked. */}
+          {addPending && (
+            <div className="flex animate-pulse gap-4 py-5">
+              <div className="aspect-square w-20 shrink-0 bg-shade" />
+              <div className="flex-1 space-y-2 py-1">
+                <div className="h-3.5 w-2/3 rounded bg-shade" />
+                <div className="h-3 w-1/3 rounded bg-shade" />
+                <div className="mt-4 h-8 w-24 rounded bg-shade" />
+              </div>
+            </div>
+          )}
+
+          {!loading && !addPending && items.length === 0 && (
             <div className="py-16 text-center">
               <p className="text-ink-soft">Сагс хоосон байна.</p>
               <Link

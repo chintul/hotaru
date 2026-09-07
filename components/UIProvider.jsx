@@ -11,6 +11,16 @@ const UIContext = createContext(null)
 
 export function UIProvider({ children }) {
   const [cartOpen, setCartOpen] = useState(false)
+  /**
+   * An add is in flight somewhere on the page.
+   *
+   * It lives here rather than on useCart because useCart is a hook: every
+   * caller builds its own useMutation, so the drawer's `adding` is a different
+   * boolean from the product page's and stays false while the product page is
+   * actually mid-request. The drawer needs to know about a request it did not
+   * make, which makes this shared UI state, not cart state.
+   */
+  const [addPending, setAddPending] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [navOpen, setNavOpen] = useState(false)
 
@@ -40,8 +50,11 @@ export function UIProvider({ children }) {
   }, [anyOpen])
 
   const value = useMemo(
-    () => ({ cartOpen, setCartOpen, searchOpen, setSearchOpen, navOpen, setNavOpen, closeAll }),
-    [cartOpen, searchOpen, navOpen, closeAll],
+    () => ({
+      cartOpen, setCartOpen, addPending, setAddPending,
+      searchOpen, setSearchOpen, navOpen, setNavOpen, closeAll,
+    }),
+    [cartOpen, addPending, searchOpen, navOpen, closeAll],
   )
   return <UIContext.Provider value={value}>{children}</UIContext.Provider>
 }

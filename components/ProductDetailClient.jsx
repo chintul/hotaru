@@ -25,7 +25,7 @@ export default function ProductDetailClient({ product, copy, payNote }) {
   const variants = nodes(product.variantCollection)
   const images = nodes(product.productImageCollection)
   const { add, adding } = useCart()
-  const { setCartOpen } = useUI()
+  const { setCartOpen, setAddPending } = useUI()
 
   const [selectedId, setSelectedId] = useState(variants[0]?.id ?? null)
   const [activeImage, setActiveImage] = useState(0)
@@ -62,20 +62,26 @@ export default function ProductDetailClient({ product, copy, payNote }) {
   const onAdd = async () => {
     if (!selected) return
     setError(null)
+    // Open on the CLICK, not on the answer. The mutation is a round trip to
+    // Supabase — measured at ~1.2s warm — and a shopper who taps a buy button
+    // and gets a second of nothing has already decided the button is broken.
+    // The drawer shows a skeleton line for that second instead.
+    setCartOpen(true)
+    setAddPending(true)
     try {
       await add(selected.id, qty)
-      // The drawer opens on the mutation, not on the refetch (useCart.add no
-      // longer awaits it), so the list fills while the panel slides in rather
-      // than after it.
-      setCartOpen(true)
-      // The button confirms the add on its own. The drawer can be dismissed in
-      // half a second, and a shopper who does that should still have seen that
-      // it worked.
+      // The button confirms it too: the drawer can be dismissed in half a
+      // second, and a shopper who does that should still have seen it work.
       setJustAdded(true)
       window.clearTimeout(addedTimer.current)
       addedTimer.current = window.setTimeout(() => setJustAdded(false), 1600)
     } catch (e) {
+      // Failed, so take the drawer back down — leaving it open on an unchanged
+      // basket, with the error behind it on the page, would be a silent lie.
+      setCartOpen(false)
       setError(e?.message ?? 'Сагсанд нэмэхэд алдаа гарлаа.')
+    } finally {
+      setAddPending(false)
     }
   }
 
@@ -94,13 +100,17 @@ export default function ProductDetailClient({ product, copy, payNote }) {
       <div className="grid gap-8 lg:grid-cols-2 lg:gap-14">
         <div>
           <div className="relative aspect-square overflow-hidden bg-shade">
-            <ProductImage
-              filePath={images[activeImage]?.filePath}
-              alt={images[activeImage]?.alt || copy.title}
-              seed={`${product.slug}-${activeImage}`}
-              priority
-              sizes="(min-width: 1024px) 50vw, 100vw"
-            />
+            {/* Keyed on the index so a thumbnail or swatch click remounts the
+                picture and it fades in, rather than snapping. */}
+            <div key={activeImage} className="fade-in absolute inset-0">
+              <ProductImage
+                filePath={images[activeImage]?.filePath}
+                alt={images[activeImage]?.alt || copy.title}
+                seed={`${product.slug}-${activeImage}`}
+                priority
+                sizes="(min-width: 1024px) 50vw, 100vw"
+              />
+            </div>
             {selected?.optionValue && !images[activeImage]?.filePath && (
               <span
                 className="badge-pill absolute left-4 top-4 text-[15px]"
@@ -118,7 +128,7 @@ export default function ProductDetailClient({ product, copy, payNote }) {
                 <button
                   key={img.filePath + i}
                   onClick={() => setActiveImage(i)}
-                  className={`relative aspect-square overflow-hidden bg-shade ${
+                  className={`relative aspect-square overflow-hidden bg-shade transition-all duration-200 ${
                     i === activeImage ? 'ring-1 ring-ink-strong' : 'opacity-70 hover:opacity-100'
                   }`}
                   aria-label={`Зураг ${i + 1}`}

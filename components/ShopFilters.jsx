@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
 import { IconChevronDown } from './Icons'
 
 /**
@@ -13,11 +13,16 @@ export default function ShopFilters({ categories, counts }) {
   const router = useRouter()
   const params = useSearchParams()
 
+  // Same reason as the toolbar: every filter is a navigation, and an
+  // unacknowledged checkbox invites a second click that queues a second
+  // navigation.
+  const [pending, startTransition] = useTransition()
+
   const setParam = (key, value) => {
     const next = new URLSearchParams(params.toString())
     if (value === null || value === '' || value === undefined) next.delete(key)
     else next.set(key, value)
-    router.push(`/shop?${next.toString()}`)
+    startTransition(() => router.push(`/shop?${next.toString()}`))
   }
 
   const activeCat = params.get('c')
@@ -26,7 +31,7 @@ export default function ShopFilters({ categories, counts }) {
   const [max, setMax] = useState(params.get('max') ?? '')
 
   return (
-    <aside className="w-full shrink-0 lg:w-[230px]">
+    <aside className={`w-full shrink-0 transition-opacity duration-200 lg:w-[230px] ${pending ? 'opacity-60' : ''}`}>
       <Group title="Ангилал">
         <ul className="space-y-2.5">
           <li>
@@ -84,7 +89,7 @@ export default function ShopFilters({ categories, counts }) {
             const next = new URLSearchParams(params.toString())
             min ? next.set('min', min) : next.delete('min')
             max ? next.set('max', max) : next.delete('max')
-            router.push(`/shop?${next.toString()}`)
+            startTransition(() => router.push(`/shop?${next.toString()}`))
           }}
           className="btn-solid mt-3 w-full py-2.5"
         >
