@@ -36,10 +36,10 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-paper">
-      <div className="mx-auto flex h-[72px] max-w-[1400px] items-center gap-4 px-5 lg:px-8">
+      <div className="mx-auto flex h-[72px] max-w-[1400px] items-center gap-2 px-3 sm:gap-4 sm:px-5 lg:px-8">
         <button
           onClick={() => setNavOpen(!navOpen)}
-          className="icon-btn -ml-2 lg:hidden"
+          className="icon-btn -ml-2 shrink-0 lg:hidden"
           aria-label="Цэс"
           aria-expanded={navOpen}
         >
@@ -50,7 +50,7 @@ export default function Header() {
           {/* Plain <img>: next/image is unused project-wide (see ProductImage).
               width/height are the intrinsic size and only reserve the box. */}
           {/* eslint-disable-next-line @next/next/no-img-element -- 14KB static PNG, no loader wanted */}
-          <img src="/logo.png" alt="hotaru" width={591} height={113} className="h-7 w-auto lg:h-8" />
+          <img src="/logo.png" alt="hotaru" width={591} height={113} className="h-6 w-auto sm:h-7 lg:h-8" />
         </Link>
 
         <nav className="mx-auto hidden items-center gap-8 lg:flex">

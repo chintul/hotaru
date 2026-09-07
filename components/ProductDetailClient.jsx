@@ -260,15 +260,17 @@ export default function ProductDetailClient({ product, copy, payNote }) {
             </div>
           )}
 
-          <p className="mt-6 text-[13px]">
-            <span className="font-semibold">Нийт дүн:</span>{' '}
-            <span className="font-bold">{formatMnt(subtotal)}</span>
-          </p>
+          {qty > 1 && (
+            <p className="mt-6 text-[13px]">
+              <span className="font-semibold">Нийт дүн:</span>{' '}
+              <span className="font-bold">{formatMnt(subtotal)}</span>
+            </p>
+          )}
 
           <p className="mt-4 text-[13px] font-semibold">Тоо ширхэг:</p>
           <div className="mt-2 flex flex-wrap items-center gap-3">
             <div className="flex items-center border border-line">
-              <button onClick={() => setQty(Math.max(1, qty - 1))} className="grid h-11 w-11 place-items-center text-ink-soft hover:text-ink" aria-label="Хасах">
+              <button onClick={() => setQty(Math.max(1, qty - 1))} className="grid h-11 w-11 place-items-center text-ink-soft hover:text-ink" aria-label="Тоо хасах">
                 <IconMinus />
               </button>
               <span className="min-w-[46px] text-center text-[14px] tabular-nums">{qty}</span>

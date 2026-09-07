@@ -143,10 +143,14 @@ export default function CartDrawer() {
 
                     <div className="mt-3 flex items-center gap-3">
                       <div className="flex items-center border border-line">
+                        {/* "Тоо хасах", not "Хасах": the remove-line control
+                            further down is also labelled Хасах, so a screen
+                            reader heard the same word for "one fewer" and for
+                            "delete this line". */}
                         <button
                           className="grid h-8 w-8 place-items-center text-ink-soft hover:text-ink"
                           onClick={() => setQuantity(variant.id, item.quantity - 1)}
-                          aria-label="Хасах"
+                          aria-label="Тоо хасах"
                         >
                           <IconMinus />
                         </button>
