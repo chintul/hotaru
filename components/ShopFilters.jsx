@@ -1,8 +1,8 @@
 'use client'
 
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useState, useTransition } from 'react'
-import { IconChevronDown } from './Icons'
+import { useEffect, useState, useTransition } from 'react'
+import { IconChevronDown, IconClose } from './Icons'
 
 /**
  * Collection filters. Every control writes to the URL rather than local state,
@@ -27,11 +27,21 @@ export default function ShopFilters({ categories, counts }) {
 
   const activeCat = params.get('c')
   const stock = params.get('stock')
+  const [sheetOpen, setSheetOpen] = useState(false)
   const [min, setMin] = useState(params.get('min') ?? '')
   const [max, setMax] = useState(params.get('max') ?? '')
 
-  return (
-    <aside className={`w-full shrink-0 transition-opacity duration-200 lg:w-[230px] ${pending ? 'opacity-60' : ''}`}>
+  const activeCount = [activeCat, stock, params.get('min'), params.get('max')].filter(Boolean).length
+
+  // Locks the page behind the sheet so the grid does not scroll underneath it.
+  useEffect(() => {
+    if (!sheetOpen) return undefined
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = '' }
+  }, [sheetOpen])
+
+  const body = (
+    <>
       <Group title="Ангилал">
         <ul className="space-y-2.5">
           <li>
@@ -96,7 +106,64 @@ export default function ShopFilters({ categories, counts }) {
           Шүүх
         </button>
       </Group>
-    </aside>
+    </>
+  )
+
+  return (
+    <>
+      {/* Below lg this entire sidebar used to stack ABOVE the grid, putting
+          773px of filter chrome and 1.26 screens of scrolling in front of the
+          first product photograph — on a page whose only job is showing
+          photographs, for a shopper who arrives with nothing specific in mind.
+          On a phone it collapses to this one bar; the filters live in a sheet. */}
+      <div className="lg:hidden">
+        <button
+          onClick={() => setSheetOpen(true)}
+          className={`flex w-full items-center justify-between border border-line px-4 py-3 transition-opacity ${pending ? 'opacity-60' : ''}`}
+        >
+          <span className="nav-link text-[13px]">Шүүх</span>
+          {activeCount > 0 ? (
+            <span className="grid h-5 min-w-5 place-items-center rounded-full bg-ink-strong px-1.5 text-[11px] font-semibold text-paper">
+              {activeCount}
+            </span>
+          ) : (
+            <IconChevronDown />
+          )}
+        </button>
+      </div>
+
+      <aside
+        className={`hidden w-full shrink-0 transition-opacity duration-200 lg:block lg:w-[230px] ${
+          pending ? 'opacity-60' : ''
+        }`}
+      >
+        {body}
+      </aside>
+
+      {sheetOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="Шүүх">
+          <button
+            className="overlay-in absolute inset-0 bg-ink/25"
+            onClick={() => setSheetOpen(false)}
+            aria-label="Хаах"
+          />
+          <div className="sheet-in absolute inset-x-0 bottom-0 flex max-h-[85vh] flex-col rounded-t-2xl bg-paper">
+            <div className="flex items-center justify-between border-b border-line px-5 py-4">
+              <span className="nav-link text-[14px]">Шүүх</span>
+              <button onClick={() => setSheetOpen(false)} className="icon-btn -mr-2" aria-label="Хаах">
+                <IconClose />
+              </button>
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto px-5">{body}</div>
+            <div className="border-t border-line px-5 py-4">
+              <button onClick={() => setSheetOpen(false)} className="btn-solid w-full py-4">
+                Үр дүнг харах
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   )
 }
 

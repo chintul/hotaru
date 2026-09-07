@@ -69,7 +69,10 @@ export default async function ShopPage({ searchParams }) {
         {blurb && <p className="mx-auto mt-2 max-w-xl text-[13px] text-ink-soft">{blurb}</p>}
       </div>
 
-      <div className="flex flex-col gap-10 lg:flex-row lg:gap-12">
+      {/* gap-4 below lg, not gap-10: on a phone the sidebar is now a single
+          filter bar, and 40px of air between it and the grid was pushing the
+          photographs down again. */}
+      <div className="flex flex-col gap-4 lg:flex-row lg:gap-12">
         <Suspense fallback={<div className="w-full lg:w-[230px]" />}>
           <ShopFilters
             categories={categories}

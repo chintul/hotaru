@@ -256,6 +256,8 @@ body {
    separately so changing the overlay timing later does not silently retime
    every product image on the site. */
 .fade-in { animation: overlay-in var(--dur) var(--ease) both; }
+@keyframes sheet-in { from { transform: translateY(100%) } to { transform: none } }
+.sheet-in { animation: sheet-in .3s var(--ease) both; }
 @keyframes drawer-in { from { transform: translateX(100%) } to { transform: none } }
 .drawer-in { animation: drawer-in .35s var(--ease) both; }
 
