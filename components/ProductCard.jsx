@@ -70,11 +70,19 @@ export default function ProductCard({ product, priority = false }) {
       <Link href={`/shop/${product.slug}`} className="block">
         <div className="card-media relative aspect-square overflow-hidden bg-shade">
           <div className="media-primary absolute inset-0">
+            {/* The default sizes claims 100vw below 640px, but the grid is
+                grid-cols-2 at EVERY width (ProductGrid.jsx:9), so each card
+                fills half the viewport. The browser was told to fetch roughly
+                twice the linear dimension it renders: measured 390px natural
+                for a 158px slot on a 390px phone. On mobile data, over a
+                27-card grid, that is the difference between a grid that paints
+                while the impulse lasts and one that does not. */}
             <ProductImage
               filePath={primaryImage?.filePath}
               alt={primaryImage?.alt || c.title || product.slug}
               seed={product.slug}
               priority={priority}
+              sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"
             />
           </div>
           {canHover && hoverImage && (
@@ -83,6 +91,7 @@ export default function ProductCard({ product, priority = false }) {
                 filePath={hoverImage.filePath}
                 alt={hoverImage.alt || c.title || product.slug}
                 seed={`${product.slug}-2`}
+                sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"
               />
             </div>
           )}

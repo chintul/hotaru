@@ -11,7 +11,10 @@
   --color-ink:        #232323;
   --color-ink-strong: #000000;
   --color-ink-soft:   #6b6b6b;
-  --color-ink-faint:  #9a9a9a;
+  /* Was #9a9a9a, which is 2.81:1 on white and fails WCAG AA at any size,
+     across 71 usages outside admin including every cart remove link and the
+     shipping disclaimer. #767676 is 4.54:1 and reads the same. */
+  --color-ink-faint:  #767676;
   --color-line:       #e5e5e5;
   --color-line-soft:  #f0f0f0;
   --color-paper:      #ffffff;
@@ -270,6 +273,19 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+  /* The blanket rule does not stop an infinite marquee, it fast-forwards it:
+     the track snaps to -50% and the reader is left looking at the second copy
+     of the list. This one has to be turned off, not sped up. */
+  .marquee-track { animation: none !important; transform: none !important; }
+}
+
+/* One visible focus ring for the whole storefront. Before this the only
+   :focus-visible rule in the codebase was on order pages, so every shop
+   control fell back to the UA default and three inputs removed it outright. */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-ink-strong);
+  outline-offset: 2px;
+  border-radius: 2px;
 }
 
 input[type="number"]::-webkit-outer-spin-button,

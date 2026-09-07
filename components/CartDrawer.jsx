@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useUI } from './UIProvider'
 import { useCart } from './useCart'
 import { copy, firstNode, formatMnt, toNumber } from '@/lib/format'
@@ -18,6 +18,15 @@ export default function CartDrawer() {
   const [confirmClear, setConfirmClear] = useState(false)
   const listRef = useRef(null)
 
+  // Every dismissal goes through here, so an armed "empty the cart" confirm can
+  // never survive a close and be waiting on the next open. Resetting it in an
+  // effect keyed on cartOpen would be setState-in-effect, which this repo's
+  // react-hooks config rejects.
+  const close = useCallback(() => {
+    setConfirmClear(false)
+    setCartOpen(false)
+  }, [setCartOpen])
+
   // The drawer opens on the click, and the line that was just added arrives
   // LAST — below the fold on any cart past three items. All the optimistic work
   // bought a confirmation the shopper never saw. Scroll to it.
@@ -31,16 +40,14 @@ export default function CartDrawer() {
   useEffect(() => {
     if (!cartOpen) return undefined
     window.history.pushState({ hotaruCart: true }, '')
-    const onPop = () => setCartOpen(false)
+    const onPop = () => close()
     window.addEventListener('popstate', onPop)
     return () => {
       window.removeEventListener('popstate', onPop)
       // Only unwind the entry we added, and only if it is still the current one.
       if (window.history.state?.hotaruCart) window.history.back()
     }
-  }, [cartOpen, setCartOpen])
-
-  useEffect(() => { if (!cartOpen) setConfirmClear(false) }, [cartOpen])
+  }, [cartOpen, close])
 
   if (!cartOpen) return null
 
@@ -48,7 +55,7 @@ export default function CartDrawer() {
     <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-label="Сагс">
       <button
         className="overlay-in absolute inset-0 bg-ink/25"
-        onClick={() => setCartOpen(false)}
+        onClick={close}
         aria-label="Хаах"
       />
       <aside className="drawer-in absolute inset-y-0 right-0 flex w-full max-w-[420px] flex-col bg-paper">
@@ -56,7 +63,7 @@ export default function CartDrawer() {
           {/* Same total as the header badge: units, not line items. The two
               disagreed when a single line held more than one of something. */}
           <p className="nav-link text-[14px]">Сагс{count ? ` (${count})` : ''}</p>
-          <button onClick={() => setCartOpen(false)} className="icon-btn -mr-2" aria-label="Хаах">
+          <button onClick={close} className="icon-btn -mr-2" aria-label="Хаах">
             <IconClose />
           </button>
         </div>
@@ -66,7 +73,7 @@ export default function CartDrawer() {
             40x40 target in the far top corner. This one is reachable one-handed. */}
         <div className="border-b border-line px-6 py-2">
           <button
-            onClick={() => setCartOpen(false)}
+            onClick={close}
             className="label text-ink-soft transition-colors hover:text-ink"
           >
             ← Дэлгүүр рүү буцах
@@ -97,7 +104,7 @@ export default function CartDrawer() {
               <p className="text-ink-soft">Сагс хоосон байна.</p>
               <Link
                 href="/shop"
-                onClick={() => setCartOpen(false)}
+                onClick={close}
                 className="label link-underline mt-4 inline-block"
               >
                 Дэлгүүр рүү
@@ -120,7 +127,7 @@ export default function CartDrawer() {
                 <li key={item.id} style={{ '--i': i }} className="flex gap-4 py-5">
                   <Link
                     href={`/shop/${product?.slug ?? ''}`}
-                    onClick={() => setCartOpen(false)}
+                    onClick={close}
                     className="relative aspect-square w-20 shrink-0 overflow-hidden bg-paper-warm"
                   >
                     <ProductImage filePath={image?.filePath} alt={title} seed={product?.slug} sizes="80px" />
@@ -177,7 +184,7 @@ export default function CartDrawer() {
             <p className="label mt-1 text-ink-faint">Хүргэлтийн төлбөр төлбөрийн хэсэгт нэмэгдэнэ</p>
             <Link
               href="/checkout"
-              onClick={() => setCartOpen(false)}
+              onClick={close}
               className="btn-solid mt-4 block py-4 text-center"
             >
               Захиалах

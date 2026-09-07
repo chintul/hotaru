@@ -28,7 +28,10 @@ export default function ShopToolbar({ total, cols }) {
 
   return (
     <div className={`mb-6 flex flex-wrap items-center gap-4 border-b border-line pb-4 transition-opacity duration-200 ${pending ? 'opacity-60' : ''}`}>
-      <div className="flex items-center gap-2">
+      {/* Hidden below md: ProductGrid resolves to grid-cols-2 at every width
+          under md, so all three options produced an identical layout while
+          each one cost a full server round trip. */}
+      <div className="hidden items-center gap-2 md:flex">
         <span className="text-[12px] uppercase tracking-[0.6px] text-ink-soft">Харах</span>
         {[2, 3, 4].map((n) => (
           <button

@@ -39,7 +39,9 @@ export default function ProductDetailClient({ product, copy, payNote }) {
   const [qty, setQty] = useState(1)
   const [justAdded, setJustAdded] = useState(false)
   const addedTimer = useRef(null)
+  const buyRef = useRef(null)
   useEffect(() => () => window.clearTimeout(addedTimer.current), [])
+  const [shared, setShared] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState(null)
   const [showBar, setShowBar] = useState(false)
@@ -53,11 +55,36 @@ export default function ProductDetailClient({ product, copy, payNote }) {
   // The sticky buy bar appears once the main add-to-cart scrolls away, which is
   // the only time it earns the space it takes.
   useEffect(() => {
-    const onScroll = () => setShowBar(window.scrollY > 620)
+    // Was a hardcoded 620, tuned for the desktop two-column layout. On the
+    // mobile single column the real buy button sits around y=1150, so both it
+    // and the sticky bar were on screen together from 620 to ~900. Watch the
+    // real button instead of guessing a pixel.
+    const onScroll = () => {
+      const el = buyRef.current
+      if (!el) return setShowBar(window.scrollY > 620)
+      const r = el.getBoundingClientRect()
+      setShowBar(r.bottom < 0)
+    }
     onScroll()
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
+
+  // navigator.share on a phone, clipboard everywhere else. Both paths reject
+  // when the user simply dismisses the sheet, which is not an error worth
+  // reporting.
+  const onShare = async () => {
+    const url = window.location.href
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: copy.title ?? product.slug, url })
+        return
+      }
+      await navigator.clipboard.writeText(url)
+      setShared(true)
+      window.setTimeout(() => setShared(false), 1600)
+    } catch { /* dismissed */ }
+  }
 
   const onAdd = async () => {
     if (!selected) return
@@ -143,8 +170,16 @@ export default function ProductDetailClient({ product, copy, payNote }) {
         <div className="lg:sticky lg:top-[96px] lg:self-start">
           <div className="flex items-start justify-between gap-4">
             <h1 className="text-[24px] font-bold leading-tight tracking-[0.4px]">{copy.title}</h1>
-            <button className="flex shrink-0 items-center gap-1.5 text-[13px] text-ink-soft hover:text-ink" aria-label="Хуваалцах">
-              <IconShare /> <span className="link-underline">Хуваалцах</span>
+            {/* Was a button with an icon, a label, an aria-label and no
+                onClick: inert on every product page. Sharing a find is exactly
+                the Instagram-adjacent behaviour these shoppers arrive by. */}
+            <button
+              onClick={onShare}
+              className="flex shrink-0 items-center gap-1.5 text-[13px] text-ink-soft hover:text-ink"
+              aria-label="Хуваалцах"
+            >
+              <IconShare />
+              <span className="link-underline">{shared ? 'Холбоос хуулсан' : 'Хуваалцах'}</span>
             </button>
           </div>
 
@@ -248,6 +283,7 @@ export default function ProductDetailClient({ product, copy, payNote }) {
             </div>
 
             <button
+              ref={buyRef}
               onClick={onAdd}
               disabled={!purchasable || adding}
               className="btn-solid h-11 min-w-[200px] flex-1 px-8 transition-transform duration-150 active:scale-[.98]"
