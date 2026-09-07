@@ -161,23 +161,63 @@ export default function ProductDetailClient({ product, copy, payNote }) {
                 <span className="font-semibold">{variants[0]?.optionLabel}:</span>{' '}
                 <span className="text-ink-soft">{selected?.optionValue}</span>
               </p>
-              <div className="mt-3 flex flex-wrap gap-2.5">
+              {/* Each option shows its OWN photograph and its name.
+                  This used to render swatchTone(optionValue) — a pastel hashed
+                  from the string — for every variant, while the grid card two
+                  taps earlier showed the real picture. So the colours were not
+                  merely approximate, they were unrelated to the product: on
+                  soft-home-slippers, "Taro Apple S" and "Taro Apple M" hashed
+                  to rgb(156,211,185) and rgb(156,211,179), six values apart in
+                  one channel and indistinguishable on a screen, under a
+                  heading reading "Color:".
+                  The name is printed rather than left in `title`, because the
+                  only difference between those two options is a size and a
+                  title attribute does not exist on a phone. */}
+              <div className="mt-3 flex flex-wrap gap-3">
                 {variants.map((v) => {
                   const out = v.quantity <= 0 && !v.allowBackorder
+                  const active = v.id === selectedId
                   return (
                     <button
                       key={v.id}
                       onClick={() => selectVariant(v)}
                       disabled={out}
-                      data-active={v.id === selectedId}
-                      className={`swatch h-[46px] w-[46px] ${out ? 'cursor-not-allowed opacity-40' : ''}`}
-                      title={v.optionValue ?? ''}
+                      aria-pressed={active}
                       aria-label={v.optionValue ?? ''}
+                      className={`group flex w-[74px] flex-col items-center gap-1.5 ${
+                        out ? 'cursor-not-allowed opacity-40' : ''
+                      }`}
                     >
                       <span
-                        className="block h-[34px] w-[34px] rounded-full"
-                        style={{ background: swatchTone(v.optionValue) }}
-                      />
+                        className={`block h-[52px] w-[52px] overflow-hidden rounded-full border transition-all ${
+                          active
+                            ? 'border-ink-strong ring-2 ring-ink-strong ring-offset-2'
+                            : 'border-line group-hover:border-ink'
+                        }`}
+                      >
+                        {v.image?.filePath ? (
+                          <ProductImage
+                            filePath={v.image.filePath}
+                            alt=""
+                            seed={v.id}
+                            width={52}
+                            height={52}
+                            className="h-full w-full"
+                          />
+                        ) : (
+                          <span
+                            className="block h-full w-full"
+                            style={{ background: swatchTone(v.optionValue) }}
+                          />
+                        )}
+                      </span>
+                      <span
+                        className={`text-center text-[11px] leading-tight ${
+                          active ? 'font-medium text-ink' : 'text-ink-soft'
+                        }`}
+                      >
+                        {v.optionValue}
+                      </span>
                     </button>
                   )
                 })}
