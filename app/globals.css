@@ -8,17 +8,28 @@
 --------------------------------------------------------------------------- */
 
 @theme {
-  --color-ink:        #232323;
-  --color-ink-strong: #000000;
-  --color-ink-soft:   #6b6b6b;
+  /* Warm-tinted neutrals, not grey ones.
+     The palette was transcribed off another shop and came out as seven pure
+     greys plus #000. PRODUCT.md names cute/soft/playful as the personality and
+     cold Western minimal as the closest anti-reference, and restraint executed
+     in pure grey lands in that anti-reference by default. The tint is tiny —
+     a few points of red over blue — and changes no layout, no weight and no
+     spacing. It is the cheapest possible move away from clinical, and every
+     pairing was re-checked: ink 15.22:1, ink-soft 5.58:1, ink-faint 4.75:1 on
+     the new paper, all clearing WCAG AA.
+     #000 was also simply banned: a pure black primary button is the thing that
+     made a 50,000₮ hair clip read like a bank statement. */
+  --color-ink:        #2a2320;
+  --color-ink-strong: #1c1714;
+  --color-ink-soft:   #6f6560;
   /* Was #9a9a9a, which is 2.81:1 on white and fails WCAG AA at any size,
      across 71 usages outside admin including every cart remove link and the
      shipping disclaimer. #767676 is 4.54:1 and reads the same. */
-  --color-ink-faint:  #767676;
-  --color-line:       #e5e5e5;
-  --color-line-soft:  #f0f0f0;
-  --color-paper:      #ffffff;
-  --color-shade:      #f4f4f4;   /* product image backdrop */
+  --color-ink-faint:  #7a706a;
+  --color-line:       #e9e3df;
+  --color-line-soft:  #f4efeb;
+  --color-paper:      #fffdfb;
+  --color-shade:      #f7f2ee;   /* product image backdrop */
   --color-footer:     #1c1c1c;
   --color-sale:       #d33;
   --color-buy:        #2196c4;   /* "Buy it now" blue */
