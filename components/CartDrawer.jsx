@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { useEffect, useRef, useState } from 'react'
 import { useUI } from './UIProvider'
 import { useCart } from './useCart'
 import { copy, firstNode, formatMnt, toNumber } from '@/lib/format'
@@ -10,6 +11,36 @@ import { IconClose, IconMinus, IconPlus } from './Icons'
 export default function CartDrawer() {
   const { cartOpen, setCartOpen, addPending } = useUI()
   const { items, subtotal, count, loading, setQuantity, clear } = useCart()
+  // Two taps to empty a cart. The button sat 12px under the checkout CTA, at
+  // the bottom of a full-height drawer, exactly in the one-handed thumb arc,
+  // with no confirm and no undo. One slip there is a whole lost order from a
+  // shopper who will not come back to rebuild it.
+  const [confirmClear, setConfirmClear] = useState(false)
+  const listRef = useRef(null)
+
+  // The drawer opens on the click, and the line that was just added arrives
+  // LAST — below the fold on any cart past three items. All the optimistic work
+  // bought a confirmation the shopper never saw. Scroll to it.
+  useEffect(() => {
+    if (!cartOpen || addPending || !listRef.current) return
+    const last = listRef.current.lastElementChild
+    if (last) last.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+  }, [cartOpen, addPending, items.length])
+
+  // Android's back button should close the drawer, not leave the product page.
+  useEffect(() => {
+    if (!cartOpen) return undefined
+    window.history.pushState({ hotaruCart: true }, '')
+    const onPop = () => setCartOpen(false)
+    window.addEventListener('popstate', onPop)
+    return () => {
+      window.removeEventListener('popstate', onPop)
+      // Only unwind the entry we added, and only if it is still the current one.
+      if (window.history.state?.hotaruCart) window.history.back()
+    }
+  }, [cartOpen, setCartOpen])
+
+  useEffect(() => { if (!cartOpen) setConfirmClear(false) }, [cartOpen])
 
   if (!cartOpen) return null
 
@@ -27,6 +58,18 @@ export default function CartDrawer() {
           <p className="nav-link text-[14px]">Сагс{count ? ` (${count})` : ''}</p>
           <button onClick={() => setCartOpen(false)} className="icon-btn -mr-2" aria-label="Хаах">
             <IconClose />
+          </button>
+        </div>
+
+        {/* The drawer measures 390px on a 390px viewport, so the overlay
+            dismiss behind it is completely covered and the only exit was a
+            40x40 target in the far top corner. This one is reachable one-handed. */}
+        <div className="border-b border-line px-6 py-2">
+          <button
+            onClick={() => setCartOpen(false)}
+            className="label text-ink-soft transition-colors hover:text-ink"
+          >
+            ← Дэлгүүр рүү буцах
           </button>
         </div>
 
@@ -66,7 +109,7 @@ export default function CartDrawer() {
               reads as a list being dealt out instead of a block appearing. The
               index feeds the delay; globals.css caps it so a long cart does not
               leave the last line waiting. */}
-          <ul className="stagger divide-y divide-line">
+          <ul ref={listRef} className="stagger divide-y divide-line">
             {items.map((item, i) => {
               const variant = item.variant
               const product = variant?.product
@@ -139,9 +182,26 @@ export default function CartDrawer() {
             >
               Захиалах
             </Link>
-            <button onClick={clear} className="label link-underline mt-3 text-ink-faint">
-              Сагс хоослох
-            </button>
+            {confirmClear ? (
+              <div className="mt-3 flex items-center gap-3">
+                <button
+                  onClick={() => { clear(); setConfirmClear(false) }}
+                  className="label text-sale underline underline-offset-4"
+                >
+                  Тийм, хоослох
+                </button>
+                <button onClick={() => setConfirmClear(false)} className="label text-ink-soft">
+                  Болих
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setConfirmClear(true)}
+                className="label link-underline mt-3 text-ink-soft"
+              >
+                Сагс хоослох
+              </button>
+            )}
           </div>
         )}
       </aside>
