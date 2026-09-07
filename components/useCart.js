@@ -36,7 +36,12 @@ export function useCart() {
   const add = useCallback(async (variantId, quantity = 1) => {
     await ensureSession()
     const res = await addMutation({ variables: { variantId, quantity } })
-    await refetch()
+    // Deliberately not awaited. The caller opens the drawer the moment the
+    // server has taken the item, and the drawer's own 350ms entrance covers
+    // this round trip — so the list fills while the panel is still sliding in.
+    // Awaiting it meant two serial round trips of completely dead UI before
+    // anything on screen moved, which no amount of animation can disguise.
+    refetch().catch(() => {})
     return res
   }, [addMutation, refetch])
 

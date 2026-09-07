@@ -74,7 +74,14 @@ export default function Header() {
           <button onClick={() => setCartOpen(true)} className="icon-btn relative" aria-label="Сагс">
             <IconBag />
             {count > 0 && (
-              <span className="absolute -right-0.5 -top-0.5 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-sale px-1 text-[10px] font-bold text-white">
+              // Keyed on the count so React remounts the node on every change,
+              // which restarts the animation. Toggling a class instead would
+              // need a timer to take it off again, and would not replay when
+              // the count changed twice inside one animation.
+              <span
+                key={count}
+                className="count-pop absolute -right-0.5 -top-0.5 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-sale px-1 text-[10px] font-bold text-white"
+              >
                 {count}
               </span>
             )}

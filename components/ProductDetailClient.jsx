@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useMutation } from '@apollo/client/react'
 import { formatMnt, nodes, toNumber } from '@/lib/format'
 import { TOGGLE_WISHLIST } from '@/lib/queries'
@@ -8,7 +8,7 @@ import { ensureSession } from '@/lib/supabase/browser'
 import { useCart } from './useCart'
 import { useUI } from './UIProvider'
 import ProductImage from './ProductImage'
-import { IconHeart, IconMinus, IconPlus, IconShare } from './Icons'
+import { IconCheck, IconHeart, IconMinus, IconPlus, IconShare } from './Icons'
 
 function swatchTone(name) {
   // `= ''` only covers undefined. option_value is nullable — a product with one
@@ -37,6 +37,9 @@ export default function ProductDetailClient({ product, copy, payNote }) {
     if (idx >= 0) setActiveImage(idx)
   }
   const [qty, setQty] = useState(1)
+  const [justAdded, setJustAdded] = useState(false)
+  const addedTimer = useRef(null)
+  useEffect(() => () => window.clearTimeout(addedTimer.current), [])
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState(null)
   const [showBar, setShowBar] = useState(false)
@@ -61,7 +64,16 @@ export default function ProductDetailClient({ product, copy, payNote }) {
     setError(null)
     try {
       await add(selected.id, qty)
+      // The drawer opens on the mutation, not on the refetch (useCart.add no
+      // longer awaits it), so the list fills while the panel slides in rather
+      // than after it.
       setCartOpen(true)
+      // The button confirms the add on its own. The drawer can be dismissed in
+      // half a second, and a shopper who does that should still have seen that
+      // it worked.
+      setJustAdded(true)
+      window.clearTimeout(addedTimer.current)
+      addedTimer.current = window.setTimeout(() => setJustAdded(false), 1600)
     } catch (e) {
       setError(e?.message ?? 'Сагсанд нэмэхэд алдаа гарлаа.')
     }
@@ -185,8 +197,14 @@ export default function ProductDetailClient({ product, copy, payNote }) {
               </button>
             </div>
 
-            <button onClick={onAdd} disabled={!purchasable || adding} className="btn-solid h-11 flex-1 px-8 min-w-[200px]">
-              {adding ? 'Нэмж байна…' : purchasable ? 'Сагсанд нэмэх' : 'Дууссан'}
+            <button
+              onClick={onAdd}
+              disabled={!purchasable || adding}
+              className="btn-solid h-11 min-w-[200px] flex-1 px-8 transition-transform duration-150 active:scale-[.98]"
+            >
+              {justAdded ? (
+                <span className="tick-in inline-flex items-center gap-2"><IconCheck /> Нэмэгдлээ</span>
+              ) : adding ? 'Нэмж байна…' : purchasable ? 'Сагсанд нэмэх' : 'Дууссан'}
             </button>
 
             <button

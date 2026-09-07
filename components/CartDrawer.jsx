@@ -46,15 +46,19 @@ export default function CartDrawer() {
             </div>
           )}
 
-          <ul className="divide-y divide-line">
-            {items.map((item) => {
+          {/* Lines arrive staggered rather than all at once, so a full basket
+              reads as a list being dealt out instead of a block appearing. The
+              index feeds the delay; globals.css caps it so a long cart does not
+              leave the last line waiting. */}
+          <ul className="stagger divide-y divide-line">
+            {items.map((item, i) => {
               const variant = item.variant
               const product = variant?.product
               const title = copy(product).title ?? 'Бүтээгдэхүүн'
               const image = firstNode(product?.productImageCollection)
               const line = toNumber(variant?.priceMnt) * item.quantity
               return (
-                <li key={item.id} className="flex gap-4 py-5">
+                <li key={item.id} style={{ '--i': i }} className="flex gap-4 py-5">
                   <Link
                     href={`/shop/${product?.slug ?? ''}`}
                     onClick={() => setCartOpen(false)}

@@ -123,7 +123,9 @@ body {
      without restoring the rule here left the preview permanently opaque on top
      of the primary image — the card showed the second photo at rest and hover
      appeared to do nothing. Keep the pair together. */
-  .card-media img, .card-media .ph { transition: opacity .45s ease, transform 1s cubic-bezier(.22,1,.36,1); }
+  /* Was transform 1s. A hover that takes a full second to settle reads as lag
+     rather than as polish — the pointer has usually left before it arrives. */
+  .card-media img, .card-media .ph { transition: opacity var(--dur-slow) ease, transform .5s var(--ease); }
   .card-media .media-hover { opacity: 0; }
   /* Guarded by (hover: hover). A tap on a touch screen can latch :hover, and
      the preview image is no longer rendered there — so unguarded, the rule
@@ -219,12 +221,41 @@ body {
   .secondary-action:hover { border-color: var(--color-ink-strong); }
 }
 
+/* ---------------------------------------------------------------------------
+   Motion tokens.
+
+   The curve is not new: cubic-bezier(.22,1,.36,1) is ease-out-quint, and it was
+   already what fade-up, drawer-in and o-modal-in used. Naming it stops the
+   fourth animation inventing a fifth curve. Durations are a three-step scale —
+   anything outside it is a decision worth arguing about, not a default.
+
+   Everything here is disarmed by the prefers-reduced-motion block below.
+--------------------------------------------------------------------------- */
+:root {
+  --ease: cubic-bezier(.22, 1, .36, 1);
+  --dur-fast: .16s;   /* state flips: press, ring, tick */
+  --dur: .28s;        /* entrances, crossfades */
+  --dur-slow: .45s;   /* image work, anything large */
+}
+
 @keyframes fade-up { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: none } }
-.fade-up { animation: fade-up .45s cubic-bezier(.22,1,.36,1) both; }
+.fade-up { animation: fade-up var(--dur-slow) var(--ease) both; }
+
+/* Stagger a list without a wrapper per item: the caller sets --i on each child
+   and the delay falls out of it. Capped at 8 so a 40-item grid does not leave
+   the last card waiting two seconds to appear. */
+.stagger > * { animation: fade-up var(--dur) var(--ease) both; animation-delay: calc(min(var(--i, 0), 8) * 40ms); }
 @keyframes overlay-in { from { opacity: 0 } to { opacity: 1 } }
 .overlay-in { animation: overlay-in .2s ease both; }
 @keyframes drawer-in { from { transform: translateX(100%) } to { transform: none } }
-.drawer-in { animation: drawer-in .35s cubic-bezier(.22,1,.36,1) both; }
+.drawer-in { animation: drawer-in .35s var(--ease) both; }
+
+/* The add-to-cart button's three states. `pop` is reused by the header count
+   badge, so a successful add reads as one gesture across two places. */
+@keyframes tick-in { from { opacity: 0; transform: scale(.4) } to { opacity: 1; transform: none } }
+.tick-in { animation: tick-in var(--dur) var(--ease) both; }
+@keyframes count-pop { 0% { transform: scale(1) } 40% { transform: scale(1.35) } 100% { transform: scale(1) } }
+.count-pop { animation: count-pop .34s var(--ease); }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
