@@ -137,3 +137,17 @@ export const IconPin = (p) => (
     <path d="M12 21s7-5.2 7-10.4A7 7 0 0 0 5 10.6C5 15.8 12 21 12 21Z" /><circle cx="12" cy="10.5" r="2.6" />
   </svg>
 )
+
+/* Theme toggle. Both render at once; .theme-icon in globals.css picks one. */
+export const IconSun = (p) => (
+  <svg viewBox="0 0 24 24" width="22" height="22" {...base} {...p}>
+    <circle cx="12" cy="12" r="4.2" />
+    <path d="M12 3v2m0 14v2M3 12h2m14 0h2M5.6 5.6l1.4 1.4m10 10 1.4 1.4m0-12.8-1.4 1.4m-10 10-1.4 1.4" />
+  </svg>
+)
+
+export const IconMoon = (p) => (
+  <svg viewBox="0 0 24 24" width="22" height="22" {...base} {...p}>
+    <path d="M20 14.2A8.2 8.2 0 0 1 9.8 4a8.4 8.4 0 1 0 10.2 10.2Z" />
+  </svg>
+)

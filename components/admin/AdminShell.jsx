@@ -9,6 +9,7 @@ import { nodes } from '@/lib/format'
 import { useSession } from '@/components/useSession'
 import { useAuthUpgrade } from '@/components/useAuthUpgrade'
 import CommandPalette from './CommandPalette'
+import Logo from '@/components/Logo'
 import {
   Bell, Chevron, Dots, Orders, Panel, Products,
   Search as SearchIcon, Settings, Star, Tag,
@@ -90,13 +91,12 @@ export default function AdminShell({ children }) {
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} nav={NAV} />
 
       <aside
-        className={`fixed inset-y-0 left-0 z-40 w-[240px] border-r border-a-line bg-a-bg transition-transform lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-40 w-60 border-r border-a-line bg-a-bg transition-transform lg:translate-x-0 ${
           menuOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         <div className="flex items-center gap-2 px-4 py-3">
-          {/* eslint-disable-next-line @next/next/no-img-element -- see ProductImage: no next/image here */}
-          <img src="/logo.png" alt="hotaru" width={591} height={113} className="h-5 w-auto" />
+          <Logo className="h-5 w-auto" />
           <Link href="/" className="ml-auto grid h-6 w-6 place-items-center rounded-md text-a-muted hover:bg-a-hover hover:text-a-ink" title="Дэлгүүр">
             <Dots />
           </Link>
@@ -124,14 +124,14 @@ export default function AdminShell({ children }) {
                 onClick={() => setMenuOpen(false)}
                 className={`mb-0.5 flex items-center gap-2.5 rounded-md px-2 py-1.5 text-[14px] transition-colors ${
                   active
-                    ? 'border border-a-line bg-white font-medium text-a-ink shadow-[0_1px_2px_rgba(0,0,0,.04)]'
+                    ? 'border border-a-line bg-a-surface font-medium text-a-ink shadow-[0_1px_2px_rgba(0,0,0,.04)]'
                     : 'border border-transparent text-a-muted hover:bg-a-hover hover:text-a-ink'
                 }`}
               >
                 <Icon />
                 <span className="flex-1">{item.label}</span>
                 {item.badge === 'pending' && pending > 0 && (
-                  <span className="rounded bg-amber-100 px-1.5 text-[11px] font-semibold text-amber-700">{pending}</span>
+                  <span className="rounded bg-warn-soft px-1.5 text-[11px] font-semibold text-warn-ink">{pending}</span>
                 )}
               </Link>
             )
@@ -139,9 +139,9 @@ export default function AdminShell({ children }) {
         </nav>
 
         {oversold > 0 && (
-          <Link href="/admin" className="mx-3 mt-3 block rounded-md border border-red-200 bg-red-50 px-3 py-2.5">
-            <p className="text-[12px] font-semibold text-red-700">{oversold} захиалга нөөцгүй</p>
-            <p className="mt-0.5 text-[12px] text-red-600">Буцаалт шаардлагатай</p>
+          <Link href="/admin" className="mx-3 mt-3 block rounded-md border border-danger-line bg-danger-soft px-3 py-2.5">
+            <p className="text-[12px] font-semibold text-danger-ink">{oversold} захиалга нөөцгүй</p>
+            <p className="mt-0.5 text-[12px] text-danger-ink">Буцаалт шаардлагатай</p>
           </Link>
         )}
 
@@ -182,7 +182,7 @@ export default function AdminShell({ children }) {
           </nav>
           <span className="ml-auto grid h-7 w-7 place-items-center rounded-md text-a-muted" title={pending ? `${pending} захиалга хүлээгдэж байна` : 'Мэдэгдэл алга'}>
             <Bell />
-            {pending > 0 && <span className="absolute mt-[-14px] ml-[14px] h-1.5 w-1.5 rounded-full bg-amber-500" />}
+            {pending > 0 && <span className="absolute mt-[-14px] ml-[14px] h-1.5 w-1.5 rounded-full bg-warn" />}
           </span>
         </header>
 

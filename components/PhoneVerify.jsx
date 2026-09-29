@@ -141,7 +141,7 @@ export default function PhoneVerify({ onVerified, initialPhone = '' }) {
 
   if (status === 'verified') {
     return (
-      <p className="rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-[13px] text-emerald-800">
+      <p className="rounded-md border border-success-line bg-success-soft px-4 py-3 text-[13px] text-success-ink">
         Утасны дугаар баталгаажлаа: <strong>{session?.phone ?? phone}</strong>
       </p>
     )

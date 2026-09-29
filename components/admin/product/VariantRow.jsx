@@ -173,7 +173,7 @@ export default function VariantRow({ product, variant, images, sharedCount, refe
                 <button
                   type="button"
                   onClick={onDelete}
-                  className="block w-full rounded-lg px-3 py-2 text-left text-[14px] text-red-600 hover:bg-red-50"
+                  className="block w-full rounded-lg px-3 py-2 text-left text-[14px] text-danger-ink hover:bg-danger-soft"
                 >
                   Устгах
                 </button>
@@ -196,7 +196,7 @@ export default function VariantRow({ product, variant, images, sharedCount, refe
           {!variant.image && (
             <span className="text-[13px] text-a-muted">зураггүй · картад эхний зураг харагдана</span>
           )}
-          {error && <span className="text-[13px] text-red-600">{error}</span>}
+          {error && <span className="text-[13px] text-danger-ink">{error}</span>}
         </div>
       )}
     </li>

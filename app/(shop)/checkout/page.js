@@ -195,7 +195,7 @@ function CheckoutForm({ items, subtotal, profileId }) {
                   }`}
                 >
                   <input type="radio" name="address" checked={a.id === addressId}
-                    onChange={() => setAddressId(a.id)} className="mt-1 accent-black" />
+                    onChange={() => setAddressId(a.id)} className="mt-1 accent-primary-strong" />
                   <span className="text-[13px]">
                     <span className="block font-semibold">{a.recipientName} · {a.phone}</span>
                     <span className="block text-ink-soft">
@@ -260,7 +260,7 @@ function CheckoutForm({ items, subtotal, profileId }) {
                   m.id === methodId ? 'border-ink' : 'border-line hover:border-ink-faint'
                 }`}>
                 <input type="radio" name="method" checked={m.id === methodId}
-                  onChange={() => setMethodId(m.id)} className="accent-black" />
+                  onChange={() => setMethodId(m.id)} className="accent-primary-strong" />
                 <span className="flex-1 text-[13px]">
                   <span className="block font-semibold">{m.name}</span>
                   {m.note && <span className="block text-ink-faint">{m.note}</span>}

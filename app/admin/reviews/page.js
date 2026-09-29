@@ -75,13 +75,13 @@ export default function ReviewsPage() {
       ) : (
         <>
           {bulkError && (
-            <p className="mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-[13px] text-red-700">
+            <p className="mb-3 rounded-lg border border-danger-line bg-danger-soft px-4 py-2.5 text-[13px] text-danger-ink">
               {bulkError}
             </p>
           )}
 
           {sel.count > 0 && (
-            <div className="mb-3 overflow-hidden rounded-xl border border-a-line bg-white">
+            <div className="mb-3 overflow-hidden rounded-xl border border-a-line bg-a-surface">
               <BulkBar count={sel.count} actions={bulkActions} onClear={sel.clear} />
             </div>
           )}
@@ -161,7 +161,7 @@ function ReviewCard({ review, selected, onToggle, onDone }) {
         >
           {removing ? 'Устгаж байна…' : 'Устгах'}
         </Button>
-        {error && <span className="text-[13px] text-red-600">{error}</span>}
+        {error && <span className="text-[13px] text-danger-ink">{error}</span>}
       </div>
     </Card>
   )

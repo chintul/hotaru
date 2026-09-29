@@ -129,7 +129,7 @@ export default function NewProductPage() {
             />
           </Field>
 
-          {error && <p className="text-[13px] text-red-600 sm:col-span-2">{error}</p>}
+          {error && <p className="text-[13px] text-danger-ink sm:col-span-2">{error}</p>}
           <div className="flex gap-2 sm:col-span-2">
             <Button type="submit" variant="primary" disabled={loading}>
               {loading ? 'Үүсгэж байна…' : 'Үүсгээд зураг нэмэх'}

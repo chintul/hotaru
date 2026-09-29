@@ -44,6 +44,21 @@ export function UIProvider({ children }) {
   const [cartStale, setCartStale] = useState(false)
 
   const close = useCallback(() => setOverlay(null), [])
+
+  /**
+   * Close because a link inside the overlay is navigating.
+   *
+   * Same as close(), minus the history unwind: the router has not updated the
+   * URL yet when the cleanup runs, so an unwind there cannot tell a dismissal
+   * from a navigation and would pop the navigation instead. Only needed for a
+   * link whose path matches the current one — any other link changes the path,
+   * and the reset below closes the overlay for free.
+   */
+  const skipUnwindRef = useRef(false)
+  const closeForNavigation = useCallback(() => {
+    skipUnwindRef.current = true
+    setOverlay(null)
+  }, [])
   const open = useCallback((name) => setOverlay(name), [])
   const toggle = useCallback((name) => setOverlay((v) => (v === name ? null : name)), [])
 
@@ -97,30 +112,32 @@ export function UIProvider({ children }) {
   /**
    * Android's back button dismisses the overlay rather than leaving the page.
    *
-   * Only the cart drawer used to do this, so back out of an open search or an
-   * open menu navigated away and left the overlay — and its scroll lock —
-   * covering the new page. Hoisting it here gives every surface the same
-   * behaviour for free.
+   * The entry is pushed in the ONE shape Next integrates with: a URL, and no
+   * custom state (see "Native History API" in the Next docs). A bare
+   * `pushState({ hotaruOverlay: true }, '')` detaches the App Router — while
+   * any overlay was open, every link inside it silently did nothing, including
+   * Захиалах in the cart drawer. Ours is the same URL, so Back lands on the
+   * page the shopper is already looking at and only the overlay goes away.
    *
-   * The unwind is guarded on the path being unchanged. A link inside an overlay
-   * closes it AND navigates, and popping our own entry in the middle of that
-   * would fight the router; whichever of the two lands first, skipping the
-   * unwind leaves a history entry pointing at the page the shopper came from,
-   * which is where Back should go anyway.
+   * A ref marks the entry instead of the state object, which is now null.
    */
-  const poppedRef = useRef(false)
+  const pushedRef = useRef(false)
   useEffect(() => {
     if (!overlay) return undefined
-    const startPath = window.location.pathname
-    poppedRef.current = false
-    window.history.pushState({ hotaruOverlay: true }, '')
-    const onPop = () => { poppedRef.current = true; setOverlay(null) }
+    const startHref = window.location.href
+    window.history.pushState(null, '', window.location.href)
+    pushedRef.current = true
+    const onPop = () => { pushedRef.current = false; setOverlay(null) }
     window.addEventListener('popstate', onPop)
     return () => {
       window.removeEventListener('popstate', onPop)
-      if (poppedRef.current) return
-      if (window.location.pathname !== startPath) return
-      if (window.history.state?.hotaruOverlay) window.history.back()
+      if (!pushedRef.current) return
+      pushedRef.current = false
+      if (skipUnwindRef.current) { skipUnwindRef.current = false; return }
+      // The router may already have moved us on; unwinding then would pop the
+      // new page rather than our own entry.
+      if (window.location.href !== startHref) return
+      window.history.back()
     }
   }, [overlay])
 
@@ -129,6 +146,7 @@ export function UIProvider({ children }) {
       overlay,
       open,
       close,
+      closeForNavigation,
       toggle,
       isOpen: (name) => overlay === name,
       addPending,
@@ -136,7 +154,7 @@ export function UIProvider({ children }) {
       cartStale,
       setCartStale,
     }),
-    [overlay, open, close, toggle, addPending, cartStale],
+    [overlay, open, close, closeForNavigation, toggle, addPending, cartStale],
   )
   return <UIContext.Provider value={value}>{children}</UIContext.Provider>
 }

@@ -11,14 +11,14 @@ import PhoneVerify from '@/components/PhoneVerify'
 import ProductImage from '@/components/ProductImage'
 
 const STATUS_TONE = {
-  awaiting_payment: 'border-amber-300 text-amber-700 bg-amber-50',
-  paid: 'border-emerald-300 text-emerald-700 bg-emerald-50',
-  packed: 'border-blue-300 text-blue-700 bg-blue-50',
-  shipped: 'border-blue-300 text-blue-700 bg-blue-50',
-  delivered: 'border-emerald-300 text-emerald-700 bg-emerald-50',
+  awaiting_payment: 'border-warn-line text-warn-ink bg-warn-soft',
+  paid: 'border-success-line text-success-ink bg-success-soft',
+  packed: 'border-info-line text-info-ink bg-info-soft',
+  shipped: 'border-info-line text-info-ink bg-info-soft',
+  delivered: 'border-success-line text-success-ink bg-success-soft',
   cancelled: 'border-line text-ink-soft bg-shade',
-  refunded: 'border-violet-300 text-violet-700 bg-violet-50',
-  oversold: 'border-red-300 text-red-700 bg-red-50',
+  refunded: 'border-note-line text-note-ink bg-note-soft',
+  oversold: 'border-danger-line text-danger-ink bg-danger-soft',
 }
 
 export default function AccountPage() {
@@ -199,7 +199,7 @@ function ProfileDetails({ profile, onSaved }) {
           <input
             type="checkbox" checked={marketing}
             onChange={(e) => setMarketing(e.target.checked)}
-            className="mt-0.5 h-4 w-4 accent-black"
+            className="mt-0.5 h-4 w-4 accent-primary-strong"
           />
           <span className="text-[13px] text-ink-soft">
             Шинэ бүтээгдэхүүн, хөнгөлөлтийн мэдээлэл имэйлээр авах
@@ -218,14 +218,14 @@ function ProfileDetails({ profile, onSaved }) {
             <dd>
               {profile?.phone ?? '—'}
               {profile?.phoneVerifiedAt && (
-                <span className="ml-1.5 text-[11px] font-semibold text-emerald-700">баталгаажсан</span>
+                <span className="ml-1.5 text-[11px] font-semibold text-success-ink">баталгаажсан</span>
               )}
             </dd>
           </div>
         </dl>
 
         {error && <p className="mt-3 text-[13px] text-sale">{error}</p>}
-        {saved && !dirty && <p className="mt-3 text-[13px] text-emerald-700">Хадгалагдлаа.</p>}
+        {saved && !dirty && <p className="mt-3 text-[13px] text-success-ink">Хадгалагдлаа.</p>}
 
         <button type="submit" disabled={loading || !dirty} className="btn-solid mt-5 w-full py-3">
           {loading ? 'Хадгалж байна…' : 'Хадгалах'}

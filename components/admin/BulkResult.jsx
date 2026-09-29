@@ -21,8 +21,8 @@ export default function BulkResult({ result, labelFor = (id) => id, onDismiss })
     <div
       className={`mb-4 rounded-lg border px-4 py-3 text-[13px] ${
         clean
-          ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
-          : 'border-amber-200 bg-amber-50 text-amber-900'
+          ? 'border-success-line bg-success-soft text-success-ink'
+          : 'border-warn-line bg-warn-soft text-warn-ink'
       }`}
     >
       <div className="flex items-center gap-3">
@@ -44,7 +44,7 @@ export default function BulkResult({ result, labelFor = (id) => id, onDismiss })
           {failed.map((f) => (
             <li key={f.id} className="flex flex-wrap gap-2">
               <span className="font-medium tabular-nums">{labelFor(f.id)}</span>
-              <span className="text-amber-800">{f.message}</span>
+              <span className="text-warn-ink">{f.message}</span>
             </li>
           ))}
         </ul>

@@ -49,8 +49,8 @@ function Box({ checked, indeterminate, onChange, label }) {
       onClick={(e) => { e.stopPropagation(); onChange() }}
       className={`grid h-4 w-4 shrink-0 place-items-center rounded border transition-colors ${
         checked || indeterminate
-          ? 'border-a-ink bg-a-ink text-white'
-          : 'border-a-line bg-white text-transparent hover:border-a-muted'
+          ? 'border-a-ink bg-a-ink text-a-on-ink'
+          : 'border-a-line bg-a-surface text-transparent hover:border-a-muted'
       }`}
     >
       <span className="scale-[.6]">{indeterminate ? <Minus /> : <Check />}</span>

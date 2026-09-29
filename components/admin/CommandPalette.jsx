@@ -91,7 +91,7 @@ function Palette({ onClose, nav }) {
   return (
     <div className="fixed inset-0 z-50" role="dialog" aria-modal="true">
       <button className="absolute inset-0 bg-black/25" onClick={onClose} aria-label="Хаах" />
-      <div className="absolute left-1/2 top-[15vh] w-[min(560px,92vw)] -translate-x-1/2 overflow-hidden rounded-xl border border-a-line bg-white shadow-xl">
+      <div className="absolute left-1/2 top-[15vh] w-[min(560px,92vw)] -translate-x-1/2 overflow-hidden rounded-xl border border-a-line bg-a-surface shadow-xl">
         <div className="flex items-center gap-2.5 border-b border-a-line px-4 py-3">
           <span className="text-a-muted"><SearchIcon /></span>
           <input

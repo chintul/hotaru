@@ -22,7 +22,7 @@ const NEXT = { paid: ['packed', 'Бэлтгэсэн гэж тэмдэглэх'],
 
 const PAYMENT_PROVIDER_LABEL = {
   bank_transfer: 'Дансаар шилжүүлэг',
-  qpay_quickqr: 'QPay QR',
+  qpay_quickqr: 'QPay',
 }
 
 export default function AdminOrderPage({ params }) {
@@ -261,8 +261,8 @@ function PaymentCard({ order, payment, onDone }) {
       )}
 
       {order.status === 'oversold' && (
-        <div className="flex flex-wrap items-center gap-3 border-t border-red-200 bg-red-50 px-6 py-4">
-          <p className="flex-1 text-[13px] text-red-700">
+        <div className="flex flex-wrap items-center gap-3 border-t border-danger-line bg-danger-soft px-6 py-4">
+          <p className="flex-1 text-[13px] text-danger-ink">
             Төлбөр орсон ч бараа дууссан. Мөнгийг буцаасны дараа тэмдэглэнэ үү.
           </p>
           <Button
@@ -279,7 +279,7 @@ function PaymentCard({ order, payment, onDone }) {
         </div>
       )}
 
-      {error && <p className="border-t border-a-line px-6 py-3 text-[13px] text-red-600">{error}</p>}
+      {error && <p className="border-t border-a-line px-6 py-3 text-[13px] text-danger-ink">{error}</p>}
     </Card>
   )
 }
@@ -325,7 +325,7 @@ function FulfilmentCard({ order, onDone }) {
           </Button>
         </div>
       )}
-      {error && <p className="border-t border-a-line px-6 py-3 text-[13px] text-red-600">{error}</p>}
+      {error && <p className="border-t border-a-line px-6 py-3 text-[13px] text-danger-ink">{error}</p>}
     </Card>
   )
 }
