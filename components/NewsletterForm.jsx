@@ -66,7 +66,7 @@ export default function NewsletterForm() {
         <button
           type="submit"
           disabled={state === 'sending'}
-          className="bg-white px-5 py-3 text-[13px] font-bold uppercase tracking-[0.7px] text-ink-strong transition-opacity disabled:opacity-60"
+          className="bg-white px-5 py-3 text-[13px] font-bold uppercase tracking-[0.7px] text-footer transition-opacity disabled:opacity-60"
         >
           {state === 'sending' ? '…' : 'Илгээх'}
         </button>

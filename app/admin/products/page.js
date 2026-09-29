@@ -49,7 +49,7 @@ export default function ProductsPage() {
     { key: 'variants', header: 'Сонголт', render: (p) => `${nodes(p.variantCollection).length}` },
     { key: 'stock', header: 'Үлдэгдэл', align: 'right', render: (p) => {
       const total = nodes(p.variantCollection).reduce((s, v) => s + v.quantity, 0)
-      return <span className={`tabular-nums ${total === 0 ? 'text-red-600' : total <= 5 ? 'text-amber-600' : ''}`}>{total}</span>
+      return <span className={`tabular-nums ${total === 0 ? 'text-danger-ink' : total <= 5 ? 'text-warn-ink' : ''}`}>{total}</span>
     } },
     { key: 'price', header: 'Үнэ', align: 'right', render: (p) => (
       <span className="tabular-nums">{formatMnt(p.minPriceMnt)}</span>) },
@@ -150,7 +150,7 @@ export default function ProductsPage() {
       ) : (
         <>
           {bulkError && (
-            <p className="mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-[13px] text-red-700">
+            <p className="mb-3 rounded-lg border border-danger-line bg-danger-soft px-4 py-2.5 text-[13px] text-danger-ink">
               {bulkError}
             </p>
           )}

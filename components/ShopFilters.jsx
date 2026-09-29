@@ -77,7 +77,7 @@ export default function ShopFilters({ categories, counts }) {
               type="checkbox"
               checked={stock === value}
               onChange={(e) => setParam('stock', e.target.checked ? value : null)}
-              className="h-4 w-4 accent-black"
+              className="h-4 w-4 accent-primary-strong"
             />
             {label}
           </label>

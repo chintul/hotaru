@@ -96,11 +96,11 @@ function SettingsForm({ settings, refetch }) {
       />
 
       {placeholders.length > 0 && (
-        <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3">
-          <p className="text-[13px] font-medium text-red-700">
+        <div className="mb-6 rounded-lg border border-danger-line bg-danger-soft px-4 py-3">
+          <p className="text-[13px] font-medium text-danger-ink">
             {placeholders.length} талбар загварын утгатай байна
           </p>
-          <p className="mt-0.5 text-[13px] text-red-600">
+          <p className="mt-0.5 text-[13px] text-danger-ink">
             {placeholders.map(([, l]) => l).join(', ')} — бодит захиалга авахаас өмнө солино уу.
             Буруу данс болон зөв дансыг систем ялгаж чадахгүй.
           </p>
@@ -119,7 +119,7 @@ function SettingsForm({ settings, refetch }) {
                       type="checkbox"
                       checked={Boolean(form[key])}
                       onChange={(e) => setForm({ ...form, [key]: e.target.checked })}
-                      className="accent-black"
+                      className="accent-primary-strong"
                     />
                     <span className="text-[13px]">{label}</span>
                   </label>
@@ -136,8 +136,8 @@ function SettingsForm({ settings, refetch }) {
 
       <div className="mt-6 flex items-center gap-3">
         <Button type="submit" disabled={saving}>{saving ? 'Хадгалж байна…' : 'Хадгалах'}</Button>
-        {saved && <span className="text-[13px] text-emerald-600">Хадгалагдлаа.</span>}
-        {error && <span className="text-[13px] text-red-600">{error}</span>}
+        {saved && <span className="text-[13px] text-success-ink">Хадгалагдлаа.</span>}
+        {error && <span className="text-[13px] text-danger-ink">{error}</span>}
       </div>
     </form>
   )

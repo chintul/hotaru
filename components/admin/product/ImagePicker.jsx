@@ -117,7 +117,7 @@ export default function ImagePicker({ open, onClose, anchorRef, product, variant
             >
               <ProductImage filePath={img.filePath} alt={img.alt ?? ''} seed={img.id} width={56} height={56} />
               {chosen && (
-                <span className="absolute inset-0 grid place-items-center bg-a-ink/45 text-white"><Check /></span>
+                <span className="absolute inset-0 grid place-items-center bg-black/45 text-white"><Check /></span>
               )}
             </button>
           )
@@ -152,7 +152,7 @@ export default function ImagePicker({ open, onClose, anchorRef, product, variant
         </button>
       )}
 
-      {error && <p className="mt-2 px-0.5 text-[13px] text-red-600">{error}</p>}
+      {error && <p className="mt-2 px-0.5 text-[13px] text-danger-ink">{error}</p>}
     </Popover>
   )
 }

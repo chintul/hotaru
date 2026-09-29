@@ -115,7 +115,7 @@ export default function OAuthButtons({ next = '/account' }) {
           <button
             onClick={() => start('apple')}
             disabled={busy !== null}
-            className="flex w-full items-center justify-center gap-2.5 rounded-full bg-ink-strong py-3.5 text-[14px] font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-45"
+            className="flex w-full items-center justify-center gap-2.5 rounded-full bg-ink-strong py-3.5 text-[14px] font-medium text-on-ink transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-45"
           >
             <AppleMark />
             {busy === 'apple' ? 'Түр хүлээнэ үү…' : 'Apple-ээр үргэлжлүүлэх'}

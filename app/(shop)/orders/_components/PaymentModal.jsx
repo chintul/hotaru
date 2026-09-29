@@ -92,7 +92,7 @@ export default function PaymentModal({
               {bank?.qpayEnabled && (
                 <div className="mx-5 mb-4 grid shrink-0 grid-cols-2 gap-1 rounded-full bg-shade p-1 sm:mx-6">
                   <Tab active={method === 'qpay'} onClick={() => onMethod('qpay')} icon={<IconQr width="16" height="16" />}>
-                    QPay QR
+                    QPay
                   </Tab>
                   <Tab active={method === 'bank'} onClick={() => onMethod('bank')} icon={<IconBank width="16" height="16" />}>
                     Данс

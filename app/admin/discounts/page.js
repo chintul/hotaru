@@ -117,7 +117,7 @@ export default function DiscountsPage() {
                 <Input value={f.usageLimit}
                   onChange={(e) => setF({ ...f, usageLimit: e.target.value.replace(/\D/g, '') })} />
               </Field>
-              {error && <p className="text-[13px] text-red-600 sm:col-span-5">{error}</p>}
+              {error && <p className="text-[13px] text-danger-ink sm:col-span-5">{error}</p>}
               <div className="flex gap-2 sm:col-span-5">
                 <Button type="submit" variant="primary" disabled={saving}>{saving ? 'Хадгалж байна…' : 'Үүсгэх'}</Button>
                 <Button type="button" onClick={() => setOpen(false)}>Болих</Button>
@@ -133,7 +133,7 @@ export default function DiscountsPage() {
       ) : (
         <>
           {bulkError && (
-            <p className="mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-[13px] text-red-700">
+            <p className="mb-3 rounded-lg border border-danger-line bg-danger-soft px-4 py-2.5 text-[13px] text-danger-ink">
               {bulkError}
             </p>
           )}
@@ -152,7 +152,7 @@ function ToggleButton({ discount, onDone }) {
       // Not destructive, so no confirm — but a refused write used to leave the
       // row looking unchanged with nothing said. The title carries the reason.
       title={failed ? 'Хадгалж чадсангүй. Дахин оролдоно уу.' : undefined}
-      className={failed ? 'border-red-200 text-red-600' : ''}
+      className={failed ? 'border-danger-line text-danger-ink' : ''}
       onClick={async () => {
         setFailed(false)
         try {

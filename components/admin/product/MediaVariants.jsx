@@ -144,7 +144,7 @@ export default function MediaVariants({ product, refetch }) {
       }
     >
       {!configured && (
-        <p className="mx-6 mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-[13px] text-red-700">
+        <p className="mx-6 mt-4 rounded-lg border border-danger-line bg-danger-soft px-4 py-2.5 text-[13px] text-danger-ink">
           ImageKit тохируулагдаагүй байна — .env.local доторх түлхүүрүүдийг шалгана уу.
         </p>
       )}
@@ -217,7 +217,7 @@ export default function MediaVariants({ product, refetch }) {
           const files = Array.from(e.dataTransfer.files ?? []).filter((file) => file.type.startsWith('image/'))
           if (files.length) onFiles(files)
         }}
-        className={`border-t px-6 py-4 transition-colors ${dragging ? 'border-a-focus bg-blue-50' : 'border-a-line'}`}
+        className={`border-t px-6 py-4 transition-colors ${dragging ? 'border-a-focus bg-info-soft' : 'border-a-line'}`}
       >
         <p className="mb-3 text-[12px] font-medium uppercase tracking-[0.04em] text-a-muted">Галерей</p>
         {images.length === 0 ? (
@@ -260,7 +260,7 @@ export default function MediaVariants({ product, refetch }) {
                     <button
                       onClick={() => onDeleteImage(img)}
                       aria-label="Устгах"
-                      className="ml-auto grid h-6 w-6 place-items-center rounded-lg text-[13px] text-white/90 hover:bg-red-500"
+                      className="ml-auto grid h-6 w-6 place-items-center rounded-lg text-[13px] text-white/90 hover:bg-danger"
                     >✕</button>
                   </div>
                 </div>
@@ -277,7 +277,7 @@ export default function MediaVariants({ product, refetch }) {
             ))}
           </ul>
         )}
-        {error && <p className="mt-3 text-[13px] text-red-600">{error}</p>}
+        {error && <p className="mt-3 text-[13px] text-danger-ink">{error}</p>}
       </div>
     </Card>
   )
@@ -327,7 +327,7 @@ function VariantForm({ product, onClose, onSaved }) {
       <Field label="Үлдэгдэл">
         <Input value={f.quantity} onChange={(e) => setF({ ...f, quantity: e.target.value.replace(/\D/g, '') })} />
       </Field>
-      {error && <p className="text-[13px] text-red-600 sm:col-span-5">{error}</p>}
+      {error && <p className="text-[13px] text-danger-ink sm:col-span-5">{error}</p>}
       <div className="flex gap-2 sm:col-span-5">
         <Button type="submit" variant="primary" disabled={loading}>Нэмэх</Button>
         <Button type="button" onClick={onClose}>Болих</Button>

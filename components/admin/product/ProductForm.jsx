@@ -86,8 +86,8 @@ export default function ProductForm({ product, categories, refetch }) {
       stickyHeader
       actions={
         <>
-          {saved && !dirty && <span className="text-[12px] text-emerald-600">Хадгалсан</span>}
-          {dirty && <span className="text-[12px] text-amber-600">Хадгалаагүй өөрчлөлт</span>}
+          {saved && !dirty && <span className="text-[12px] text-success-ink">Хадгалсан</span>}
+          {dirty && <span className="text-[12px] text-warn-ink">Хадгалаагүй өөрчлөлт</span>}
           <Button form="product-form" type="submit" variant="primary" disabled={!dirty || loading}>
             {loading ? 'Хадгалж байна…' : 'Хадгалах'}
           </Button>
@@ -128,7 +128,7 @@ export default function ProductForm({ product, categories, refetch }) {
             type="checkbox"
             checked={f.isFeatured}
             onChange={(e) => { setSaved(false); setF({ ...f, isFeatured: e.target.checked }) }}
-            className="h-4 w-4 accent-black"
+            className="h-4 w-4 accent-primary-strong"
           />
           Онцлох
         </label>
@@ -145,12 +145,12 @@ export default function ProductForm({ product, categories, refetch }) {
         </Field>
         <div className="rounded-lg border border-a-line bg-a-bg px-4 py-3 sm:col-span-2">
           <p className="mb-2 text-[12px] font-medium text-a-muted">Хайлтад ийм харагдана</p>
-          <p className="truncate text-[16px] text-blue-800">{shownTitle}</p>
-          <p className="text-[12px] text-emerald-700">hotaru.mn/shop/{product.slug}</p>
+          <p className="truncate text-[16px] text-info-ink">{shownTitle}</p>
+          <p className="text-[12px] text-success-ink">hotaru.mn/shop/{product.slug}</p>
           <p className="line-clamp-2 text-[13px] text-a-muted">{shownDesc}</p>
         </div>
 
-        {error && <p className="text-[13px] text-red-600 sm:col-span-2">{error}</p>}
+        {error && <p className="text-[13px] text-danger-ink sm:col-span-2">{error}</p>}
       </form>
     </Card>
   )
