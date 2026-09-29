@@ -6,9 +6,11 @@ import { ADD_TO_CART, CLEAR_CART, MY_CART, SET_CART_QTY } from '@/lib/queries'
 import { cartTotals, nodes } from '@/lib/format'
 import { ensureSession } from '@/lib/supabase/browser'
 import { useSession } from './useSession'
+import { useUI } from './UIProvider'
 
 export function useCart() {
   const { ready, session, user } = useSession()
+  const { setCartStale } = useUI()
 
   // Skip until we know whether a session exists — see useSession.
   const { data, loading, refetch } = useQuery(MY_CART, {
@@ -36,14 +38,21 @@ export function useCart() {
   const add = useCallback(async (variantId, quantity = 1) => {
     await ensureSession()
     const res = await addMutation({ variables: { variantId, quantity } })
+    setCartStale(false)
     // Deliberately not awaited. The caller opens the drawer the moment the
     // server has taken the item, and the drawer's own 350ms entrance covers
     // this round trip — so the list fills while the panel is still sliding in.
     // Awaiting it meant two serial round trips of completely dead UI before
     // anything on screen moved, which no amount of animation can disguise.
-    refetch().catch(() => {})
+    //
+    // Not awaited is not the same as not handled. This used to end in
+    // `.catch(() => {})`, so a failed refetch left the drawer rendering an
+    // empty basket over an item the server had already accepted. The flag is
+    // shared UI state because the drawer that has to own up to it is a
+    // different useCart instance from the one that ran the add.
+    refetch().catch(() => setCartStale(true))
     return res
-  }, [addMutation, refetch])
+  }, [addMutation, refetch, setCartStale])
 
   const setQuantity = useCallback(async (variantId, quantity) => {
     await setQtyMutation({ variables: { variantId, quantity } })

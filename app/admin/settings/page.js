@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useMutation, useQuery } from '@apollo/client/react'
 import { ADMIN_SETTINGS, UPDATE_SETTINGS } from '@/lib/queries'
 import { nodes } from '@/lib/format'
@@ -54,15 +54,21 @@ const GROUPS = [
 
 export default function SettingsPage() {
   const { data, loading, refetch } = useQuery(ADMIN_SETTINGS)
-  const [save, { loading: saving }] = useMutation(UPDATE_SETTINGS)
-  const [form, setForm] = useState({})
-  const [saved, setSaved] = useState(false)
-  const [error, setError] = useState(null)
-
   const settings = nodes(data?.storeSettingsCollection)[0]
-  useEffect(() => { if (settings) setForm(settings) }, [settings])
 
   if (loading && !data) return <p className="text-[13px] text-a-muted">Ачааллаж байна…</p>
+
+  // Keyed on the settings row, so the form seeds its fields at mount instead of
+  // an effect copying the query result into state after an empty form has
+  // already painted.
+  return <SettingsForm key={settings?.id ?? 'empty'} settings={settings} refetch={refetch} />
+}
+
+function SettingsForm({ settings, refetch }) {
+  const [save, { loading: saving }] = useMutation(UPDATE_SETTINGS)
+  const [form, setForm] = useState(settings ?? {})
+  const [saved, setSaved] = useState(false)
+  const [error, setError] = useState(null)
 
   const allFields = GROUPS.flatMap((g) => g.fields)
   const placeholders = allFields

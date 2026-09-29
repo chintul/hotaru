@@ -1,8 +1,10 @@
 'use client'
 
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useEffect, useState, useTransition } from 'react'
+import { useState, useTransition } from 'react'
 import { IconChevronDown, IconClose } from './Icons'
+import { useUI } from './UIProvider'
+import { useFocusTrap } from './useFocusTrap'
 
 /**
  * Collection filters. Every control writes to the URL rather than local state,
@@ -27,18 +29,18 @@ export default function ShopFilters({ categories, counts }) {
 
   const activeCat = params.get('c')
   const stock = params.get('stock')
-  const [sheetOpen, setSheetOpen] = useState(false)
+  // The sheet is an overlay like any other now. It used to keep its own
+  // boolean and write document.body.style.overflow itself, which made it the
+  // second owner of one global style — closing it released the scroll lock the
+  // cart drawer was still relying on — and left it as the one surface Escape
+  // could not dismiss, because it was outside UIProvider's set.
+  const { isOpen, open: openOverlay, close: closeOverlay } = useUI()
+  const sheetOpen = isOpen('filters')
+  const sheetRef = useFocusTrap(sheetOpen)
   const [min, setMin] = useState(params.get('min') ?? '')
   const [max, setMax] = useState(params.get('max') ?? '')
 
   const activeCount = [activeCat, stock, params.get('min'), params.get('max')].filter(Boolean).length
-
-  // Locks the page behind the sheet so the grid does not scroll underneath it.
-  useEffect(() => {
-    if (!sheetOpen) return undefined
-    document.body.style.overflow = 'hidden'
-    return () => { document.body.style.overflow = '' }
-  }, [sheetOpen])
 
   const body = (
     <>
@@ -118,7 +120,7 @@ export default function ShopFilters({ categories, counts }) {
           On a phone it collapses to this one bar; the filters live in a sheet. */}
       <div className="lg:hidden">
         <button
-          onClick={() => setSheetOpen(true)}
+          onClick={() => openOverlay('filters')}
           className={`flex w-full items-center justify-between border border-line px-4 py-3 transition-opacity ${pending ? 'opacity-60' : ''}`}
         >
           <span className="nav-link text-[13px]">Шүүх</span>
@@ -144,19 +146,23 @@ export default function ShopFilters({ categories, counts }) {
         <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="Шүүх">
           <button
             className="overlay-in absolute inset-0 bg-ink/25"
-            onClick={() => setSheetOpen(false)}
+            onClick={closeOverlay}
             aria-label="Хаах"
           />
-          <div className="sheet-in absolute inset-x-0 bottom-0 flex max-h-[85vh] flex-col rounded-t-2xl bg-paper">
+          <div
+            ref={sheetRef}
+            tabIndex={-1}
+            className="sheet-in absolute inset-x-0 bottom-0 flex max-h-[85vh] flex-col rounded-t-2xl bg-paper outline-none"
+          >
             <div className="flex items-center justify-between border-b border-line px-5 py-4">
               <span className="nav-link text-[14px]">Шүүх</span>
-              <button onClick={() => setSheetOpen(false)} className="icon-btn -mr-2" aria-label="Хаах">
+              <button onClick={closeOverlay} className="icon-btn -mr-2" aria-label="Хаах">
                 <IconClose />
               </button>
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto px-5">{body}</div>
             <div className="border-t border-line px-5 py-4">
-              <button onClick={() => setSheetOpen(false)} className="btn-solid w-full py-4">
+              <button onClick={closeOverlay} className="btn-solid w-full py-4">
                 Үр дүнг харах
               </button>
             </div>

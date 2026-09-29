@@ -14,21 +14,32 @@ export function useSession() {
   const [session, setSession] = useState(null)
   const [ready, setReady] = useState(false)
 
+  // The auth client is a lazy chunk now (see lib/supabase/browser.js), so this
+  // resolves a tick later than it used to. `ready` already covered that gap —
+  // it exists precisely so nothing queries a cart before we know whether there
+  // is a session — so the only new work is unsubscribing from a listener that
+  // may arrive after unmount.
   useEffect(() => {
-    const supabase = supabaseBrowser()
     let alive = true
+    let unsubscribe = null
 
-    supabase.auth.getSession().then(({ data }) => {
+    supabaseBrowser().then((supabase) => {
       if (!alive) return
-      setSession(data.session ?? null)
-      setReady(true)
+      supabase.auth.getSession().then(({ data }) => {
+        if (!alive) return
+        setSession(data.session ?? null)
+        setReady(true)
+      })
+
+      const { data: sub } = supabase.auth.onAuthStateChange((_event, next) => {
+        if (!alive) return
+        setSession(next ?? null)
+        setReady(true)
+      })
+      unsubscribe = () => sub.subscription.unsubscribe()
     })
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, next) => {
-      setSession(next ?? null)
-      setReady(true)
-    })
-    return () => { alive = false; sub.subscription.unsubscribe() }
+    return () => { alive = false; unsubscribe?.() }
   }, [])
 
   const isAnonymous = Boolean(session?.user?.is_anonymous)

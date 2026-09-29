@@ -30,7 +30,7 @@ export function useAuthUpgrade() {
   const upgrade = useCallback(async ({ email, password }) => {
     setBusy(true)
     setError(null)
-    const supabase = supabaseBrowser()
+    const supabase = await supabaseBrowser()
     try {
       await ensureSession()
       const { data: { session } } = await supabase.auth.getSession()
@@ -88,7 +88,7 @@ export function useAuthUpgrade() {
   }, [apollo])
 
   const signOut = useCallback(async () => {
-    await supabaseBrowser().auth.signOut()
+    await (await supabaseBrowser()).auth.signOut()
     await apollo.resetStore()
   }, [apollo])
 

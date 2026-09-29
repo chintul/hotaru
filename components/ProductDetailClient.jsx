@@ -25,7 +25,7 @@ export default function ProductDetailClient({ product, copy, payNote }) {
   const variants = nodes(product.variantCollection)
   const images = nodes(product.productImageCollection)
   const { add, adding } = useCart()
-  const { setCartOpen, setAddPending } = useUI()
+  const { open: openOverlay, close: closeOverlay, setAddPending } = useUI()
 
   const [selectedId, setSelectedId] = useState(variants[0]?.id ?? null)
   const [activeImage, setActiveImage] = useState(0)
@@ -118,7 +118,7 @@ export default function ProductDetailClient({ product, copy, payNote }) {
     // Supabase — measured at ~1.2s warm — and a shopper who taps a buy button
     // and gets a second of nothing has already decided the button is broken.
     // The drawer shows a skeleton line for that second instead.
-    setCartOpen(true)
+    openOverlay('cart')
     setAddPending(true)
     try {
       await add(selected.id, qty)
@@ -130,7 +130,7 @@ export default function ProductDetailClient({ product, copy, payNote }) {
     } catch (e) {
       // Failed, so take the drawer back down — leaving it open on an unchanged
       // basket, with the error behind it on the page, would be a silent lie.
-      setCartOpen(false)
+      closeOverlay()
       setError(e?.message ?? 'Сагсанд нэмэхэд алдаа гарлаа.')
     } finally {
       setAddPending(false)

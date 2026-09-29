@@ -145,7 +145,10 @@ export default function AccountPage() {
           )}
         </section>
 
-        <ProfileDetails profile={profile} onSaved={refetch} />
+        {/* Keyed on the profile so a different row arriving remounts the form
+            with fresh fields, rather than an effect copying props into state
+            after the stale values have already painted. */}
+        <ProfileDetails key={profile?.id ?? 'new'} profile={profile} onSaved={refetch} />
       </div>
     </div>
   )
@@ -153,15 +156,13 @@ export default function AccountPage() {
 
 function ProfileDetails({ profile, onSaved }) {
   const [save, { loading }] = useMutation(UPDATE_PROFILE)
-  const [fullName, setFullName] = useState('')
-  const [marketing, setMarketing] = useState(false)
+  // Seeded from the profile at mount. The parent keys this component on the
+  // profile id, so a different row arrives as a remount and these initialisers
+  // run again — no effect copying props into state one render too late.
+  const [fullName, setFullName] = useState(profile?.fullName ?? '')
+  const [marketing, setMarketing] = useState(Boolean(profile?.marketingOptIn))
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState(null)
-
-  useEffect(() => {
-    setFullName(profile?.fullName ?? '')
-    setMarketing(Boolean(profile?.marketingOptIn))
-  }, [profile])
 
   const dirty =
     fullName !== (profile?.fullName ?? '') || marketing !== Boolean(profile?.marketingOptIn)

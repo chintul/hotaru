@@ -71,7 +71,7 @@ export default function OAuthButtons({ next = '/account' }) {
       // Back through /auth/callback, not straight to `next`: PKCE returns a
       // code that has to be exchanged for a session by something that can
       // write cookies. The destination rides along as a query param.
-      const { error } = await supabaseBrowser().auth.signInWithOAuth({
+      const { error } = await (await supabaseBrowser()).auth.signInWithOAuth({
         provider,
         options: {
           redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,

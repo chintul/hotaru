@@ -31,9 +31,13 @@
   --color-paper:      #fffdfb;
   --color-shade:      #f7f2ee;   /* product image backdrop */
   --color-footer:     #1c1c1c;
+  /* Sale price only. It is not a general-purpose accent: the cart count badge
+     wore it, and PRODUCT.md names red urgency (AliExpress, Pinduoduo) as an
+     anti-reference — a basket that has three cute things in it is not an
+     alarm. --color-buy and --color-badge were declared alongside it and used
+     nowhere, and #8f8f8f was 3.0:1 on paper anyway, which the rest of this
+     palette clears comfortably. Deleted rather than left as traps. */
   --color-sale:       #d33;
-  --color-buy:        #2196c4;   /* "Buy it now" blue */
-  --color-badge:      #8f8f8f;
 
   /* Order pages. The shop is a stark gallery; an order page is the one place a
      customer is anxious (did my money arrive?), so these surfaces are softer:
@@ -284,10 +288,17 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
-  /* The blanket rule does not stop an infinite marquee, it fast-forwards it:
-     the track snaps to -50% and the reader is left looking at the second copy
-     of the list. This one has to be turned off, not sped up. */
+  /* The blanket rule does not stop an infinite animation, it fast-forwards it:
+     the marquee track snaps to -50% and the reader is left looking at the
+     second copy of the list, and a loop at .01ms is a repaint every frame for
+     as long as the element lives. Every infinite animation in this file has to
+     be turned OFF, not sped up — there are three, and the exemption used to
+     name only the first.
+     .o-skeleton keeps a flat ground so a loading block still reads as a block,
+     and .o-ping keeps its dot visible rather than mid-expansion. */
   .marquee-track { animation: none !important; transform: none !important; }
+  .o-skeleton { animation: none !important; background: var(--color-line-soft) !important; }
+  .o-ping { animation: none !important; opacity: .55 !important; transform: none !important; }
 }
 
 /* One visible focus ring for the whole storefront. Before this the only

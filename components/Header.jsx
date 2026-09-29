@@ -1,10 +1,6 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
-import { useQuery } from '@apollo/client/react'
-import { NAV_CATEGORIES } from '@/lib/queries'
-import { firstNode, nodes } from '@/lib/format'
 import { useUI } from './UIProvider'
 import { useCart } from './useCart'
 import { useSession } from './useSession'
@@ -13,17 +9,18 @@ import { IconBag, IconClose, IconHeart, IconMenu, IconSearch, IconUser } from '.
 /**
  * Header laid out like the reference: logo left, centred uppercase nav,
  * icon cluster right (search, account, wishlist, cart with a count badge).
+ *
+ * `categories` arrives as a prop from the (shop) layout, which reads it on the
+ * server with the anon key. It used to be a client useQuery, which meant the
+ * top-level navigation of every page waited on a round trip to Tokyo before it
+ * could render — and put the category list in the client bundle for a value
+ * that changes about never.
  */
-export default function Header() {
-  const { setCartOpen, setSearchOpen, navOpen, setNavOpen } = useUI()
+export default function Header({ categories = [] }) {
+  const { isOpen, open, close, toggle } = useUI()
+  const navOpen = isOpen('nav')
   const { count } = useCart()
   const { isAuthenticated } = useSession()
-  const { data } = useQuery(NAV_CATEGORIES)
-
-  const categories = nodes(data?.categoryCollection).map((c) => ({
-    href: `/shop?c=${c.slug}`,
-    label: firstNode(c.categoryTranslationCollection)?.name ?? c.slug,
-  }))
 
   const nav = [
     { href: '/', label: 'Нүүр' },
@@ -31,17 +28,21 @@ export default function Header() {
     ...categories.slice(0, 4),
   ]
 
-  // Close the mobile sheet on route change; otherwise it hangs over the page.
-  useEffect(() => { setNavOpen(false) }, [setNavOpen])
+  // Closing on navigation is UIProvider's job now. It used to live here as an
+  // effect keyed on [setNavOpen] — a setState function, which never changes —
+  // so it ran once on mount and never again, and Header does not remount
+  // between routes. The menu survived every Android back press, scroll lock and
+  // all.
 
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-paper">
       <div className="mx-auto flex h-[72px] max-w-[1400px] items-center gap-2 px-3 sm:gap-4 sm:px-5 lg:px-8">
         <button
-          onClick={() => setNavOpen(!navOpen)}
+          onClick={() => toggle('nav')}
           className="icon-btn -ml-2 shrink-0 lg:hidden"
           aria-label="Цэс"
           aria-expanded={navOpen}
+          aria-controls="mobile-nav"
         >
           {navOpen ? <IconClose /> : <IconMenu />}
         </button>
@@ -62,7 +63,7 @@ export default function Header() {
         </nav>
 
         <div className="ml-auto flex items-center gap-1 lg:ml-0">
-          <button onClick={() => setSearchOpen(true)} className="icon-btn" aria-label="Хайх">
+          <button onClick={() => open('search')} className="icon-btn" aria-label="Хайх">
             <IconSearch />
           </button>
           <Link href={isAuthenticated ? '/account' : '/login'} className="icon-btn" aria-label="Профайл">
@@ -71,7 +72,7 @@ export default function Header() {
           <Link href="/wishlist" className="icon-btn" aria-label="Хадгалсан">
             <IconHeart />
           </Link>
-          <button onClick={() => setCartOpen(true)} className="icon-btn relative" aria-label="Сагс">
+          <button onClick={() => open('cart')} className="icon-btn relative" aria-label="Сагс">
             <IconBag />
             {count > 0 && (
               // Keyed on the count so React remounts the node on every change,
@@ -80,7 +81,7 @@ export default function Header() {
               // the count changed twice inside one animation.
               <span
                 key={count}
-                className="count-pop absolute -right-0.5 -top-0.5 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-sale px-1 text-[10px] font-bold text-white"
+                className="count-pop absolute -right-0.5 -top-0.5 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-ink-strong px-1 text-[10px] font-bold text-paper"
               >
                 {count}
               </span>
@@ -90,18 +91,18 @@ export default function Header() {
       </div>
 
       {navOpen && (
-        <nav className="overlay-in border-t border-line bg-paper px-5 py-3 lg:hidden">
+        <nav id="mobile-nav" className="overlay-in border-t border-line bg-paper px-5 py-3 lg:hidden">
           {nav.map((item) => (
             <Link
               key={item.href + item.label}
               href={item.href}
-              onClick={() => setNavOpen(false)}
+              onClick={close}
               className="nav-link block py-3"
             >
               {item.label}
             </Link>
           ))}
-          <Link href="/orders" onClick={() => setNavOpen(false)} className="nav-link block py-3">
+          <Link href="/orders" onClick={close} className="nav-link block py-3">
             Захиалга
           </Link>
         </nav>

@@ -102,7 +102,7 @@ export default function PhoneVerify({ onVerified, initialPhone = '' }) {
         if (body.status === 'VERIFIED') {
           stopPolling()
           setStatus('verified')
-          const supabase = supabaseBrowser()
+          const supabase = await supabaseBrowser()
 
           if (body.session) {
             // The number belongs to an existing account, so we adopt its

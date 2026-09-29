@@ -23,7 +23,7 @@ function makeClient() {
    * at client-construction time would start failing after the first refresh.
    */
   const authLink = new SetContextLink(async (prevContext) => {
-    const { data: { session } } = await supabaseBrowser().auth.getSession()
+    const { data: { session } } = await (await supabaseBrowser()).auth.getSession()
     const token = session?.access_token ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
     return {
       headers: {

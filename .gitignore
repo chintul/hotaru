@@ -16,4 +16,7 @@ npm-debug.log*
 # *.png above keeps stray screenshots out; the brand assets still have to ship.
 !/public/logo.png
 !/public/logo-mark.png
-!/app/apple-icon.png
+!/public/favicon-*.png
+!/public/android-icon-*.png
+!/public/apple-icon-*.png
+!/public/ms-icon-*.png

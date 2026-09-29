@@ -12,7 +12,19 @@ import { Search as SearchIcon } from './icons'
  * phone or a laptop, jumping straight to an order number is the single most
  * common action, and it is otherwise three clicks and a scan of a table.
  */
+/**
+ * The panel is mounted only while open, so the query and the cursor reset by
+ * unmounting. The old shape held one instance forever and cleared it on the way
+ * down with `if (open) focus(); else { setQ(''); setCursor(0) }`, which is
+ * setState-in-effect — and also kept the 100-product window query alive behind
+ * a `skip` for the whole session.
+ */
 export default function CommandPalette({ open, onClose, nav }) {
+  if (!open) return null
+  return <Palette onClose={onClose} nav={nav} />
+}
+
+function Palette({ onClose, nav }) {
   const router = useRouter()
   const [q, setQ] = useState('')
   const inputRef = useRef(null)
@@ -31,17 +43,15 @@ export default function CommandPalette({ open, onClose, nav }) {
 
   const { data: orderData } = useQuery(ADMIN_ALL_ORDERS, {
     variables: { first: 6, filter: orderFilter },
-    skip: !open || !term,
+    skip: !term,
   })
   // Products stay client-side: a title lives in productTranslationCollection
   // and pg_graphql cannot filter a parent by a child's column, so server-side
   // matching would only see the slug. The window covers the whole catalog.
-  const { data: productData } = useQuery(ADMIN_PRODUCTS, { variables: { first: 100 }, skip: !open })
+  const { data: productData } = useQuery(ADMIN_PRODUCTS, { variables: { first: 100 } })
 
-  useEffect(() => {
-    if (open) setTimeout(() => inputRef.current?.focus(), 40)
-    else { setQ(''); setCursor(0) }
-  }, [open])
+  // A DOM call on mount, not a state write.
+  useEffect(() => { inputRef.current?.focus({ preventScroll: true }) }, [])
 
   const results = useMemo(() => {
     const lower = term.toLowerCase()
@@ -75,8 +85,6 @@ export default function CommandPalette({ open, onClose, nav }) {
   // arrive from the server, so the list can shrink under a cursor that is
   // already past the end — and Enter on a missing row does nothing at all.
   const cursor = Math.min(rawCursor, Math.max(0, results.length - 1))
-
-  if (!open) return null
 
   const go = (item) => { if (item) { router.push(item.href); onClose() } }
 

@@ -4,19 +4,22 @@ import Link from 'next/link'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useUI } from './UIProvider'
 import { useCart } from './useCart'
+import { useFocusTrap } from './useFocusTrap'
 import { copy, firstNode, formatMnt, toNumber } from '@/lib/format'
 import ProductImage from './ProductImage'
 import { IconClose, IconMinus, IconPlus } from './Icons'
 
 export default function CartDrawer() {
-  const { cartOpen, setCartOpen, addPending } = useUI()
-  const { items, subtotal, count, loading, setQuantity, clear } = useCart()
+  const { isOpen, close: closeOverlay, addPending, cartStale, setCartStale } = useUI()
+  const cartOpen = isOpen('cart')
+  const { items, subtotal, count, loading, setQuantity, clear, refetch } = useCart()
   // Two taps to empty a cart. The button sat 12px under the checkout CTA, at
   // the bottom of a full-height drawer, exactly in the one-handed thumb arc,
   // with no confirm and no undo. One slip there is a whole lost order from a
   // shopper who will not come back to rebuild it.
   const [confirmClear, setConfirmClear] = useState(false)
   const listRef = useRef(null)
+  const panelRef = useFocusTrap(cartOpen)
 
   // Every dismissal goes through here, so an armed "empty the cart" confirm can
   // never survive a close and be waiting on the next open. Resetting it in an
@@ -24,8 +27,8 @@ export default function CartDrawer() {
   // react-hooks config rejects.
   const close = useCallback(() => {
     setConfirmClear(false)
-    setCartOpen(false)
-  }, [setCartOpen])
+    closeOverlay()
+  }, [closeOverlay])
 
   // The drawer opens on the click, and the line that was just added arrives
   // LAST — below the fold on any cart past three items. All the optimistic work
@@ -36,18 +39,8 @@ export default function CartDrawer() {
     if (last) last.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
   }, [cartOpen, addPending, items.length])
 
-  // Android's back button should close the drawer, not leave the product page.
-  useEffect(() => {
-    if (!cartOpen) return undefined
-    window.history.pushState({ hotaruCart: true }, '')
-    const onPop = () => close()
-    window.addEventListener('popstate', onPop)
-    return () => {
-      window.removeEventListener('popstate', onPop)
-      // Only unwind the entry we added, and only if it is still the current one.
-      if (window.history.state?.hotaruCart) window.history.back()
-    }
-  }, [cartOpen, close])
+  // Escape, the scroll lock and Android's back button are handled once in
+  // UIProvider now, for every overlay rather than only for this one.
 
   if (!cartOpen) return null
 
@@ -58,7 +51,11 @@ export default function CartDrawer() {
         onClick={close}
         aria-label="Хаах"
       />
-      <aside className="drawer-in absolute inset-y-0 right-0 flex w-full max-w-[420px] flex-col bg-paper">
+      <aside
+        ref={panelRef}
+        tabIndex={-1}
+        className="drawer-in absolute inset-y-0 right-0 flex w-full max-w-[420px] flex-col bg-paper outline-none"
+      >
         <div className="flex items-center justify-between border-b border-line px-6 py-4">
           {/* Same total as the header badge: units, not line items. The two
               disagreed when a single line held more than one of something. */}
@@ -82,6 +79,25 @@ export default function CartDrawer() {
 
         <div className="flex-1 overflow-y-auto px-6">
           {loading && !addPending && <p className="label py-10 text-ink-faint">Ачааллаж байна…</p>}
+
+          {/* The add succeeded and the refetch after it did not, so this list is
+              older than the basket the server holds. That used to be swallowed
+              (`refetch().catch(() => {})`), which meant a tap that worked could
+              render as "Сагс хоосон байна" — the worst available answer, and the
+              one most likely to make a shopper give up and leave. */}
+          {cartStale && (
+            <div className="mt-4 flex items-center gap-3 border border-line bg-paper-warm px-4 py-3">
+              <p className="flex-1 text-[13px] text-ink-soft">
+                Сагсыг шинэчилж чадсангүй. Энд харагдаж байгаа нь бүрэн бус байж болно.
+              </p>
+              <button
+                onClick={() => { setCartStale(false); refetch().catch(() => setCartStale(true)) }}
+                className="label link-underline shrink-0 text-ink"
+              >
+                Дахин оролдох
+              </button>
+            </div>
+          )}
 
           {/* The drawer now opens on the click, not on the server's answer, so
               for the length of one round trip there is a line on its way that

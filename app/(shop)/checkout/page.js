@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useApolloClient, useMutation, useQuery } from '@apollo/client/react'
 import { CHECKOUT_CONTEXT, CREATE_ADDRESS, MY_CART, PLACE_ORDER } from '@/lib/queries'
 import { copy, firstNode, formatMnt, nodes, toNumber } from '@/lib/format'
@@ -106,25 +106,34 @@ function CheckoutForm({ items, subtotal, profileId }) {
   const addresses = nodes(data?.addressCollection)
   const methods = nodes(data?.deliveryMethodCollection)
 
-  const [addressId, setAddressId] = useState(null)
-  const [methodId, setMethodId] = useState(null)
+  // Only what the shopper has actually picked is state. The defaults are
+  // derived below, because an effect that writes them back is a second render
+  // pass over a screen that is already waiting on the network — and is
+  // setState-in-effect, which this repo's react-hooks config rejects.
+  const [pickedAddressId, setPickedAddressId] = useState(null)
+  const [pickedMethodId, setPickedMethodId] = useState(null)
   const [discountCode, setDiscountCode] = useState('')
   const [note, setNote] = useState('')
   const [draft, setDraft] = useState(EMPTY_ADDRESS)
-  const [addingAddress, setAddingAddress] = useState(false)
+  const [addingByChoice, setAddingByChoice] = useState(false)
   const [error, setError] = useState(null)
 
-  useEffect(() => {
-    if (!addressId && addresses.length) {
-      setAddressId(addresses.find((a) => a.isDefault)?.id ?? addresses[0].id)
-    }
-    if (!methodId && methods.length) setMethodId(methods[0].id)
-    if (addresses.length === 0 && !loading) setAddingAddress(true)
-  }, [addresses, methods, addressId, methodId, loading])
+  // Default to the shopper's default address, else the first one they have.
+  const addressId =
+    pickedAddressId ?? addresses.find((a) => a.isDefault)?.id ?? addresses[0]?.id ?? null
+  const setAddressId = setPickedAddressId
+  const methodId = pickedMethodId ?? methods[0]?.id ?? null
+  const setMethodId = setPickedMethodId
+  // With no addresses on file there is nothing to choose between, so the form
+  // is the screen rather than something behind a button.
+  const addingAddress = addingByChoice || (!loading && addresses.length === 0)
+  const setAddingAddress = setAddingByChoice
 
   const method = methods.find((m) => m.id === methodId)
   const deliveryFee = toNumber(method?.feeMnt)
-  const estimate = useMemo(() => subtotal + deliveryFee, [subtotal, deliveryFee])
+  // Adding two numbers. It was wrapped in useMemo, which the React Compiler
+  // cannot preserve now that the delivery method is derived rather than stored.
+  const estimate = subtotal + deliveryFee
 
   const onSaveAddress = async (e) => {
     e.preventDefault()

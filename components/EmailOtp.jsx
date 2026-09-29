@@ -34,7 +34,7 @@ export default function EmailOtp({ onVerified, next = '/account' }) {
         setTransferToken(t.data?.issueCartTransferToken ?? null)
       } catch { /* empty cart */ }
 
-      const supabase = supabaseBrowser()
+      const supabase = await supabaseBrowser()
       const { error } = await supabase.auth.signInWithOtp({
         email: email.trim(),
         options: {
@@ -55,7 +55,7 @@ export default function EmailOtp({ onVerified, next = '/account' }) {
     setError(null)
     setPhase('verifying')
     try {
-      const supabase = supabaseBrowser()
+      const supabase = await supabaseBrowser()
       const { error } = await supabase.auth.verifyOtp({
         email: email.trim(),
         token: code.trim(),
