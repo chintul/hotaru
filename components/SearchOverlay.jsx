@@ -87,7 +87,6 @@ function SearchPanel({ onClose }) {
                     <li key={p.id}>
                       <Link
                         href={`/shop/${p.slug}`}
-                        onClick={onClose}
                         className="flex items-center gap-4 py-4"
                       >
                         <span className="relative aspect-square w-16 shrink-0 overflow-hidden bg-paper-warm">

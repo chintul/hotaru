@@ -120,7 +120,6 @@ export default function CartDrawer() {
               <p className="text-ink-soft">Сагс хоосон байна.</p>
               <Link
                 href="/shop"
-                onClick={close}
                 className="label link-underline mt-4 inline-block"
               >
                 Дэлгүүр рүү
@@ -143,7 +142,6 @@ export default function CartDrawer() {
                 <li key={item.id} style={{ '--i': i }} className="flex gap-4 py-5">
                   <Link
                     href={`/shop/${product?.slug ?? ''}`}
-                    onClick={close}
                     className="relative aspect-square w-20 shrink-0 overflow-hidden bg-paper-warm"
                   >
                     <ProductImage filePath={image?.filePath} alt={title} seed={product?.slug} sizes="80px" />
@@ -204,7 +202,6 @@ export default function CartDrawer() {
             <p className="label mt-1 text-ink-faint">Хүргэлтийн төлбөр төлбөрийн хэсэгт нэмэгдэнэ</p>
             <Link
               href="/checkout"
-              onClick={close}
               className="btn-solid mt-4 block py-4 text-center"
             >
               Захиалах

@@ -30,29 +30,45 @@ export function useCart() {
   const { subtotal, count } = cartTotals(items)
 
   /**
+   * Read the cart back after a write, and do not take the first empty answer
+   * for an answer.
+   *
+   * The read that follows a mutation can still miss it — measured at a few
+   * hundred ms on this project, during which addToCart's own payload also
+   * comes back with an empty cartItemCollection. One empty result is not proof
+   * of an empty cart, and believing it is what left the drawer showing "Сагс
+   * хоосон байна" over an item the server had already taken.
+   */
+  const settle = useCallback(async () => {
+    for (const wait of [0, 250, 600, 1200]) {
+      if (wait) await new Promise((resolve) => setTimeout(resolve, wait))
+      try {
+        const { data: fresh } = await refetch()
+        const settled = nodes(fresh?.cartCollection)[0]
+        if (nodes(settled?.cartItemCollection).length > 0) {
+          setCartStale(false)
+          return
+        }
+      } catch { /* keep trying */ }
+    }
+    // Out of attempts: the drawer owns up rather than quietly showing nothing.
+    setCartStale(true)
+  }, [refetch, setCartStale])
+
+  /**
    * Add to cart. If the visitor has no identity yet, create an anonymous one
-   * first — that is the entire reason anonymous auth exists here. The refetch
-   * covers the first-ever add, where the MY_CART query was skipped and so has
-   * nothing to update.
+   * first — that is the entire reason anonymous auth exists here.
    */
   const add = useCallback(async (variantId, quantity = 1) => {
     await ensureSession()
     const res = await addMutation({ variables: { variantId, quantity } })
     setCartStale(false)
     // Deliberately not awaited. The caller opens the drawer the moment the
-    // server has taken the item, and the drawer's own 350ms entrance covers
-    // this round trip — so the list fills while the panel is still sliding in.
-    // Awaiting it meant two serial round trips of completely dead UI before
-    // anything on screen moved, which no amount of animation can disguise.
-    //
-    // Not awaited is not the same as not handled. This used to end in
-    // `.catch(() => {})`, so a failed refetch left the drawer rendering an
-    // empty basket over an item the server had already accepted. The flag is
-    // shared UI state because the drawer that has to own up to it is a
-    // different useCart instance from the one that ran the add.
-    refetch().catch(() => setCartStale(true))
+    // server has taken the item, and the drawer's own entrance covers the
+    // round trip, so the list fills while the panel is still sliding in.
+    settle()
     return res
-  }, [addMutation, refetch, setCartStale])
+  }, [addMutation, settle, setCartStale])
 
   const setQuantity = useCallback(async (variantId, quantity) => {
     await setQtyMutation({ variables: { variantId, quantity } })
