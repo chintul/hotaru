@@ -66,9 +66,9 @@ export default async function ProductPage({ params }) {
   return (
     <div className="mx-auto max-w-[1400px] px-5 py-8 lg:px-8">
       <nav className="mb-6 text-[12px] text-ink-faint">
-        <Link href="/" className="hover:text-ink">Нүүр</Link>
+        <Link href="/" className="tap hover:text-ink">Нүүр</Link>
         <span className="px-2">/</span>
-        <Link href="/shop" className="hover:text-ink">Дэлгүүр</Link>
+        <Link href="/shop" className="tap hover:text-ink">Дэлгүүр</Link>
         <span className="px-2">/</span>
         <span className="text-ink">{productCopy(product).title}</span>
       </nav>

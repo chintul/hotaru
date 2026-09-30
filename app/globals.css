@@ -348,10 +348,16 @@ body {
 
   /* Colour swatch circles under a card and on the PDP. */
   .swatch {
+    position: relative;
     width: 30px; height: 30px; border-radius: 999px;
     border: 1px solid var(--color-line);
     display: grid; place-items: center;
     transition: box-shadow var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease);
+  }
+  /* A 30px circle is a 30px target. The ring stays 30px and the thumb gets 44,
+     taken from the gap around it rather than from the layout. */
+  .swatch::after {
+    content: ''; position: absolute; inset: -8px; border-radius: 999px;
   }
   .swatch:hover { transform: scale(1.06); }
   /* --primary-strong, so the ring is right in both themes: dark lifts it. */
@@ -361,12 +367,32 @@ body {
     transform: scale(1.06);
   }
 
+  /* 44px on a phone, 40 where there is a cursor. This is the chrome every page
+     is operated by, one-handed. */
   .icon-btn {
-    width: 40px; height: 40px; border-radius: 999px;
+    width: 44px; height: 44px; border-radius: 999px;
     display: grid; place-items: center;
     transition: background-color .15s ease;
   }
+  @media (min-width: 640px) { .icon-btn { width: 40px; height: 40px; } }
   .icon-btn:hover { background: var(--color-line-soft); }
+
+  /* Gives a small control a 44px touch area without moving anything around it.
+     For controls that are text-sized by design — breadcrumbs, "share", the
+     standalone underlined actions.
+
+     Scoped to .inline-block/.block for the underlined links on purpose: those
+     sit on their own line. The same treatment on a link inside a sentence
+     would put a 44px band over the lines above and below it and swallow taps
+     meant for them. */
+  .tap,
+  .link-underline:is(.inline-block, .block) { position: relative; }
+  .tap::after,
+  .link-underline:is(.inline-block, .block)::after {
+    content: ''; position: absolute; left: 0; right: 0;
+    top: 50%; translate: 0 -50%;
+    height: 100%; min-height: 44px;
+  }
 
   /* Both icons are in the DOM; CSS shows the one you would switch TO. Keyed on
      the attribute rather than React state so it is right on the first paint.

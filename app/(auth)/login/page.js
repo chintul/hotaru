@@ -64,7 +64,7 @@ function SignIn() {
               type="button"
               onClick={() => setMethod(key)}
               aria-pressed={method === key}
-              className={`rounded-full py-2.5 text-[14px] font-medium transition-colors ${
+              className={`min-h-11 rounded-full py-2.5 text-[14px] font-medium transition-colors ${
                 method === key
                   ? "bg-paper text-ink shadow-[0_1px_2px_rgba(0,0,0,.08)]"
                   : "text-ink-soft hover:text-ink"

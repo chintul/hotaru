@@ -23,9 +23,10 @@ export default function FaqPage() {
     <Prose title="Түгээмэл асуулт">
       <div className="divide-y divide-line border-y border-line">
         {QA.map(([q, a]) => (
-          <details key={q} className="group py-4">
+          <details key={q} className="group py-1 sm:py-4">
             <summary className="cursor-pointer list-none text-[14px] font-semibold text-ink marker:hidden">
-              <span className="flex items-center justify-between gap-4">
+              {/* The whole row is the target, not the 23px line of text. */}
+              <span className="flex min-h-11 items-center justify-between gap-4 py-2 sm:min-h-0 sm:py-0">
                 {q}
                 <span className="text-ink-faint transition-transform group-open:rotate-45">+</span>
               </span>

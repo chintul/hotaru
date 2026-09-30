@@ -54,7 +54,7 @@ export default function ShopToolbar({ total, cols }) {
         <select
           value={params.get('sort') ?? 'featured'}
           onChange={(e) => set('sort', e.target.value)}
-          className="border border-line px-3 py-2 text-[13px] focus:border-ink focus:outline-none"
+          className="min-h-11 border border-line px-3 py-2 text-[13px] focus:border-ink focus:outline-none sm:min-h-0"
         >
           {SORTS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
         </select>
