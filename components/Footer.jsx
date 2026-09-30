@@ -15,10 +15,6 @@ const COLUMNS = [
     title: "Дэлгүүр",
     links: [
       { href: "/shop", label: "Бүх бүтээгдэхүүн" },
-      { href: "/shop?c=bags", label: "Цүнх" },
-      { href: "/shop?c=drinkware", label: "Аяга сав" },
-      { href: "/shop?c=accessories", label: "Хэрэглэл" },
-      { href: "/shop?c=jewelry", label: "Гоёл чимэглэл" },
     ],
   },
   {
@@ -48,16 +44,18 @@ export default async function Footer() {
     // --color-footer is a dark band in BOTH themes, so the white-alpha scale
     // below is correct in both and is deliberately not tokenised.
     <footer className="bg-footer text-white">
-      <div className="mx-auto grid max-w-350 gap-10 px-5 py-16 sm:grid-cols-2 lg:grid-cols-6 lg:px-8">
+      <div className="mx-auto grid max-w-350 gap-6 px-5 py-10 sm:gap-10 sm:py-16 sm:grid-cols-2 lg:grid-cols-6 lg:px-8">
         {COLUMNS.map((col) => (
           <div key={col.title}>
             <h3 className="nav-link text-white">{col.title}</h3>
-            <ul className="mt-5 space-y-2.5">
+            {/* 36px rows on a phone: enough for a thumb in a secondary nav,
+                without the 44px band turning the footer into a page of its own. */}
+            <ul className="mt-3 sm:mt-5 sm:space-y-2.5">
               {col.links.map((l) => (
                 <li key={l.href + l.label}>
                   <Link
                     href={l.href}
-                    className="text-[13px] text-white/70 transition-colors hover:text-white"
+                    className="flex min-h-9 items-center text-[13px] text-white/70 transition-colors hover:text-white sm:min-h-0"
                   >
                     {l.label}
                   </Link>
@@ -73,12 +71,12 @@ export default async function Footer() {
         {!contact.isEmpty && (
           <div>
             <h3 className="nav-link text-white">Холбоо барих</h3>
-            <ul className="mt-5 space-y-3">
+            <ul className="mt-3 space-y-1 sm:mt-5 sm:space-y-3">
               {contact.phone && (
                 <li>
                   <a
                     href={contact.phoneHref}
-                    className="flex items-start gap-2.5 text-[13px] text-white/70 transition-colors hover:text-white"
+                    className="flex min-h-9 items-start gap-2.5 text-[13px] text-white/70 transition-colors hover:text-white sm:min-h-0"
                   >
                     <IconPhone
                       className="mt-px shrink-0 opacity-70"
@@ -93,7 +91,7 @@ export default async function Footer() {
                 <li>
                   <a
                     href={`mailto:${contact.email}`}
-                    className="flex items-start gap-2.5 text-[13px] text-white/70 transition-colors hover:text-white"
+                    className="flex min-h-9 items-start gap-2.5 text-[13px] text-white/70 transition-colors hover:text-white sm:min-h-0"
                   >
                     <IconMail
                       className="mt-px shrink-0 opacity-70"
@@ -125,7 +123,7 @@ export default async function Footer() {
                     target="_blank"
                     rel="noreferrer noopener"
                     aria-label={s.label}
-                    className="grid h-9 w-9 place-items-center rounded-full border border-white/20 text-white/70 transition-colors hover:border-white hover:text-white"
+                    className="grid h-10 w-10 place-items-center rounded-full border border-white/20 text-white/70 transition-colors hover:border-white hover:text-white sm:h-9 sm:w-9"
                   >
                     {s.key === "facebook" ? (
                       <IconFacebook />

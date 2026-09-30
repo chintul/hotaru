@@ -149,7 +149,7 @@ export default function ProductDetailClient({ product, copy, payNote }) {
 
   return (
     <>
-      <div className="grid gap-8 lg:grid-cols-2 lg:gap-14">
+      <div className="grid gap-8 md:grid-cols-2 md:gap-8 lg:gap-14">
         <div>
           <div className="relative aspect-square overflow-hidden bg-shade">
             {/* Keyed on the index so a thumbnail or swatch click remounts the
@@ -160,7 +160,7 @@ export default function ProductDetailClient({ product, copy, payNote }) {
                 alt={images[activeImage]?.alt || copy.title}
                 seed={`${product.slug}-${activeImage}`}
                 priority
-                sizes="(min-width: 1024px) 50vw, 100vw"
+                sizes="(min-width: 768px) 50vw, 100vw"
               />
             </div>
             {selected?.optionValue && !images[activeImage]?.filePath && (
@@ -200,7 +200,7 @@ export default function ProductDetailClient({ product, copy, payNote }) {
                 the Instagram-adjacent behaviour these shoppers arrive by. */}
             <button
               onClick={onShare}
-              className="flex shrink-0 items-center gap-1.5 text-[13px] text-ink-soft hover:text-ink"
+              className="tap flex shrink-0 items-center gap-1.5 text-[13px] text-ink-soft hover:text-ink"
               aria-label="Хуваалцах"
             >
               <IconShare />
@@ -272,7 +272,7 @@ export default function ProductDetailClient({ product, copy, payNote }) {
                         )}
                       </span>
                       <span
-                        className={`text-center text-[11px] leading-tight ${
+                        className={`text-center text-[12px] leading-tight ${
                           active ? 'font-medium text-ink' : 'text-ink-soft'
                         }`}
                       >
@@ -293,7 +293,10 @@ export default function ProductDetailClient({ product, copy, payNote }) {
           )}
 
           <p className="mt-4 text-[13px] font-semibold">Тоо ширхэг:</p>
-          <div className="mt-2 flex flex-wrap items-center gap-3">
+          {/* On a phone the CTA takes its own full-width row. Inline, it was
+              squeezed to its 200px minimum between the stepper and the heart,
+              which wrapped "Сагсанд нэмэх" onto two lines inside a 44px button. */}
+          <div className="mt-2 grid grid-cols-[auto_1fr] items-center gap-3 sm:flex sm:flex-wrap">
             <div className="flex items-center border border-line">
               <button onClick={() => setQty(Math.max(1, qty - 1))} className="grid h-11 w-11 place-items-center text-ink-soft hover:text-ink" aria-label="Тоо хасах">
                 <IconMinus />
@@ -313,7 +316,7 @@ export default function ProductDetailClient({ product, copy, payNote }) {
               ref={buyRef}
               onClick={onAdd}
               disabled={!purchasable || adding}
-              className="btn-solid h-11 min-w-[200px] flex-1 px-8 transition-transform duration-150 active:scale-[.98]"
+              className="btn-solid order-last col-span-2 h-11 w-full px-8 transition-transform duration-150 active:scale-[.98] sm:order-none sm:col-auto sm:w-auto sm:min-w-[160px] sm:flex-1"
             >
               {justAdded ? (
                 <span className="tick-in inline-flex items-center gap-2"><IconCheck /> Нэмэгдлээ</span>
@@ -322,7 +325,7 @@ export default function ProductDetailClient({ product, copy, payNote }) {
 
             <button
               onClick={onSave}
-              className={`grid h-11 w-11 shrink-0 place-items-center rounded-full border ${
+              className={`grid h-11 w-11 shrink-0 place-items-center justify-self-end rounded-full border sm:justify-self-auto ${
                 saved ? 'border-sale text-sale' : 'border-line text-ink-soft hover:border-ink hover:text-ink'
               }`}
               aria-label="Хадгалах"

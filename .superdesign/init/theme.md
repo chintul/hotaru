@@ -1,3 +1,161 @@
+# Theme — design tokens
+
+## Part 1 — Compact token summary
+
+**Approach:** Tailwind v4. There is **no `tailwind.config`** — tokens are `@theme inline` variables in
+`app/globals.css` mapping `--color-*` utilities onto raw `--t-*` values. Utilities are therefore
+`bg-paper`, `text-ink-soft`, `border-line`, `bg-primary-strong`, `text-on-primary`, and so on.
+
+**Theming:** `:root` holds light. Dark is declared **twice, identically** — once under
+`@media (prefers-color-scheme: dark)` guarded as `:root:not([data-theme])`, once under
+`:root[data-theme="dark"]`. An inline boot script in `app/layout.js` stamps `data-theme` before first
+paint. A `dark` custom variant is declared for Tailwind. **Edit both dark blocks together.**
+
+**Brand:** primary is `#152b57`, a deep ink navy, the same navy as the wordmark. In **light** it clears
+AA on every surface (13.50:1 on paper), so `--t-primary` and `--t-primary-strong` are both the brand hex
+and text on it is white. In **dark** it is 1.28:1 on the page, so dark lifts the lightness at the same
+hue (262) and chroma (0.084). Pure `#000` is banned. Neutrals sit at hue 247, a whisper of chroma
+(C 0.003 → 0.016) — cool, deliberately, to agree with the primary.
+
+**Type:** Poppins (`next/font/google`, weights 400/500/600/700) via `--font-poppins` → `--font-sans`.
+Body is 14px / 1.6. `.nav-link` = 14px/700 uppercase, 0.7px tracking. `.label` and `.eyebrow` = 12px/600
+uppercase. `.display` = 700, -0.4px tracking, callers pass their own `clamp()` size.
+`.section-title` = 24px/700 centred.
+
+**Breakpoints:** Tailwind defaults — `sm:640 md:768 lg:1024 xl:1280`. The storefront switches from the
+phone layout to the cursor layout at `sm`, and the desktop nav appears at `lg`.
+
+**Touch:** `.icon-btn` is 44px on a phone and 40px from `sm` up. `.tap` and the standalone
+`.link-underline` actions hang a 44px hit band off a pseudo-element so small text controls are thumb-sized
+without moving layout. `.swatch` keeps a 30px ring inside a 46px target.
+
+### Light tokens (`:root`)
+
+| token | value |
+|---|---|
+| `--t-paper` | `#fbfcfe` |
+| `--t-paper-raise` | `#f4f8fb` |
+| `--t-line-soft` | `#ebf0f4` |
+| `--t-shade` | `#eef3f8` |
+| `--t-line` | `#dde6ef` |
+| `--t-line-strong` | `#848d97` |
+| `--t-footer` | `#18222b` |
+| `--t-ink` | `#1e2a35` |
+| `--t-ink-strong` | `#19232d` |
+| `--t-ink-soft` | `#57616b` |
+| `--t-ink-faint` | `#646f78` |
+| `--t-on-ink` | `#ffffff` |
+| `--t-primary` | `#152b57` |
+| `--t-primary-on` | `#ffffff` |
+| `--t-primary-strong` | `#152b57` |
+| `--t-on-primary` | `#ffffff` |
+| `--t-primary-soft` | `#e6f0ff` |
+| `--t-primary-soft-ink` | `#152b57` |
+| `--t-sale` | `#be4741` |
+| `--t-cream` | `#fdf5e9` |
+| `--t-cream-ink` | `#956608` |
+| `--t-mint` | `#e9f5ee` |
+| `--t-mint-ink` | `#2e7b53` |
+| `--t-sky` | `#eaf1fa` |
+| `--t-sky-ink` | `#3a6ea8` |
+| `--t-blush` | `#fdeef0` |
+| `--t-blush-ink` | `#b34a56` |
+| `--t-danger` | `#ff5e54` |
+| `--t-danger-soft` | `#ffebe8` |
+| `--t-danger-line` | `#f9b9b1` |
+| `--t-danger-ink` | `#cf2d2a` |
+| `--t-success` | `#37a77b` |
+| `--t-success-soft` | `#e6f7ee` |
+| `--t-success-line` | `#a8d6bf` |
+| `--t-success-ink` | `#007f57` |
+| `--t-warn` | `#db7d24` |
+| `--t-warn-soft` | `#ffefe1` |
+| `--t-warn-line` | `#f0c19f` |
+| `--t-warn-ink` | `#ad5700` |
+| `--t-info` | `#5493ff` |
+| `--t-info-soft` | `#e8f3ff` |
+| `--t-info-line` | `#b1cbfd` |
+| `--t-info-ink` | `#2d67e2` |
+| `--t-note` | `#ac7aff` |
+| `--t-note-soft` | `#f3efff` |
+| `--t-note-line` | `#cdc3f9` |
+| `--t-note-ink` | `#804beb` |
+| `--t-a-bg` | `#f7f7f8` |
+| `--t-a-surface` | `#ffffff` |
+| `--t-a-ink` | `#18181b` |
+| `--t-a-on-ink` | `#ffffff` |
+| `--t-a-muted` | `#6e6e74` |
+| `--t-a-line` | `#e4e4e7` |
+| `--t-a-hover` | `#f4f4f5` |
+| `--t-a-focus` | `#3472d9` |
+| `--t-lift` | `0 8px 22px -14px rgb(23 35 46 / .45)` |
+
+### Dark tokens (`:root[data-theme="dark"]`, and the identical `prefers-color-scheme` block)
+
+| token | value |
+|---|---|
+| `--t-paper` | `#13191f` |
+| `--t-paper-raise` | `#1d242b` |
+| `--t-line-soft` | `#272f37` |
+| `--t-shade` | `#242c33` |
+| `--t-line` | `#37424c` |
+| `--t-line-strong` | `#6a757f` |
+| `--t-footer` | `#090f15` |
+| `--t-ink` | `#e3eef8` |
+| `--t-ink-strong` | `#f2f6fb` |
+| `--t-ink-soft` | `#98a5b1` |
+| `--t-ink-faint` | `#8895a1` |
+| `--t-on-ink` | `#0c1218` |
+| `--t-primary` | `#617cae` |
+| `--t-primary-on` | `#0a1016` |
+| `--t-primary-strong` | `#7e9bcf` |
+| `--t-on-primary` | `#0a1016` |
+| `--t-primary-soft` | `#152b57` |
+| `--t-primary-soft-ink` | `#7a96ca` |
+| `--t-sale` | `#dd766c` |
+| `--t-cream` | `#3a2b12` |
+| `--t-cream-ink` | `#c09657` |
+| `--t-mint` | `#1a3427` |
+| `--t-mint-ink` | `#70af8a` |
+| `--t-sky` | `#1f2f43` |
+| `--t-sky-ink` | `#74a2d6` |
+| `--t-blush` | `#412429` |
+| `--t-blush-ink` | `#db8288` |
+| `--t-danger` | `#c13a33` |
+| `--t-danger-soft` | `#42231f` |
+| `--t-danger-line` | `#633934` |
+| `--t-danger-ink` | `#df756a` |
+| `--t-success` | `#1b7a57` |
+| `--t-success-soft` | `#193327` |
+| `--t-success-line` | `#274e3c` |
+| `--t-success-ink` | `#69a88b` |
+| `--t-warn` | `#a25805` |
+| `--t-warn-soft` | `#3e2613` |
+| `--t-warn-line` | `#5e3d23` |
+| `--t-warn-ink` | `#c58959` |
+| `--t-info` | `#3466cf` |
+| `--t-info-soft` | `#202c45` |
+| `--t-info-line` | `#344566` |
+| `--t-info-ink` | `#6c96ea` |
+| `--t-note` | `#7950d7` |
+| `--t-note-soft` | `#2d2842` |
+| `--t-note-line` | `#474063` |
+| `--t-note-ink` | `#9d83ed` |
+| `--t-a-bg` | `#171719` |
+| `--t-a-surface` | `#212123` |
+| `--t-a-ink` | `#e7e7ea` |
+| `--t-a-on-ink` | `#171719` |
+| `--t-a-muted` | `#939398` |
+| `--t-a-line` | `#39393c` |
+| `--t-a-hover` | `#2b2b2e` |
+| `--t-a-focus` | `#5a8ad8` |
+| `--t-lift` | `0 8px 22px -12px rgb(0 0 0 / .6)` |
+
+## Part 2 — Raw source
+
+### `app/globals.css`
+
+```css
 @import "tailwindcss";
 
 @custom-variant dark {
@@ -625,3 +783,15 @@ input[type="number"] { -moz-appearance: textfield; }
    moment on the page, and only ever fired once per order. */
 @keyframes o-pop { 0% { opacity: 0; transform: scale(.6) } 60% { opacity: 1; transform: scale(1.08) } 100% { transform: scale(1) } }
 .o-pop { animation: o-pop .5s cubic-bezier(.22,1,.36,1) both; }
+```
+
+### Tailwind config
+
+None. Tailwind v4 is configured entirely through `@theme` / `@theme inline` in `app/globals.css`,
+loaded via `@tailwindcss/postcss`.
+
+### Theme provider
+
+See `components/ThemeProvider.jsx` and `lib/theme.js` in `layouts.md`; `lib/theme.js` holds
+`THEME_KEY`, `PREFERENCES` and `THEME_COLOR` and is deliberately **not** a `'use client'` module so the
+server-rendered boot script can read the same constants.

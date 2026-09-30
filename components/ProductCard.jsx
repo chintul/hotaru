@@ -1,10 +1,13 @@
-'use client'
+"use client";
 
-import Link from 'next/link'
-import { useState } from 'react'
-import { copy, formatMnt, nodes, toNumber } from '@/lib/format'
-import ProductImage from './ProductImage'
-import { useCanHover } from './useCanHover'
+import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
+import { copy, formatMnt, nodes, toNumber } from "@/lib/format";
+import ProductImage from "./ProductImage";
+import { useCanHover } from "./useCanHover";
+import { useCart } from "./useCart";
+import { useUI } from "./UIProvider";
+import { IconBag, IconCheck } from "./Icons";
 
 /**
  * Deterministic swatch colour from the option name.
@@ -18,27 +21,27 @@ function swatchTone(name) {
   // option-less variant stores null — and null sailed past the default straight
   // into null.length. The call sites already wrote `v.optionValue ?? ''` for
   // title and aria-label; this one was missed, and it crashed the whole page.
-  const text = String(name ?? '')
-  let h = 0
-  for (let i = 0; i < text.length; i++) h = (h * 31 + text.charCodeAt(i)) % 360
-  return `hsl(${h} 38% 72%)`
+  const text = String(name ?? "");
+  let h = 0;
+  for (let i = 0; i < text.length; i++) h = (h * 31 + text.charCodeAt(i)) % 360;
+  return `hsl(${h} 38% 72%)`;
 }
 
 // Four fit one row at the narrowest card we render (2-up at 390px). A fifth
 // wrapped, which pushed the swatch row onto two lines and made neighbouring
 // cards different heights.
-const MAX_SWATCHES = 4
+const MAX_SWATCHES = 4;
 
 export default function ProductCard({ product, priority = false }) {
-  const c = copy(product)
-  const images = nodes(product.productImageCollection)
-  const variants = nodes(product.variantCollection)
-  const [active, setActive] = useState(0)
+  const c = copy(product);
+  const images = nodes(product.productImageCollection);
+  const variants = nodes(product.variantCollection);
+  const [active, setActive] = useState(0);
   // On a phone the preview can never be seen, and it was half of every card's
   // image payload: 27 cards were downloading 53 pictures at 390px wide.
-  const canHover = useCanHover()
+  const canHover = useCanHover();
 
-  const variant = variants[active] ?? variants[0]
+  const variant = variants[active] ?? variants[0];
 
   // Carry the chosen colourway to the product page. Tapping Berry on a card
   // and then the photo used to open on Cream White, because the link dropped
@@ -46,12 +49,13 @@ export default function ProductCard({ product, priority = false }) {
   // tap targets on this grid and recorded nothing. Only added once the shopper
   // has actually moved off the default, so the common URL stays clean and
   // matches the prerendered one.
-  const href = active > 0 && variant?.id
-    ? `/shop/${product.slug}?v=${variant.id}`
-    : `/shop/${product.slug}`
+  const href =
+    active > 0 && variant?.id
+      ? `/shop/${product.slug}?v=${variant.id}`
+      : `/shop/${product.slug}`;
 
   // Each variant carries its own photo (variants.image_id).
-  const primaryImage = variant?.image ?? images[0]
+  const primaryImage = variant?.image ?? images[0];
 
   // Hovering the card previews the NEXT variant, cycling from whichever swatch
   // is currently active — not a fixed second photo. Variants can share an image
@@ -59,73 +63,135 @@ export default function ProductCard({ product, priority = false }) {
   // forward until the picture actually differs; otherwise the hover looks dead.
   const nextVariant = (() => {
     for (let step = 1; step < variants.length; step++) {
-      const candidate = variants[(active + step) % variants.length]
-      if (candidate?.image?.filePath && candidate.image.filePath !== primaryImage?.filePath) {
-        return candidate
+      const candidate = variants[(active + step) % variants.length];
+      if (
+        candidate?.image?.filePath &&
+        candidate.image.filePath !== primaryImage?.filePath
+      ) {
+        return candidate;
       }
     }
-    return null
-  })()
+    return null;
+  })();
 
   // No label on the preview: the reference's photography already has the
   // variant name burned into the image, so ours would just print it twice.
   const hoverImage =
-    nextVariant?.image ?? images.find((i) => i.filePath !== primaryImage?.filePath) ?? null
-  const min = toNumber(product.minPriceMnt)
-  const max = toNumber(product.maxPriceMnt)
-  const ranged = max > min
+    nextVariant?.image ??
+    images.find((i) => i.filePath !== primaryImage?.filePath) ??
+    null;
+  /**
+   * Add straight from the grid.
+   *
+   * The shop is an impulse scroll, so making every purchase go through the
+   * product page costs a tap and a page load at exactly the wrong moment. The
+   * button adds the colourway the card is currently showing — the same variant
+   * its link carries — so what you tapped is what lands in the basket.
+   *
+   * A product with real options still goes to the page: picking a size from a
+   * 30px swatch you cannot read is worse than one more tap.
+   */
+  const { add } = useCart();
+  const { open: openOverlay, close: closeOverlay, setAddPending } = useUI();
+  const [adding, setAdding] = useState(false);
+  const [added, setAdded] = useState(false);
+  const addedTimer = useRef(null);
+  useEffect(() => () => window.clearTimeout(addedTimer.current), []);
+
+  const quickAddable = product.inStock && variant?.id;
+  const onQuickAdd = async () => {
+    if (!quickAddable || adding) return;
+    // The drawer opens on the tap, not on the answer — same rule as the PDP.
+    openOverlay("cart");
+    setAddPending(true);
+    setAdding(true);
+    try {
+      await add(variant.id, 1);
+      setAdded(true);
+      window.clearTimeout(addedTimer.current);
+      addedTimer.current = window.setTimeout(() => setAdded(false), 1600);
+    } catch {
+      // Failed, so take the drawer back down rather than leave it open on an
+      // unchanged basket. The PDP has room to explain; a card does not.
+      closeOverlay();
+    } finally {
+      setAdding(false);
+      setAddPending(false);
+    }
+  };
+
+  const min = toNumber(product.minPriceMnt);
+  const max = toNumber(product.maxPriceMnt);
+  const ranged = max > min;
 
   return (
     <div className="group">
-      <Link href={href} className="block">
-        <div className="card-media relative aspect-square overflow-hidden bg-shade">
-          <div className="media-primary absolute inset-0">
-            {/* The default sizes claims 100vw below 640px, but the grid is
+      <div className="relative">
+        <Link href={href} className="block">
+          <div className="card-media relative aspect-square overflow-hidden bg-shade">
+            <div className="media-primary absolute inset-0">
+              {/* The default sizes claims 100vw below 640px, but the grid is
                 grid-cols-2 at EVERY width (ProductGrid.jsx:9), so each card
                 fills half the viewport. The browser was told to fetch roughly
                 twice the linear dimension it renders: measured 390px natural
                 for a 158px slot on a 390px phone. On mobile data, over a
                 27-card grid, that is the difference between a grid that paints
                 while the impulse lasts and one that does not. */}
-            <ProductImage
-              filePath={primaryImage?.filePath}
-              alt={primaryImage?.alt || c.title || product.slug}
-              seed={product.slug}
-              priority={priority}
-              sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"
-            />
-          </div>
-          {canHover && hoverImage && (
-            <div className="media-hover absolute inset-0">
               <ProductImage
-                filePath={hoverImage.filePath}
-                alt={hoverImage.alt || c.title || product.slug}
-                seed={`${product.slug}-2`}
+                filePath={primaryImage?.filePath}
+                alt={primaryImage?.alt || c.title || product.slug}
+                seed={product.slug}
+                priority={priority}
                 sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"
               />
             </div>
-          )}
+            {canHover && hoverImage && (
+              <div className="media-hover absolute inset-0">
+                <ProductImage
+                  filePath={hoverImage.filePath}
+                  alt={hoverImage.alt || c.title || product.slug}
+                  seed={`${product.slug}-2`}
+                  sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"
+                />
+              </div>
+            )}
 
-          {/* Variant pill. Suppressed when real photography exists: the
+            {/* Variant pill. Suppressed when real photography exists: the
               reference's own images already have this badge baked in, and two
               stacked pills read as a bug. */}
-          {variant?.optionValue && !primaryImage?.filePath && (
-            <span
-              className="badge-pill absolute left-3 top-3"
-              style={{ background: swatchTone(variant.optionValue) }}
-            >
-              <span className="badge-knob">◍</span>
-              {variant.optionValue}
-            </span>
-          )}
+            {variant?.optionValue && !primaryImage?.filePath && (
+              <span
+                className="badge-pill absolute left-3 top-3"
+                style={{ background: swatchTone(variant.optionValue) }}
+              >
+                <span className="badge-knob">◍</span>
+                {variant.optionValue}
+              </span>
+            )}
 
-          {!product.inStock && (
-            <span className="absolute right-3 top-3 bg-paper/95 px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.6px]">
-              Дууссан
-            </span>
-          )}
-        </div>
-      </Link>
+            {!product.inStock && (
+              <span className="absolute right-3 top-3 bg-paper/95 px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.6px]">
+                Дууссан
+              </span>
+            )}
+          </div>
+        </Link>
+
+        {quickAddable && (
+          <button
+            onClick={onQuickAdd}
+            disabled={adding}
+            aria-label={`${c.title ?? product.slug} — сагсанд нэмэх`}
+            className="absolute bottom-2 right-2 grid h-10 w-10 place-items-center rounded-full bg-paper/90 text-ink-strong shadow-[var(--t-lift)] backdrop-blur transition-[transform,opacity] active:scale-90 disabled:opacity-60 sm:h-9 sm:w-9"
+          >
+            {added ? (
+              <IconCheck width="18" height="18" />
+            ) : (
+              <IconBag width="18" height="18" />
+            )}
+          </button>
+        )}
+      </div>
 
       <div className="mt-3 text-center">
         <Link href={href} className="block">
@@ -137,7 +203,11 @@ export default function ProductCard({ product, priority = false }) {
           </p>
         </Link>
         <p className="mt-1.5 text-[15px] font-bold">
-          {ranged ? <span className="mr-1 text-[12px] font-normal text-ink-soft">эхлэх үнэ</span> : null}
+          {ranged ? (
+            <span className="mr-1 text-[12px] font-normal text-ink-soft">
+              эхлэх үнэ
+            </span>
+          ) : null}
           {formatMnt(min)}
         </p>
 
@@ -151,8 +221,8 @@ export default function ProductCard({ product, priority = false }) {
                 onClick={() => setActive(i)}
                 data-active={i === active}
                 className="swatch"
-                title={v.optionValue ?? ''}
-                aria-label={v.optionValue ?? 'Сонголт'}
+                title={v.optionValue ?? ""}
+                aria-label={v.optionValue ?? "Сонголт"}
               >
                 {/* The reference shows the colourway itself, not an abstract
                     dot — which is the only way to tell "Cream White" from
@@ -184,5 +254,5 @@ export default function ProductCard({ product, priority = false }) {
         )}
       </div>
     </div>
-  )
+  );
 }

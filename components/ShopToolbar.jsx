@@ -50,11 +50,11 @@ export default function ShopToolbar({ total, cols }) {
       <span className="text-[13px] text-ink-soft">{total} бүтээгдэхүүн</span>
 
       <label className="ml-auto flex items-center gap-2">
-        <span className="text-[12px] uppercase tracking-[0.6px] text-ink-soft">Эрэмбэлэх</span>
+        <span className="hidden text-[12px] uppercase tracking-[0.6px] text-ink-soft sm:inline">Эрэмбэлэх</span>
         <select
           value={params.get('sort') ?? 'featured'}
           onChange={(e) => set('sort', e.target.value)}
-          className="border border-line px-3 py-2 text-[13px] focus:border-ink focus:outline-none"
+          className="min-h-11 border border-line px-3 py-2 text-[13px] focus:border-ink focus:outline-none sm:min-h-0"
         >
           {SORTS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
         </select>

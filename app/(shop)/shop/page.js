@@ -1,7 +1,7 @@
 import { Suspense } from 'react'
 import { safeQuery } from '@/lib/apollo/safeQuery'
 import { CATALOG_FILTERED, NAV_CATEGORIES } from '@/lib/queries'
-import { firstNode, nodes } from '@/lib/format'
+import { firstNode, nodes, stocked } from '@/lib/format'
 import ProductGrid from '@/components/ProductGrid'
 import ShopFilters from '@/components/ShopFilters'
 import ShopToolbar from '@/components/ShopToolbar'
@@ -26,8 +26,11 @@ export async function generateMetadata({ searchParams }) {
 export default async function ShopPage({ searchParams }) {
   const sp = await searchParams
   const { data: navData } = await safeQuery(NAV_CATEGORIES)
+  // Two lists on purpose. `categoryNodes` stays complete so an existing link to
+  // a now-empty category still resolves and still names itself; only the facet
+  // list drops them.
   const categoryNodes = nodes(navData?.categoryCollection)
-  const categories = categoryNodes.map((c) => ({
+  const categories = stocked(categoryNodes).map((c) => ({
     slug: c.slug,
     label: firstNode(c.categoryTranslationCollection)?.name ?? c.slug,
   }))

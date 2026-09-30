@@ -71,7 +71,7 @@ export default function CartDrawer() {
         <div className="border-b border-line px-6 py-2">
           <button
             onClick={close}
-            className="label text-ink-soft transition-colors hover:text-ink"
+            className="tap label text-ink-soft transition-colors hover:text-ink"
           >
             ← Дэлгүүр рүү буцах
           </button>
@@ -162,7 +162,7 @@ export default function CartDrawer() {
                             reader heard the same word for "one fewer" and for
                             "delete this line". */}
                         <button
-                          className="grid h-8 w-8 place-items-center text-ink-soft hover:text-ink"
+                          className="grid h-11 w-11 place-items-center text-ink-soft hover:text-ink sm:h-8 sm:w-8"
                           onClick={() => setQuantity(variant.id, item.quantity - 1)}
                           aria-label="Тоо хасах"
                         >

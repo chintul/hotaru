@@ -110,8 +110,9 @@ export default function Header({ categories = [] }) {
           {navOpen ? <IconClose /> : <IconMenu />}
         </button>
 
-        {/* Shrinks rather than pushing the cart off the bar on a 320px phone. */}
-        <Link href="/" className="min-w-0 shrink">
+        {/* Shrinks rather than pushing the cart off the bar on a 320px phone.
+            The flex band gives the 20px wordmark a 44px target. */}
+        <Link href="/" className="flex min-h-11 min-w-0 shrink items-center">
           <Logo className="h-5 w-auto max-w-full object-contain object-left sm:h-7 lg:h-8" />
         </Link>
 
