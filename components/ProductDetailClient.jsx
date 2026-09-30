@@ -149,7 +149,7 @@ export default function ProductDetailClient({ product, copy, payNote }) {
 
   return (
     <>
-      <div className="grid gap-8 lg:grid-cols-2 lg:gap-14">
+      <div className="grid gap-8 md:grid-cols-2 md:gap-8 lg:gap-14">
         <div>
           <div className="relative aspect-square overflow-hidden bg-shade">
             {/* Keyed on the index so a thumbnail or swatch click remounts the
@@ -160,7 +160,7 @@ export default function ProductDetailClient({ product, copy, payNote }) {
                 alt={images[activeImage]?.alt || copy.title}
                 seed={`${product.slug}-${activeImage}`}
                 priority
-                sizes="(min-width: 1024px) 50vw, 100vw"
+                sizes="(min-width: 768px) 50vw, 100vw"
               />
             </div>
             {selected?.optionValue && !images[activeImage]?.filePath && (
@@ -316,7 +316,7 @@ export default function ProductDetailClient({ product, copy, payNote }) {
               ref={buyRef}
               onClick={onAdd}
               disabled={!purchasable || adding}
-              className="btn-solid order-last col-span-2 h-11 w-full px-8 transition-transform duration-150 active:scale-[.98] sm:order-none sm:col-auto sm:w-auto sm:min-w-[200px] sm:flex-1"
+              className="btn-solid order-last col-span-2 h-11 w-full px-8 transition-transform duration-150 active:scale-[.98] sm:order-none sm:col-auto sm:w-auto sm:min-w-[160px] sm:flex-1"
             >
               {justAdded ? (
                 <span className="tick-in inline-flex items-center gap-2"><IconCheck /> Нэмэгдлээ</span>
