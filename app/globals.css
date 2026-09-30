@@ -23,7 +23,8 @@
   --color-ink-faint:   var(--t-ink-faint);
   --color-on-ink:      var(--t-on-ink);       /* text on an ink-strong fill */
 
-  /* Primary. #7698b8 is the brand constant — the SAME hex in both themes. */
+  /* Primary. #152b57 is the brand hex. Light uses it as-is; dark lifts the
+     lightness (same hue and chroma) because it is 1.28:1 on a dark ground. */
   --color-primary:          var(--t-primary);
   --color-primary-on:       var(--t-primary-on);
   --color-primary-strong:   var(--t-primary-strong);
@@ -68,19 +69,17 @@
 /* ---------------------------------------------------------------------------
    LIGHT — a cool spine.
 
-   This deliberately reverses 8ffb05d ("warm the neutrals"). The primary is
-   #7698b8, a dusty blue, and a warm-tinted neutral under a cool primary reads
-   as an accident rather than as a decision — the two tints fight at every
-   border. So the neutrals now carry the SAME hue as the primary (OKLCH h =
-   -113deg) at the same whisper of chroma the warm palette used: C runs 0.003
-   (paper) -> 0.016 (line), against the warm palette's 0.003 -> 0.009. The tint
-   is still almost invisible per-surface; what changed is which direction it
-   leans.
+   A warm-tinted neutral under a cool primary reads as an accident rather than
+   as a decision — the two tints fight at every border. So the neutrals carry a
+   cool hue (OKLCH h = 247) at a whisper of chroma: C runs 0.003 (paper) ->
+   0.016 (line). The primary sits at h = 262; 15deg apart is invisible at this
+   chroma, so re-hueing the neutrals to match would move no pixel a shopper can
+   see and would invalidate every ratio documented below.
 
    PRODUCT.md names cold Western minimal as the closest failure mode, and a
    cool grey is how you land there. The defence is that the tint is a real hue,
-   not an absence of one, and that #7698b8 itself is a soft, chalky blue rather
-   than a screen blue — but this is the palette's main risk and worth re-reading
+   not an absence of one, and that #152b57 is a deep ink navy rather than a
+   screen blue — but this is the palette's main risk and worth re-reading
    PRODUCT.md before pushing it further in this direction.
 
    Every ratio below was solved, not eyeballed: each text role is pinned against
@@ -105,15 +104,14 @@
   --t-ink-faint:   #646f78;   /*  5.01 paper ·  4.60 shade — clears AA on BOTH */
   --t-on-ink:      #ffffff;   /* 15.91 on ink-strong */
 
-  /* 2.94:1 on this paper — below AA for text and below the 3:1 WCAG 1.4.11 asks
-     of a meaningful boundary. In light the brand hex is a FILL ONLY. Anything
-     that must read as primary and be legible uses --primary-strong. */
-  --t-primary:          #7698b8;
-  --t-primary-on:       #1e2a35;   /* 4.84:1 on the #7698b8 fill */
-  --t-primary-strong:   #405e7b;   /* 6.59 paper · 6.06 shade — text, rings, buttons */
-  --t-on-primary:       #ffffff;   /* 6.76:1 on primary-strong */
-  --t-primary-soft:     #e2effb;
-  --t-primary-soft-ink: #4e6d8a;   /* 4.63:1 on primary-soft */
+  /* #152b57 clears AA on every light surface, so here the brand hex IS the
+     strong one and both tokens hold it — only dark has to lift it. */
+  --t-primary:          #152b57;   /* 13.50 paper · 12.98 raise · 12.42 shade */
+  --t-primary-on:       #ffffff;   /* 13.86:1 on the #152b57 fill */
+  --t-primary-strong:   #152b57;   /* text, rings, buttons */
+  --t-on-primary:       #ffffff;   /* 13.86:1 on primary-strong */
+  --t-primary-soft:     #e6f0ff;
+  --t-primary-soft-ink: #152b57;   /* 12.06:1 on primary-soft */
 
   --t-sale: #be4741;   /* 4.91 paper · 4.51 shade */
 
@@ -162,12 +160,12 @@
     --t-ink-faint:   #8895a1;
     --t-on-ink:      #0c1218;
 
-    --t-primary:          #7698b8;
+    --t-primary:          #617cae;
     --t-primary-on:       #0a1016;
-    --t-primary-strong:   #87a0b7;
+    --t-primary-strong:   #7e9bcf;
     --t-on-primary:       #0a1016;
-    --t-primary-soft:     #243342;
-    --t-primary-soft-ink: #889db0;
+    --t-primary-soft:     #152b57;
+    --t-primary-soft-ink: #7a96ca;
 
     --t-sale: #dd766c;
 
@@ -212,14 +210,14 @@
   --t-ink-faint:   #8895a1;   /*  5.78 paper ·  4.63 shade */
   --t-on-ink:      #0c1218;   /* 17.35 on ink-strong */
 
-  /* Same hex, opposite job: 5.86:1 here, so it can carry a boundary. Text on it
-     is still the dark --primary-on — light ink on #7698b8 is 2.30:1. */
-  --t-primary:          #7698b8;
-  --t-primary-on:       #0a1016;   /* 6.33:1 on the #7698b8 fill */
-  --t-primary-strong:   #87a0b7;   /* 6.53 paper · 5.22 shade */
-  --t-on-primary:       #0a1016;   /* 7.05:1 on primary-strong */
-  --t-primary-soft:     #243342;
-  --t-primary-soft-ink: #889db0;   /* 4.61:1 on primary-soft */
+  /* #152b57 is 1.28:1 on this paper, so dark lifts it: same hue (262) and the
+     same chroma, more lightness. The brand hex stays, as the soft tint. */
+  --t-primary:          #617cae;   /* 4.22 paper · 3.37 shade — carries a boundary */
+  --t-primary-on:       #0a1016;   /* 4.55:1 on the fill */
+  --t-primary-strong:   #7e9bcf;   /* 6.30 paper · 5.04 shade */
+  --t-on-primary:       #0a1016;   /* 6.81:1 on primary-strong */
+  --t-primary-soft:     #152b57;
+  --t-primary-soft-ink: #7a96ca;   /* 4.65:1 on primary-soft */
 
   --t-sale: #dd766c;   /* 5.80 paper · 4.64 shade */
 
@@ -356,8 +354,7 @@ body {
     transition: box-shadow var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease);
   }
   .swatch:hover { transform: scale(1.06); }
-  /* --primary-strong, not the brand hex: this ring carries state and #7698b8
-     is 2.94:1 on paper. */
+  /* --primary-strong, so the ring is right in both themes: dark lifts it. */
   .swatch[data-active="true"] {
     border-color: var(--color-primary-strong);
     box-shadow: 0 0 0 1px var(--color-primary-strong);
@@ -393,9 +390,9 @@ body {
   [data-theme="dark"] .logo-dark { display: block; }
 
   /* 14px/700 uppercase is not "large text" to WCAG (that starts at 18.66px
-     bold), so these labels need the full 4.5:1: white on #7698b8 is 3.02:1,
-     white on --primary-strong is 6.76:1. Hover is an opacity step so it needs
-     no second token and works in both themes. */
+     bold), so these labels need the full 4.5:1: --on-primary on
+     --primary-strong is 13.86:1 in light and 6.81:1 in dark. Hover is an
+     opacity step so it needs no second token and works in both themes. */
   .btn-solid {
     background: var(--color-primary-strong);
     color: var(--color-on-primary);
