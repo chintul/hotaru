@@ -1,0 +1,380 @@
+'use client'
+
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { useMutation } from '@apollo/client/react'
+import { formatMnt, nodes, toNumber } from '@/lib/format'
+import { TOGGLE_WISHLIST } from '@/lib/queries'
+import { ensureSession } from '@/lib/supabase/browser'
+import type { Product, ProductTranslation, Variant } from '@/lib/types'
+import { useCart } from './useCart'
+import { useUI } from './UIProvider'
+import ProductImage, { swatchTone } from './ProductImage'
+import { IconCheck, IconHeart, IconMinus, IconPlus, IconShare } from './Icons'
+import { errorMessage } from '@/lib/errors'
+import { Button } from '@/components/ui/button'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+
+interface ProductDetailClientProps {
+  product: Product
+  copy: ProductTranslation
+  payNote: string
+}
+
+interface ToggleWishlistData {
+  toggleWishlist: boolean | null
+}
+
+interface ToggleWishlistVars {
+  productId?: string
+}
+
+const CONFIRMATION_MS = 1600
+const FALLBACK_BUY_BAR_SCROLL_Y = 620
+const LOW_STOCK_THRESHOLD = 3
+
+const neverChanges = () => () => {}
+const readVariantIdFromUrl = () => new URLSearchParams(window.location.search).get('v')
+const noVariantIdOnServer = () => null
+
+const ignoreDismissal = () => undefined
+
+const variantAvailable = (v: Variant) => (v.quantity ?? 0) > 0 || Boolean(v.allowBackorder)
+
+export default function ProductDetailClient({ product, copy, payNote }: ProductDetailClientProps) {
+  const variants = nodes(product.variantCollection)
+  const images = nodes(product.productImageCollection)
+  const { add, adding } = useCart()
+  const { open: openOverlay, close: closeOverlay, setAddPending } = useUI()
+
+  const imageIndexOf = (v: Variant): number | null => {
+    const idx = images.findIndex((img) => img.filePath === v.image?.filePath)
+    return idx >= 0 ? idx : null
+  }
+
+  const urlVariantId = useSyncExternalStore(neverChanges, readVariantIdFromUrl, noVariantIdOnServer)
+  const urlVariant = urlVariantId ? variants.find((x) => x.id === urlVariantId) : undefined
+
+  const [chosenId, setChosenId] = useState<string | null>(null)
+  const [chosenImage, setChosenImage] = useState<number | null>(null)
+  const selectedId = chosenId ?? urlVariant?.id ?? variants[0]?.id ?? null
+  const activeImage = chosenImage ?? (urlVariant ? imageIndexOf(urlVariant) : null) ?? 0
+
+  const selectVariant = (v: Variant) => {
+    setChosenId(v.id)
+    const idx = imageIndexOf(v)
+    if (idx !== null) setChosenImage(idx)
+  }
+
+  const [qty, setQty] = useState(1)
+  const [justAdded, setJustAdded] = useState(false)
+  const addedTimer = useRef<number | undefined>(undefined)
+  const buyRef = useRef<HTMLButtonElement>(null)
+  useEffect(() => () => window.clearTimeout(addedTimer.current), [])
+  const [shared, setShared] = useState(false)
+  const [saved, setSaved] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [showBar, setShowBar] = useState(false)
+
+  const [toggleWishlist] = useMutation<ToggleWishlistData, ToggleWishlistVars>(TOGGLE_WISHLIST)
+  const selected: Variant | undefined = variants.find((v) => v.id === selectedId) ?? variants[0]
+  const purchasable = Boolean(selected && variantAvailable(selected))
+  const hasOptions = variants.length > 1 && variants.some((v) => v.optionLabel)
+  const subtotal = toNumber(selected?.priceMnt) * qty
+  const lowStock = (selected?.quantity ?? 0) <= LOW_STOCK_THRESHOLD && !selected?.allowBackorder
+
+  useEffect(() => {
+    const onScroll = () => {
+      const buyButton = buyRef.current
+      if (!buyButton) {
+        setShowBar(window.scrollY > FALLBACK_BUY_BAR_SCROLL_Y)
+        return
+      }
+      setShowBar(buyButton.getBoundingClientRect().bottom < 0)
+    }
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
+  const onShare = async () => {
+    const url = window.location.href
+    if (navigator.share) {
+      await navigator.share({ title: copy.title ?? product.slug, url }).catch(ignoreDismissal)
+      return
+    }
+    const copied = await navigator.clipboard.writeText(url).then(() => true, () => false)
+    if (!copied) return
+    setShared(true)
+    window.setTimeout(() => setShared(false), CONFIRMATION_MS)
+  }
+
+  const onAdd = async () => {
+    if (!selected) return
+    setError(null)
+    openOverlay('cart')
+    setAddPending(true)
+    try {
+      await add(selected.id, qty)
+      setJustAdded(true)
+      window.clearTimeout(addedTimer.current)
+      addedTimer.current = window.setTimeout(() => setJustAdded(false), CONFIRMATION_MS)
+    } catch (e) {
+      closeOverlay()
+      setError(errorMessage(e, 'Сагсанд нэмэхэд алдаа гарлаа.'))
+    } finally {
+      setAddPending(false)
+    }
+  }
+
+  const onSave = async () => {
+    try {
+      await ensureSession()
+      const res = await toggleWishlist({ variables: { productId: product.id } })
+      setSaved(Boolean(res.data?.toggleWishlist))
+    } catch (e) {
+      setError(errorMessage(e, 'Хадгалахад алдаа гарлаа.'))
+    }
+  }
+
+  return (
+    <>
+      <div className="grid gap-8 md:grid-cols-2 md:gap-8 lg:gap-14">
+        <div>
+          <div className="relative aspect-square overflow-hidden bg-shade">
+            <div key={activeImage} className="fade-in absolute inset-0">
+              <ProductImage
+                filePath={images[activeImage]?.filePath}
+                alt={images[activeImage]?.alt || copy.title}
+                seed={`${product.slug}-${activeImage}`}
+                priority
+                sizes="(min-width: 768px) 50vw, 100vw"
+              />
+            </div>
+            {selected?.optionValue && !images[activeImage]?.filePath && (
+              <span
+                className="badge-pill absolute left-4 top-4 text-[15px]"
+                style={{ background: swatchTone(selected.optionValue) }}
+              >
+                <span className="badge-knob">◍</span>
+                {selected.optionValue}
+              </span>
+            )}
+          </div>
+
+          {images.length > 1 && (
+            <div className="mt-3 grid grid-cols-5 gap-2.5">
+              {images.map((img, i) => (
+                <button
+                  key={img.filePath + i}
+                  onClick={() => setChosenImage(i)}
+                  className={`relative aspect-square overflow-hidden bg-shade transition-all duration-200 ${
+                    i === activeImage ? 'ring-1 ring-ink-strong' : 'opacity-70 hover:opacity-100'
+                  }`}
+                  aria-label={`Зураг ${i + 1}`}
+                >
+                  <ProductImage filePath={img.filePath} alt="" seed={`${product.slug}-${i}`} sizes="120px" />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="lg:sticky lg:top-[96px] lg:self-start">
+          <div className="flex items-start justify-between gap-4">
+            <h1 className="text-[24px] font-bold leading-tight tracking-[0.4px]">{copy.title}</h1>
+            <button
+              onClick={onShare}
+              className="tap flex shrink-0 items-center gap-1.5 text-[13px] text-ink-soft hover:text-ink"
+              aria-label="Хуваалцах"
+            >
+              <IconShare />
+              <span className="link-underline">{shared ? 'Холбоос хуулсан' : 'Хуваалцах'}</span>
+            </button>
+          </div>
+
+          {copy.subtitle && <p className="mt-1.5 text-[13px] text-ink-soft">{copy.subtitle}</p>}
+
+          <p className="mt-5 text-[24px] font-bold">{formatMnt(selected?.priceMnt)}</p>
+          {selected?.compareAtPriceMnt && (
+            <p className="text-[14px] text-ink-faint line-through">{formatMnt(selected.compareAtPriceMnt)}</p>
+          )}
+
+          {hasOptions && (
+            <div className="mt-7">
+              <p className="text-[13px]">
+                <span className="font-semibold">{variants[0]?.optionLabel}:</span>{' '}
+                <span className="text-ink-soft">{selected?.optionValue}</span>
+              </p>
+              <div className="mt-3 flex flex-wrap gap-3">
+                {variants.map((v) => {
+                  const out = !variantAvailable(v)
+                  const active = v.id === selectedId
+                  return (
+                    <button
+                      key={v.id}
+                      onClick={() => selectVariant(v)}
+                      disabled={out}
+                      aria-pressed={active}
+                      aria-label={v.optionValue ?? ''}
+                      className={`group flex w-[74px] flex-col items-center gap-1.5 ${
+                        out ? 'cursor-not-allowed opacity-40' : ''
+                      }`}
+                    >
+                      <span
+                        className={`block h-[52px] w-[52px] overflow-hidden rounded-full border transition-all ${
+                          active
+                            ? 'border-ink-strong ring-2 ring-ink-strong ring-offset-2'
+                            : 'border-line group-hover:border-ink'
+                        }`}
+                      >
+                        {v.image?.filePath ? (
+                          <ProductImage
+                            filePath={v.image.filePath}
+                            alt=""
+                            seed={v.id}
+                            width={52}
+                            height={52}
+                            className="h-full w-full"
+                          />
+                        ) : (
+                          <span
+                            className="block h-full w-full"
+                            style={{ background: swatchTone(v.optionValue) }}
+                          />
+                        )}
+                      </span>
+                      <span
+                        className={`text-center text-[12px] leading-tight ${
+                          active ? 'font-medium text-ink' : 'text-ink-soft'
+                        }`}
+                      >
+                        {v.optionValue}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {qty > 1 && (
+            <p className="mt-6 text-[13px]">
+              <span className="font-semibold">Нийт дүн:</span>{' '}
+              <span className="font-bold">{formatMnt(subtotal)}</span>
+            </p>
+          )}
+
+          <p className="mt-4 text-[13px] font-semibold">Тоо ширхэг:</p>
+          <div className="mt-2 grid grid-cols-[auto_1fr] items-center gap-3 sm:flex sm:flex-wrap">
+            <div className="flex items-center border border-line">
+              <button onClick={() => setQty(Math.max(1, qty - 1))} className="grid h-11 w-11 place-items-center text-ink-soft hover:text-ink" aria-label="Тоо хасах">
+                <IconMinus />
+              </button>
+              <span className="min-w-[46px] text-center text-[14px] tabular-nums">{qty}</span>
+              <button
+                onClick={() => setQty(qty + 1)}
+                disabled={!selected?.allowBackorder && qty >= (selected?.quantity ?? 0)}
+                className="grid h-11 w-11 place-items-center text-ink-soft hover:text-ink disabled:opacity-30"
+                aria-label="Нэмэх"
+              >
+                <IconPlus />
+              </button>
+            </div>
+
+            <Button
+              ref={buyRef}
+              variant="solid"
+              size="touch"
+              onClick={onAdd}
+              disabled={!purchasable || adding}
+              className="order-last col-span-2 w-full px-8 active:scale-[.98] sm:order-none sm:col-auto sm:w-auto sm:min-w-[160px] sm:flex-1"
+            >
+              {justAdded ? (
+                <span className="tick-in inline-flex items-center gap-2"><IconCheck /> Нэмэгдлээ</span>
+              ) : adding ? 'Нэмж байна…' : purchasable ? 'Сагсанд нэмэх' : 'Дууссан'}
+            </Button>
+
+            <button
+              onClick={onSave}
+              className={`grid h-11 w-11 shrink-0 place-items-center justify-self-end rounded-full border sm:justify-self-auto ${
+                saved ? 'border-sale text-sale' : 'border-line text-ink-soft hover:border-ink hover:text-ink'
+              }`}
+              aria-label="Хадгалах"
+            >
+              <IconHeart filled={saved} />
+            </button>
+          </div>
+
+          <p className="mt-3 text-[13px] text-ink-soft">
+            {purchasable
+              ? lowStock
+                ? `Үлдэгдэл ${selected?.quantity} ширхэг`
+                : 'Бэлэн байгаа'
+              : 'Түр дууссан'}
+          </p>
+
+          {error && <p className="mt-3 text-[13px] text-sale">{error}</p>}
+
+          <div className="mt-8 border-t border-line pt-6 text-[13px] text-ink-soft">
+            <p className="font-semibold text-ink">Хүргэлт ба төлбөр</p>
+            <p className="mt-2">{`Улаанбаатар хотод ажлын 1–2 хоногт. ${payNote}`}</p>
+          </div>
+
+          {copy.description && (
+            <div className="mt-6 border-t border-line pt-6">
+              <p className="text-[13px] font-semibold">Тайлбар</p>
+              <p className="mt-2 whitespace-pre-line text-[13px] text-ink-soft">{copy.description}</p>
+            </div>
+          )}
+          {copy.careDetails && (
+            <div className="mt-6 border-t border-line pt-6">
+              <p className="text-[13px] font-semibold">Арчилгаа</p>
+              <p className="mt-2 whitespace-pre-line text-[13px] text-ink-soft">{copy.careDetails}</p>
+            </div>
+          )}
+          {selected?.sku && <p className="mt-6 text-[12px] text-ink-faint">SKU {selected.sku}</p>}
+        </div>
+      </div>
+
+      {showBar && (
+        <div className="fixed inset-x-0 bottom-(--bottom-nav-h) z-30 border-t border-line bg-paper/97 backdrop-blur">
+          <div className="mx-auto flex max-w-[1400px] items-center gap-4 px-5 py-3 lg:px-8">
+            <div className="relative hidden h-12 w-12 shrink-0 overflow-hidden bg-shade sm:block">
+              <ProductImage filePath={images[0]?.filePath} alt="" seed={product.slug} sizes="48px" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[13px] font-semibold">{copy.title}</p>
+              <p className="text-[13px] font-bold">{formatMnt(selected?.priceMnt)}</p>
+            </div>
+            {hasOptions && (
+              <Select
+                value={selectedId ?? ''}
+                onValueChange={(id) => {
+                  const v = variants.find((x) => x.id === id)
+                  if (v) selectVariant(v)
+                }}
+              >
+                <SelectTrigger
+                  aria-label={variants[0]?.optionLabel ?? undefined}
+                  className="hidden rounded-none px-3 text-[13px] sm:flex"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent position="popper" side="top" align="end" className="rounded-none border-line bg-paper">
+                  {variants.map((v) => (
+                    <SelectItem key={v.id} value={v.id} className="rounded-none text-[13px]">
+                      {v.optionValue}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            <Button variant="solid" size="touch" onClick={onAdd} disabled={!purchasable || adding} className="px-7">
+              {purchasable ? 'Сагсанд нэмэх' : 'Дууссан'}
+            </Button>
+          </div>
+        </div>
+      )}
+    </>
+  )
+}
