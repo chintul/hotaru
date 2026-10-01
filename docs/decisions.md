@@ -22,6 +22,8 @@ than an accident.
 | 14 | Solo-owner admin | Single `admin` role; the pending-payment queue is the primary screen |
 | 15 | Close visual match, own assets | Reference uses Poppins (Google Fonts, OFL) at 12px body / 16px headings |
 | 16 | v1 = discounts, search, wishlist, reviews | All four have schema from day one |
+| 17 | Pre-orders pay a deposit, then a balance | Owner's call. A backorder line the stock can't cover is a pre-order: the shopper pays in-stock lines in full plus each pre-order line's deposit share (per product, default 50%), the owner invoices the balance when the goods arrive. One order even for a mixed cart; it ships when fully paid. Deposits are non-refundable and the shopper is told before paying |
+| 18 | Reviews publish on submit | Owner's call, reversing pre-moderation. Moderation becomes "hide"; editing a hidden review does not republish it |
 
 ## Consequences worth remembering
 
@@ -87,6 +89,14 @@ service_role worker drains it. Reasons, in order of importance:
 A confirmed payment on an `oversold` order deliberately does **not** email the
 customer: telling someone their payment succeeded when you cannot ship is worse
 than silence. The owner's oversold alert drives that refund conversation.
+
+**A pre-order order has several payment rows (decision 17).** The upfront row
+(`full` or `deposit`) is created by `place_order`; `admin_request_balance` adds
+the `balance` row. Every path that confirms, claims or invoices a payment acts
+on the *open* row — the newest one still `unpaid` or `submitted` — so a
+confirmed deposit is never rewritten. Stock moves with the upfront
+confirmation only, and `cancel_order` restocks on `paid_at`, not on
+`payment_status`. Packing and shipping stay blocked until the balance is in.
 
 ## Still open
 

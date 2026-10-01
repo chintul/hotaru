@@ -10,6 +10,7 @@ import type { Connection } from '@/lib/types'
 import { Card, PageHeader, Status, type Tone } from '@/components/admin/ui'
 import ProductForm from '@/components/admin/product/ProductForm'
 import MediaVariants from '@/components/admin/product/MediaVariants'
+import PreorderTerms from '@/components/admin/product/PreorderTerms'
 import type { EditorCategory, EditorProduct } from '@/components/admin/product/types'
 
 const STATUS_TONE: Record<string, Tone> = { active: 'green', draft: 'amber', archived: 'grey' }
@@ -67,6 +68,7 @@ function Editor() {
       <div className="space-y-4">
         <ProductForm {...shared} categories={categories} />
         <MediaVariants {...shared} />
+        <PreorderTerms {...shared} />
       </div>
     </>
   )

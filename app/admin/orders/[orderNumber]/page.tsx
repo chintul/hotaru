@@ -4,18 +4,23 @@ import Link from 'next/link'
 import { use, useState } from 'react'
 import { useMutation, useQuery } from '@apollo/client/react'
 import {
-  ADMIN_MARK_REFUNDED, ADMIN_ORDER_DETAIL, ADMIN_SET_ORDER_STATUS,
-  CANCEL_ORDER, CONFIRM_PAYMENT,
+  ADMIN_MARK_REFUNDED, ADMIN_ORDER_DETAIL, ADMIN_SET_ORDER_STATUS, CONFIRM_PAYMENT,
 } from '@/lib/queries'
-import { formatAddress, formatDate, formatMnt, firstNode, nodes, parseJson } from '@/lib/format'
-import type { AddressSnapshot, Connection, Order, Payment } from '@/lib/types'
+import { formatAddress, formatDate, formatMnt, firstNode, nodes, parseJson, toNumber } from '@/lib/format'
+import type { AddressSnapshot, Connection, Order, OrderItem, Payment, PaymentKind, PaymentStatus } from '@/lib/types'
 import {
   Activity, Button, Card, EmptyState, Input, Row, Status, type ActivityItem,
 } from '@/components/admin/ui'
 import { Back, Truck } from '@/components/admin/icons'
 import { useConfirm } from '@/components/admin/confirm'
+import { PreorderBadge } from '@/components/admin/product/PreorderToggle'
+import {
+  REQUEST_BALANCE_LABEL, isDepositOrder, upfrontOf, useCancelOrder, useRequestBalance,
+} from '@/components/admin/preorder'
 import { errorMessage } from '@/lib/errors'
-import { paymentLabel, paymentTone, statusLabel, statusTone } from '../../_lib/order-status'
+import {
+  CONFIRM_PAYMENT_LABEL, PAYMENT_LABEL, paymentKindLabel, paymentLabel, paymentTone, statusLabel, statusTone,
+} from '../../_lib/order-status'
 
 const NEXT_STEP: Record<string, readonly [string, string]> = {
   paid: ['packed', 'Бэлтгэсэн гэж тэмдэглэх'],
@@ -57,13 +62,19 @@ export default function AdminOrderPage({ params }: PageProps<'/admin/orders/[ord
   }
 
   const items = nodes(order.orderItemCollection)
-  const payment = firstNode(order.paymentCollection)
   const address: AddressSnapshot = parseJson(order.shippingAddress)
+  const deposit = isDepositOrder(order)
 
   const activity: ActivityItem[] = [
     ...(order.cancelledAt ? [{ label: 'Цуцлагдсан', at: formatDate(order.cancelledAt) }] : []),
     ...(order.shippedAt ? [{ label: 'Илгээсэн', at: formatDate(order.shippedAt), detail: order.trackingNumber }] : []),
-    ...(order.paidAt ? [{ label: 'Төлбөр баталгаажсан', at: formatDate(order.paidAt), detail: formatMnt(order.totalMnt) }] : []),
+    ...(order.balancePaidAt ? [{ label: 'Үлдэгдэл баталгаажсан', at: formatDate(order.balancePaidAt), detail: formatMnt(order.balanceMnt) }] : []),
+    ...(order.balanceRequestedAt ? [{ label: 'Үлдэгдэл нэхэмжилсэн', at: formatDate(order.balanceRequestedAt), detail: formatMnt(order.balanceMnt) }] : []),
+    ...(order.paidAt
+      ? [deposit
+          ? { label: 'Урьдчилгаа баталгаажсан', at: formatDate(order.paidAt), detail: formatMnt(upfrontOf(order)) }
+          : { label: 'Төлбөр баталгаажсан', at: formatDate(order.paidAt), detail: formatMnt(order.totalMnt) }]
+      : []),
     { label: 'Захиалга үүссэн', at: formatDate(order.placedAt), detail: formatMnt(order.totalMnt) },
   ]
 
@@ -80,6 +91,7 @@ export default function AdminOrderPage({ params }: PageProps<'/admin/orders/[ord
             subtitle={`${formatDate(order.placedAt)} · ${order.deliveryMethod?.name ?? '—'}`}
             actions={
               <>
+                {deposit && <PreorderBadge />}
                 <Status tone={paymentTone(order.paymentStatus)}>{paymentLabel(order.paymentStatus)}</Status>
                 <Status tone={statusTone(order.status)}>{statusLabel(order.status)}</Status>
               </>
@@ -95,6 +107,7 @@ export default function AdminOrderPage({ params }: PageProps<'/admin/orders/[ord
                     <p className="text-[12px] text-a-muted">
                       {i.variantLabel ?? '—'}{i.sku ? ` · ${i.sku}` : ''}
                     </p>
+                    {i.isPreorder && <PreorderLine item={i} />}
                   </div>
                   <span className="shrink-0 text-[13px] tabular-nums text-a-muted">{formatMnt(i.unitPriceMnt)}</span>
                   <span className="w-10 shrink-0 text-right text-[13px] tabular-nums text-a-muted">{i.quantity}×</span>
@@ -112,7 +125,7 @@ export default function AdminOrderPage({ params }: PageProps<'/admin/orders/[ord
             </div>
           </Card>
 
-          <PaymentCard order={order} payment={payment} onDone={refetch} />
+          <PaymentCard order={order} onDone={refetch} />
           <FulfilmentCard order={order} onDone={refetch} />
         </div>
 
@@ -164,23 +177,63 @@ function qpayOutcomeMessage(outcome: string | undefined): string {
   }
 }
 
+function PreorderLine({ item }: { item: OrderItem }) {
+  return (
+    <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-a-muted">
+      <PreorderBadge />
+      <span>
+        {item.preorderEta ? `Ирэх: ${item.preorderEta}` : 'Ирэх хугацаа тодорхойгүй'}
+        {item.depositPct != null ? ` · хамгийн бага урьдчилгаа ${item.depositPct}%` : ''}
+      </span>
+    </p>
+  )
+}
+
+const isPaymentStatus = (s: string | null | undefined): s is PaymentStatus => s != null && s in PAYMENT_LABEL
+
+const isOpen = (p: Payment) => p.status === 'unpaid' || p.status === 'submitted'
+
+function PaymentState({ payment }: { payment: Payment | null | undefined }) {
+  const status = payment?.status
+  if (!isPaymentStatus(status)) return null
+  return <Status tone={paymentTone(status)}>{paymentLabel(status)}</Status>
+}
+
+const confirmHint = (kind: PaymentKind, amount: string, balance: string): string => {
+  if (kind === 'deposit') return `Урьдчилгаа ${amount} дансанд орсныг шалгаад баталгаажуулна уу. Үлдэгдэл ${balance}-ийг бараа ирэхэд нэхэмжилнэ.`
+  if (kind === 'balance') return `Үлдэгдэл ${amount} дансанд орсныг шалгаад баталгаажуулна уу — дараа нь бэлтгэж илгээнэ.`
+  return 'Дансаа шалгаад баталгаажуулна уу — үүний дараа нөөц хасагдана.'
+}
+
 interface PaymentCardProps {
   order: Order
-  payment: Payment | null
   onDone: Refetch
 }
 
-function PaymentCard({ order, payment, onDone }: PaymentCardProps) {
+function PaymentCard({ order, onDone }: PaymentCardProps) {
   const [confirm, { loading }] = useMutation<ConfirmPaymentData, { orderId: string; externalReference: string | null }>(CONFIRM_PAYMENT)
   const [markRefunded, { loading: refunding }] = useMutation<unknown, { orderId: string; note: string }>(ADMIN_MARK_REFUNDED)
-  const [cancel, { loading: cancelling }] = useMutation<unknown, { orderId: string; reason: string }>(CANCEL_ORDER)
+  const cancel = useCancelOrder(onDone)
+  const requestBalance = useRequestBalance(onDone)
   const [reference, setReference] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [checkMessage, setCheckMessage] = useState('')
   const [checking, setChecking] = useState(false)
   const confirmDialog = useConfirm()
 
-  const awaiting = order.paymentStatus !== 'confirmed' && order.paymentStatus !== 'refunded'
+  const payments = nodes(order.paymentCollection)
+  const deposit = isDepositOrder(order)
+  const upfront = upfrontOf(order)
+  const open = payments.find(isOpen) ?? null
+  const live = order.status !== 'cancelled' && order.status !== 'refunded'
+  const legacyUnpaid = payments.length === 0 && (order.paymentStatus === 'unpaid' || order.paymentStatus === 'submitted')
+  const awaiting = live && (open !== null || legacyUnpaid)
+  const openKind: PaymentKind = open?.kind === 'deposit' && !deposit ? 'full' : (open?.kind ?? 'full')
+  const openAmount = formatMnt(open?.amountMnt ?? (openKind === 'balance' ? order.balanceMnt : upfront))
+  const depositPayment = payments.find((p) => p.kind === 'deposit')
+  const balancePayment = payments.find((p) => p.kind === 'balance')
+  const refundAmount = deposit && !order.balancePaidAt ? upfront : toNumber(order.totalMnt)
+  const actionError = error ?? cancel.error ?? requestBalance.error
 
   const confirmThenRun = async (title: string, description: string, mutate: () => Promise<unknown>) => {
     if (!(await confirmDialog({ title, description, destructive: true }))) return
@@ -200,6 +253,7 @@ function PaymentCard({ order, payment, onDone }: PaymentCardProps) {
       if (res.data?.confirmPayment?.status === 'oversold') {
         setError('Төлбөр баталгаажсан ч нөөц хүрэлцэхгүй байна. Буцаалт хийнэ үү.')
       }
+      setReference('')
       onDone()
     } catch (e) { setError(errorMessage(e, 'Алдаа гарлаа.')) }
   }
@@ -229,44 +283,103 @@ function PaymentCard({ order, payment, onDone }: PaymentCardProps) {
     }
   }
 
+  const cancelButton = (
+    <Button variant="danger" disabled={cancel.loading} onClick={() => cancel.run(order)}>
+      {cancel.loading ? 'Цуцалж байна…' : 'Цуцлах'}
+    </Button>
+  )
+
   return (
     <Card
       title="Төлбөр"
       actions={<Status tone={paymentTone(order.paymentStatus)}>{paymentLabel(order.paymentStatus)}</Status>}
       padded={false}
     >
-      <Row label="Хэлбэр">{PAYMENT_PROVIDER_LABEL[payment?.provider ?? ''] ?? payment?.provider ?? '—'}</Row>
-      <Row label="Дүн">{formatMnt(payment?.amountMnt ?? order.totalMnt)}</Row>
-      {payment?.externalReference && <Row label="Гүйлгээний дугаар">{payment.externalReference}</Row>}
-      {payment?.payerNote && <Row label="Төлөгчийн тэмдэглэл">{payment.payerNote}</Row>}
-      {payment?.confirmedAt && <Row label="Баталгаажсан">{formatDate(payment.confirmedAt)}</Row>}
+      {deposit && (
+        <div className="border-b border-a-line">
+          <Row label={<span className="font-medium text-a-ink">Нийт</span>}>
+            <span className="font-semibold tabular-nums">{formatMnt(order.totalMnt)}</span>
+          </Row>
+          {order.minUpfrontMnt != null && order.minUpfrontMnt !== '' && (
+            <Row label="Хамгийн бага">
+              <span className="tabular-nums text-a-muted">{formatMnt(order.minUpfrontMnt)}</span>
+            </Row>
+          )}
+          <Row label="Урьдчилгаа">
+            <span className="inline-flex flex-wrap items-center justify-end gap-2">
+              <span className="tabular-nums">{formatMnt(upfront)}</span>
+              <PaymentState payment={depositPayment} />
+            </span>
+            {order.paidAt && <span className="block text-[12px] text-a-muted">Баталгаажсан {formatDate(order.paidAt)}</span>}
+          </Row>
+          <Row label="Үлдэгдэл">
+            <span className="inline-flex flex-wrap items-center justify-end gap-2">
+              <span className="tabular-nums">{formatMnt(order.balanceMnt)}</span>
+              {balancePayment
+                ? <PaymentState payment={balancePayment} />
+                : <Status tone="grey">Нэхэмжлээгүй</Status>}
+            </span>
+            <span className="block text-[12px] text-a-muted">
+              {order.balancePaidAt
+                ? `Баталгаажсан ${formatDate(order.balancePaidAt)}`
+                : order.balanceRequestedAt
+                  ? `Нэхэмжилсэн ${formatDate(order.balanceRequestedAt)}`
+                  : 'Бараа ирэхэд нэхэмжилнэ'}
+            </span>
+          </Row>
+        </div>
+      )}
+
+      {payments.length === 0 && <Row label="Дүн">{formatMnt(order.totalMnt)}</Row>}
+      {payments.map((p) => (
+        <div key={p.id} className="border-b border-a-line last:border-0">
+          <div className="flex items-center justify-between gap-3 bg-a-hover/40 px-6 py-2">
+            <span className="text-[12px] font-semibold uppercase tracking-wide text-a-muted">
+              {paymentKindLabel(p.kind)} · {PAYMENT_PROVIDER_LABEL[p.provider ?? ''] ?? p.provider ?? '—'}
+            </span>
+            <PaymentState payment={p} />
+          </div>
+          <Row label="Дүн">{formatMnt(p.amountMnt)}</Row>
+          {p.externalReference && <Row label="Гүйлгээний дугаар">{p.externalReference}</Row>}
+          {p.payerNote && <Row label="Төлөгчийн тэмдэглэл">{p.payerNote}</Row>}
+          {p.confirmedAt && <Row label="Баталгаажсан">{formatDate(p.confirmedAt)}</Row>}
+        </div>
+      ))}
 
       {awaiting && (
         <div className="flex flex-wrap items-end gap-3 border-t border-a-line bg-a-hover/50 px-6 py-4">
+          {open?.status === 'submitted' && (
+            <p className="w-full rounded-md border border-warn-line bg-warn-soft px-3 py-2 text-[13px] font-medium text-warn-ink">
+              Худалдан авагч {paymentKindLabel(openKind).toLowerCase()} {openAmount} төлсөн гэж мэдэгдсэн
+            </p>
+          )}
           <p className="w-full text-[13px] text-a-muted">
-            Дансаа шалгаад баталгаажуулна уу — үүний дараа нөөц хасагдана.
+            {confirmHint(openKind, openAmount, formatMnt(order.balanceMnt))}
           </p>
           <div className="min-w-[180px] flex-1">
             <Input value={reference} onChange={(e) => setReference(e.target.value)} placeholder="Гүйлгээний дугаар (заавал биш)" />
           </div>
           <Button variant="primary" disabled={loading} onClick={confirmPayment}>
-            Төлбөр баталгаажуулах
+            {CONFIRM_PAYMENT_LABEL[openKind]}
           </Button>
-          <Button
-            variant="danger"
-            disabled={cancelling}
-            onClick={() => confirmThenRun(
-              `${order.orderNumber} захиалгыг цуцлах уу?`,
-              'Нөөц агуулах руу буцаж, энэ үйлдлийг буцаах боломжгүй.',
-              () => cancel({ variables: { orderId: order.id, reason: 'admin cancelled' } }),
-            )}
-          >
-            {cancelling ? 'Цуцалж байна…' : 'Цуцлах'}
-          </Button>
+          {cancelButton}
           <Button disabled={checking} onClick={checkQpay}>
             {checking ? 'Шалгаж байна…' : 'QPay шалгах'}
           </Button>
           {checkMessage && <p className="w-full text-[13px] text-a-muted">{checkMessage}</p>}
+        </div>
+      )}
+
+      {order.status === 'deposit_paid' && (
+        <div className="flex flex-wrap items-center gap-3 border-t border-info-line bg-info-soft px-6 py-4">
+          <p className="w-full text-[13px] text-info-ink">
+            Урьдчилгаа орсон. Бараа ирэхэд үлдэгдэл {formatMnt(order.balanceMnt)}-ийг нэхэмжилнэ —
+            {order.email ? ' худалдан авагчид имэйл автоматаар очно.' : ` имэйлгүй тул ${order.phone ?? 'утсаар'} мэдэгдээрэй.`}
+          </p>
+          <Button variant="primary" disabled={requestBalance.loading} onClick={() => requestBalance.run(order)}>
+            {requestBalance.loading ? 'Нэхэмжилж байна…' : REQUEST_BALANCE_LABEL}
+          </Button>
+          {cancelButton}
         </div>
       )}
 
@@ -279,7 +392,7 @@ function PaymentCard({ order, payment, onDone }: PaymentCardProps) {
             variant="danger"
             disabled={refunding}
             onClick={() => confirmThenRun(
-              `${formatMnt(order.totalMnt)} буцаасныг баталгаажуулах уу?`,
+              `${formatMnt(refundAmount)} буцаасныг баталгаажуулах уу?`,
               'Мөнгийг банкаар нь буцаасны ДАРАА тэмдэглэнэ. Захиалга "Буцаагдсан" болно.',
               () => markRefunded({ variables: { orderId: order.id, note: 'refunded from admin' } }),
             )}
@@ -289,7 +402,7 @@ function PaymentCard({ order, payment, onDone }: PaymentCardProps) {
         </div>
       )}
 
-      {error && <p className="border-t border-a-line px-6 py-3 text-[13px] text-danger-ink">{error}</p>}
+      {actionError && <p className="border-t border-a-line px-6 py-3 text-[13px] text-danger-ink">{actionError}</p>}
     </Card>
   )
 }
@@ -306,7 +419,14 @@ function FulfilmentCard({ order, onDone }: FulfilmentCardProps) {
   const next = NEXT_STEP[order.status ?? '']
 
   const fulfilmentPossible = order.paymentStatus === 'confirmed' && order.status !== 'oversold'
-  if (!fulfilmentPossible) return null
+  if (!fulfilmentPossible) {
+    if (order.status !== 'deposit_paid' && order.status !== 'awaiting_balance') return null
+    return (
+      <Card title="Хүргэлт">
+        <p className="text-[13px] text-a-muted">Үлдэгдэл төлөгдөж баталгаажсаны дараа бэлтгэж илгээнэ.</p>
+      </Card>
+    )
+  }
 
   const advance = async (status: string) => {
     setError(null)

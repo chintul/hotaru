@@ -10,6 +10,9 @@ import { IconClose, IconMinus, IconPlus } from './Icons'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetClose, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { Skeleton } from '@/components/ui/skeleton'
+import { DEFAULT_DEPOSIT_PCT, depositOf, isPreorder } from '@/lib/preorder'
+import PreorderTag from './PreorderTag'
+import { cartSplit } from './cartSplit'
 
 type StaggerStyle = CSSProperties & { '--i': number }
 
@@ -51,6 +54,7 @@ function CartPanel({ confirmClear, setConfirmClear, onClose }: CartPanelProps) {
   const { addPending, cartStale, setCartStale } = useUI()
   const { items, subtotal, count, loading, setQuantity, clear, refetch } = useCart()
   const listRef = useRef<HTMLUListElement>(null)
+  const split = cartSplit(items)
 
   useEffect(() => {
     if (addPending || !listRef.current) return
@@ -126,6 +130,8 @@ function CartPanel({ confirmClear, setConfirmClear, onClose }: CartPanelProps) {
             const image = firstNode(product?.productImageCollection)
             const line = toNumber(variant?.priceMnt) * item.quantity
             const staggerStyle: StaggerStyle = { '--i': i }
+            const preorder = isPreorder(variant, item.quantity)
+            const pct = product?.preorderDepositPct ?? DEFAULT_DEPOSIT_PCT
             const setLineQuantity = (quantity: number) => {
               if (variant) setQuantity(variant.id, quantity)
             }
@@ -144,7 +150,20 @@ function CartPanel({ confirmClear, setConfirmClear, onClose }: CartPanelProps) {
                       {variant.optionLabel}: {variant.optionValue}
                     </p>
                   )}
-                  <p className="mt-1 text-ink-soft">{formatMnt(variant?.priceMnt)}</p>
+                  {preorder ? (
+                    <>
+                      <PreorderTag eta={product?.preorderEta} className="mt-1.5" />
+                      <p className="mt-1.5 text-[13px] text-ink-soft">
+                        Үндсэн үнэ <span className="tabular-nums">{formatMnt(variant?.priceMnt)}</span>
+                      </p>
+                      <p className="text-[13px] text-ink-soft">
+                        Хамгийн багадаа {pct}% ·{' '}
+                        <span className="font-semibold text-ink tabular-nums">{formatMnt(depositOf(line, pct))}</span>
+                      </p>
+                    </>
+                  ) : (
+                    <p className="mt-1 text-ink-soft">{formatMnt(variant?.priceMnt)}</p>
+                  )}
 
                   <div className="mt-3 flex items-center gap-3">
                     <div className="flex items-center border border-line">
@@ -186,6 +205,21 @@ function CartPanel({ confirmClear, setConfirmClear, onClose }: CartPanelProps) {
             <span className="label text-ink-faint">Дүн</span>
             <span className="text-[15px] tabular-nums">{formatMnt(subtotal)}</span>
           </div>
+          {split.hasPreorder && (
+            <div className="mt-2 space-y-1 rounded-2xl bg-paper-warm px-4 py-3 text-[13px]">
+              <div className="flex items-baseline justify-between text-ink-soft">
+                <span>Бүтэн дүн</span>
+                <span className="tabular-nums">{formatMnt(split.total)}</span>
+              </div>
+              <div className="flex items-baseline justify-between">
+                <span className="font-semibold">Одоо хамгийн багадаа</span>
+                <span className="font-semibold tabular-nums">{formatMnt(split.upfront)}</span>
+              </div>
+              <p className="pt-1 text-[12px] leading-relaxed text-ink-soft">
+                Хамгийн багадаа {formatMnt(split.upfront)} урьдчилж төлнө, бүтэн дүнгээр ч төлж болно.
+              </p>
+            </div>
+          )}
           <p className="label mt-1 text-ink-faint">Хүргэлтийн төлбөр төлбөрийн хэсэгт нэмэгдэнэ</p>
           <Button asChild variant="solid" size="cta" className="mt-4 w-full">
             <Link href="/checkout">Захиалах</Link>

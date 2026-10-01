@@ -4,6 +4,7 @@ import {
   ADMIN_DELETE_IMAGE,
   ADMIN_DELETE_VARIANT,
   ADMIN_REORDER_IMAGES,
+  ADMIN_SET_PRODUCT_PREORDER,
   ADMIN_SET_STOCK,
   ADMIN_SET_VARIANT_IMAGE,
   ADMIN_UPSERT_PRODUCT,
@@ -76,3 +77,14 @@ export interface UpsertProductVars {
 }
 
 export const UPSERT_PRODUCT: TypedDocumentNode<unknown, UpsertProductVars> = ADMIN_UPSERT_PRODUCT
+
+export interface PreorderTerms {
+  id: string
+  preorderDepositPct?: number | null
+  preorderEta?: string | null
+}
+
+export const SET_PRODUCT_PREORDER: TypedDocumentNode<
+  { adminSetProductPreorder: PreorderTerms | null },
+  { productId: string; depositPct: number; eta: string | null }
+> = ADMIN_SET_PRODUCT_PREORDER

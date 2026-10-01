@@ -55,7 +55,10 @@ export async function createInvoiceForOrder<Admin = AdminClient>(
     throw new QPayError('store bank account is incomplete', { code: 'NO_BANK_ACCOUNT', status: 503 })
   }
 
-  const agreedAmountMnt = order.paymentAmountMnt ?? order.totalMnt
+  if (order.paymentAmountMnt === null) {
+    throw new QPayError('nothing is due on this order right now', { code: 'NOTHING_DUE', status: 409 })
+  }
+  const agreedAmountMnt = order.paymentAmountMnt
 
   const invoice = await createInvoice({
     merchantId: settings.qpayMerchantId || (process.env.QPAY_MERCHANT_ID ?? ''),

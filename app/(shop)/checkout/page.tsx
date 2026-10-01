@@ -10,6 +10,9 @@ import { copy, firstNode, formatMnt, nodes, toNumber } from '@/lib/format'
 import { useCart } from '@/components/useCart'
 import { useSession } from '@/components/useSession'
 import ProductImage from '@/components/ProductImage'
+import PreorderTag from '@/components/PreorderTag'
+import { cartSplit } from '@/components/cartSplit'
+import { DEFAULT_DEPOSIT_PCT, isPreorder } from '@/lib/preorder'
 import type { Address, CartItem, Connection, DeliveryMethod, Order } from '@/lib/types'
 import { errorMessage } from '@/lib/errors'
 import { Button } from '@/components/ui/button'
@@ -153,6 +156,7 @@ function CheckoutForm({ items, subtotal, profileId }: CheckoutFormProps) {
   const method = methods.find((m) => m.id === methodId)
   const deliveryFee = toNumber(method?.feeMnt)
   const estimate = subtotal + deliveryFee
+  const split = cartSplit(items, deliveryFee)
 
   const onSaveAddress = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -317,6 +321,14 @@ function CheckoutForm({ items, subtotal, profileId }: CheckoutFormProps) {
                     {i.variant?.optionValue && (
                       <span className="block text-[12px] text-ink-faint">{i.variant.optionValue}</span>
                     )}
+                    {isPreorder(i.variant, i.quantity) && (
+                      <>
+                        <PreorderTag eta={product?.preorderEta} className="mt-1" />
+                        <span className="mt-0.5 block text-[12px] text-ink-faint">
+                          Урьдчилгаа хамгийн багадаа {product?.preorderDepositPct ?? DEFAULT_DEPOSIT_PCT}%
+                        </span>
+                      </>
+                    )}
                   </span>
                   <span className="shrink-0 text-[13px] tabular-nums">
                     {formatMnt(toNumber(i.variant?.priceMnt) * i.quantity)}
@@ -346,7 +358,29 @@ function CheckoutForm({ items, subtotal, profileId }: CheckoutFormProps) {
               <dt>Нийт</dt>
               <dd className="tabular-nums">{formatMnt(estimate)}</dd>
             </div>
+            {split.hasPreorder && (
+              <>
+                <div className="flex justify-between pt-1 text-[14px] font-semibold">
+                  <dt>Одоо хамгийн багадаа</dt>
+                  <dd className="tabular-nums">{formatMnt(split.upfront)}</dd>
+                </div>
+                <Row label="Бараа ирэхэд хамгийн ихдээ" value={formatMnt(split.balance)} />
+              </>
+            )}
           </dl>
+
+          {split.hasPreorder && (
+            <div className="mt-5 rounded-2xl bg-paper p-4 text-[13px] leading-relaxed">
+              <p className="font-semibold">Урьдчилсан захиалгын тухай</p>
+              <p className="mt-1.5 text-ink-soft">
+                Хамгийн багадаа {formatMnt(split.upfront)} урьдчилж төлнө, бүтэн дүнгээр ч төлж болно. Төлөх дүнгээ дараагийн алхамд өөрөө сонгоно.
+              </p>
+              <p className="mt-1.5 text-ink-soft">
+                Бараа ирмэгц үлдэгдлийн нэхэмжлэл илгээх бөгөөд бүрэн төлөгдсөний дараа бүх бараа тань хамт хүргэгдэнэ.
+              </p>
+              <p className="mt-1.5 font-medium text-ink">Урьдчилгаа төлбөр буцаагдахгүйг анхаарна уу.</p>
+            </div>
+          )}
 
           {error && <p className="mt-4 text-[13px] text-sale">{error}</p>}
 

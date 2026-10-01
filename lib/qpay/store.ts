@@ -29,12 +29,20 @@ export interface QpayPayment {
   paymentStatus: string
 }
 
+interface PaymentLine {
+  id: string
+  amount_mnt: string | number
+  external_reference: string | null
+  status: string
+  created_at: string
+}
+
 interface OrderRow {
   id: string
   order_number: string
   total_mnt: string | number
   payment_status: string
-  payments: { amount_mnt: string | number; external_reference: string | null }[] | null
+  payments: PaymentLine[] | null
 }
 
 interface SettingsRow {
@@ -45,19 +53,32 @@ interface SettingsRow {
   bank_account_name: string | null
 }
 
-interface PaymentRow {
-  order_id: string
-  amount_mnt: string | number
-  external_reference: string | null
-  status: string
+const now = (): string => new Date().toISOString()
+
+const OPEN_STATUSES = new Set(['unpaid', 'submitted'])
+
+const newestFirst = (a: PaymentLine, b: PaymentLine) =>
+  b.created_at.localeCompare(a.created_at) || b.id.localeCompare(a.id)
+
+export function currentPayment(payments: readonly PaymentLine[] | null | undefined): PaymentLine | null {
+  const rows = [...(payments ?? [])].sort(newestFirst)
+  return rows.find((p) => OPEN_STATUSES.has(p.status)) ?? rows[0] ?? null
 }
 
-const now = (): string => new Date().toISOString()
+async function loadPayments(admin: AdminClient, orderId: string): Promise<PaymentLine[]> {
+  const { data, error } = await admin
+    .from('payments')
+    .select('id, amount_mnt, external_reference, status, created_at')
+    .eq('order_id', orderId)
+    .returns<PaymentLine[]>()
+  if (error) throw new Error(`could not load payments: ${error.message}`)
+  return data ?? []
+}
 
 export async function loadOrderForInvoice(admin: AdminClient, orderId: string): Promise<OrderForInvoice> {
   const { data: order, error } = await admin
     .from('orders')
-    .select('id, order_number, total_mnt, payment_status, payments(amount_mnt, external_reference)')
+    .select('id, order_number, total_mnt, payment_status, payments(id, amount_mnt, external_reference, status, created_at)')
     .eq('id', orderId)
     .maybeSingle<OrderRow>()
   if (error) throw new Error(`could not load order: ${error.message}`)
@@ -70,7 +91,8 @@ export async function loadOrderForInvoice(admin: AdminClient, orderId: string): 
     .maybeSingle<SettingsRow>()
   if (sErr) throw new Error(`could not load store settings: ${sErr.message}`)
 
-  const payment = order.payments?.[0] ?? null
+  const open = currentPayment(order.payments)
+  const payment = open && OPEN_STATUSES.has(open.status) ? open : null
   return {
     order: {
       id: order.id,
@@ -94,6 +116,8 @@ export async function attachInvoice(
   admin: AdminClient,
   { orderId, invoiceId, payload }: { orderId: string; invoiceId: string; payload: unknown },
 ): Promise<void> {
+  const open = currentPayment(await loadPayments(admin, orderId))
+  if (!open || !OPEN_STATUSES.has(open.status)) throw new Error('no open payment to attach the invoice to')
   const { error } = await admin
     .from('payments')
     .update({
@@ -102,20 +126,15 @@ export async function attachInvoice(
       raw_payload: payload,
       updated_at: now(),
     })
-    .eq('order_id', orderId)
+    .eq('id', open.id)
   if (error) throw new Error(`could not attach invoice: ${error.message}`)
 }
 
 export async function loadPayment(admin: AdminClient, orderId: string): Promise<QpayPayment | null> {
-  const { data, error } = await admin
-    .from('payments')
-    .select('order_id, amount_mnt, external_reference, status')
-    .eq('order_id', orderId)
-    .maybeSingle<PaymentRow>()
-  if (error) throw new Error(`could not load payment: ${error.message}`)
+  const data = currentPayment(await loadPayments(admin, orderId))
   if (!data) return null
   return {
-    id: data.order_id,
+    id: orderId,
     paymentAmountMnt: Number(data.amount_mnt),
     externalReference: data.external_reference,
     paymentStatus: data.status,

@@ -9,6 +9,8 @@ import { useCanHover } from "./useCanHover";
 import { useCart } from "./useCart";
 import { useUI } from "./UIProvider";
 import { IconBag, IconCheck } from "./Icons";
+import PreorderTag from "./PreorderTag";
+import { isPreorder } from "@/lib/preorder";
 
 const MAX_SWATCHES_PER_ROW = 4;
 const ADDED_CONFIRMATION_MS = 1600;
@@ -60,6 +62,7 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
   useEffect(() => () => window.clearTimeout(addedTimer.current), []);
 
   const quickAddVariantId = product.inStock ? variant?.id : undefined;
+  const quickIsPreorder = Boolean(quickAddVariantId) && isPreorder(variant, 1);
   const onQuickAdd = async () => {
     if (!quickAddVariantId || adding) return;
     openOverlay("cart");
@@ -82,6 +85,10 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
   const max = toNumber(product.maxPriceMnt);
   const ranged = max > min;
   const showVariantPill = variant?.optionValue && !primaryImage?.filePath;
+  const preorderOnly =
+    variants.length > 0 &&
+    !variants.some((v) => (v.quantity ?? 0) > 0) &&
+    variants.some((v) => v.allowBackorder);
 
   return (
     <div className="group">
@@ -118,6 +125,10 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
               </span>
             )}
 
+            {preorderOnly && (
+              <PreorderTag className="absolute right-2 top-2 max-w-[calc(100%-1rem)]" />
+            )}
+
             {!product.inStock && (
               <span className="absolute right-3 top-3 bg-paper/95 px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.6px]">
                 Дууссан
@@ -126,7 +137,17 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
           </div>
         </Link>
 
-        {quickAddVariantId && (
+        {quickAddVariantId && quickIsPreorder && (
+          <Link
+            href={href}
+            aria-label={`${c.title ?? product.slug} — урьдчилан захиалах`}
+            className="absolute bottom-2 right-2 inline-flex h-10 items-center rounded-full bg-paper/90 px-3.5 text-[12px] font-semibold text-ink-strong shadow-[var(--t-lift)] backdrop-blur transition-transform active:scale-95 sm:h-9"
+          >
+            Урьдчилан захиалах
+          </Link>
+        )}
+
+        {quickAddVariantId && !quickIsPreorder && (
           <button
             onClick={onQuickAdd}
             disabled={adding}

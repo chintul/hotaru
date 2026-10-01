@@ -4,7 +4,11 @@ import Link from "next/link";
 import { use, useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { useMutation, useQuery } from "@apollo/client/react";
-import { ORDER_DETAIL, SUBMIT_PAYMENT_PROOF } from "@/lib/queries";
+import {
+  ORDER_DETAIL,
+  SET_UPFRONT_AMOUNT,
+  SUBMIT_PAYMENT_PROOF,
+} from "@/lib/queries";
 import {
   orderStatusLabel,
   formatAddress,
@@ -17,6 +21,7 @@ import {
 } from "@/lib/format";
 import { useSession } from "@/components/useSession";
 import ProductImage from "@/components/ProductImage";
+import PreorderTag from "@/components/PreorderTag";
 import {
   IconBank,
   IconChevronLeft,
@@ -24,6 +29,7 @@ import {
   IconQr,
   IconTruck,
 } from "@/components/Icons";
+import AmountChooser from "../_components/AmountChooser";
 import OrderSkeleton from "../_components/OrderSkeleton";
 import OrderTrail, { trailApplies } from "../_components/OrderTrail";
 import PaymentModal from "../_components/PaymentModal";
@@ -34,6 +40,15 @@ import type {
   PaymentCheckState,
 } from "../_components/PaymentModal";
 import useCountdown, { paymentDeadline } from "../_components/useCountdown";
+import {
+  STAGE_TITLE,
+  dueNow,
+  hasBalance,
+  isPreorderOrder,
+  minUpfront,
+  payStage,
+} from "../_components/payStage";
+import type { PayStage } from "../_components/payStage";
 import type {
   AddressSnapshot,
   Connection,
@@ -47,10 +62,32 @@ interface OrderDetailData {
   storeSettingsCollection: Connection<StoreSettings> | null;
 }
 
+interface SetUpfrontData {
+  setUpfrontAmount: Order | null;
+}
+
+interface SetUpfrontVars {
+  orderId: string;
+  amountMnt: string;
+}
+
+function upfrontErrorMessage(e: unknown, min: string): string {
+  const message = e instanceof Error ? e.message : "";
+  if (message.includes("amount must be between")) {
+    return `Хамгийн багадаа ${min} төлөх боломжтой.`;
+  }
+  if (message.includes("can only change before payment")) {
+    return "Төлбөр аль хэдийн эхэлсэн тул дүнг өөрчлөх боломжгүй.";
+  }
+  return "Дүн хадгалахад алдаа гарлаа. Дахин оролдоно уу.";
+}
+
 type Tone = "wait" | "good" | "move" | "stop";
 
 const STATUS_TONE: Record<OrderStatus, Tone> = {
   awaiting_payment: "wait",
+  deposit_paid: "move",
+  awaiting_balance: "wait",
   paid: "good",
   packed: "move",
   shipped: "move",
@@ -62,6 +99,8 @@ const STATUS_TONE: Record<OrderStatus, Tone> = {
 
 const STATUS_NOTE: Record<OrderStatus, readonly [note: string, emoji: string]> = {
   awaiting_payment: ["Төлбөрөө хүлээж байна", "🕰️"],
+  deposit_paid: ["Урьдчилгаа баталгаажлаа, бараа ирэхийг хүлээж байна", "🌱"],
+  awaiting_balance: ["Бараа тань ирлээ. Үлдэгдлээ төлмөгц хүргэнэ", "🎁"],
   paid: ["Төлбөр баталгаажлаа, баярлалаа", "🎀"],
   packed: ["Захиалга тань савлагдлаа", "📦"],
   shipped: ["Хүргэлтэд гарсан", "🚚"],
@@ -82,7 +121,15 @@ export default function OrderPage({
   });
   const [submitProof, { loading: submitting }] =
     useMutation(SUBMIT_PAYMENT_PROOF);
-  const [done, setDone] = useState(false);
+  const [doneStage, setDoneStage] = useState<PayStage | null>(null);
+  const [openedStage, setOpenedStage] = useState<PayStage | null>(null);
+  const [amountChosen, setAmountChosen] = useState(false);
+  const [changingAmount, setChangingAmount] = useState(false);
+  const [amountError, setAmountError] = useState<string | null>(null);
+  const [setUpfront, { loading: savingAmount }] = useMutation<
+    SetUpfrontData,
+    SetUpfrontVars
+  >(SET_UPFRONT_AMOUNT);
 
   const [qpay, setQpay] = useState<QpayInvoice | null>(null);
   const [qpayState, setQpayState] = useState<QpayState>("idle");
@@ -94,11 +141,56 @@ export default function OrderPage({
   const items = nodes(order?.orderItemCollection);
   const address: AddressSnapshot = parseJson(order?.shippingAddress);
 
-  const awaiting = order?.status === "awaiting_payment";
-  const submitted = done || order?.paymentStatus === "submitted";
+  const stage = payStage(order);
+  const submitted =
+    (stage !== null && doneStage === stage) ||
+    order?.paymentStatus === "submitted";
   const deadline = useCountdown(
-    awaiting ? paymentDeadline(order, bank?.paymentDeadlineHours) : null,
+    order?.status === "awaiting_payment"
+      ? paymentDeadline(order, bank?.paymentDeadlineHours)
+      : null,
   );
+
+  const choosingAmount =
+    stage === "deposit" && !submitted && (!amountChosen || changingAmount);
+
+  const resetQpay = () => {
+    setQpay(null);
+    setQpayState("idle");
+    setPaymentCheck("idle");
+  };
+
+  const openPayment = (next: PayMethod) => {
+    if (stage && openedStage !== stage) {
+      setOpenedStage(stage);
+      resetQpay();
+    }
+    setMethod(next);
+  };
+
+  const confirmAmount = async (amount: number) => {
+    if (!order) return;
+    setAmountError(null);
+    try {
+      if (amount !== dueNow(order, "deposit")) {
+        await setUpfront({
+          variables: { orderId: order.id, amountMnt: String(amount) },
+        });
+        resetQpay();
+        await refetch();
+      }
+      setAmountChosen(true);
+      setChangingAmount(false);
+    } catch (e) {
+      setAmountError(upfrontErrorMessage(e, formatMnt(minUpfront(order))));
+    }
+  };
+
+  const changeAmount = () => {
+    setMethod(null);
+    setAmountError(null);
+    setChangingAmount(true);
+  };
 
   const orderId = order?.id;
   const mintQpay = async () => {
@@ -123,13 +215,15 @@ export default function OrderPage({
     try {
       const result = await refetch();
       const latest = firstNode(result.data?.orderCollection);
-      setPaymentCheck(latest?.status === "awaiting_payment" ? "pending" : "idle");
+      setPaymentCheck(
+        latest && payStage(latest) === openedStage ? "pending" : "idle",
+      );
     } catch {
       setPaymentCheck("failed");
     }
   };
 
-  const watching = awaiting && (method !== null || qpayState === "ready");
+  const watching = stage !== null && (method !== null || qpayState === "ready");
   useEffect(() => {
     if (!watching) return;
     const id = setInterval(() => {
@@ -165,6 +259,9 @@ export default function OrderPage({
 
   const [note, noteEmoji] = (order.status && STATUS_NOTE[order.status]) || ["", ""];
   const count = items.reduce((n, i) => n + (i.quantity ?? 0), 0);
+  const preorder = isPreorderOrder(order);
+  const eta = items.find((i) => i.isPreorder && i.preorderEta)?.preorderEta;
+  const modalStage = openedStage ?? stage;
 
   return (
     <div className="mx-auto max-w-[860px] px-4 py-8 sm:px-6 sm:py-12">
@@ -221,16 +318,34 @@ export default function OrderPage({
         </Banner>
       )}
 
-      {awaiting && bank && (
+      {order.status === "deposit_paid" && (
+        <Banner tone="move" title="Бараа тань замдаа явж байна">
+          Урьдчилгаа тань баталгаажлаа, баярлалаа.
+          {eta ? ` Ирэх хугацаа: ${eta}.` : ""} Бараа ирмэгц бид үлдэгдлийн
+          нэхэмжлэл илгээж, имэйлээр мэдэгдэнэ. Үлдэгдэл төлөгдсөний дараа бүх
+          барааг тань хамт хүргэнэ.
+        </Banner>
+      )}
+
+      {stage && bank && (
         <section className="o-card fade-up mt-4 p-5 sm:p-6">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-[.6px] text-ink-faint">
-                Төлөх дүн
+                {choosingAmount ? "Одоо хэдийг төлөх вэ?" : STAGE_TITLE[stage]}
               </p>
-              <p className="display mt-1 text-[clamp(1.5rem,4vw,2rem)] tabular-nums">
-                {formatMnt(order.totalMnt)}
-              </p>
+              {choosingAmount ? (
+                <p className="mt-1 text-[13px] text-ink-soft">
+                  Нийт дүн{" "}
+                  <span className="font-semibold text-ink tabular-nums">
+                    {formatMnt(order.totalMnt)}
+                  </span>
+                </p>
+              ) : (
+                <p className="display mt-1 text-[clamp(1.5rem,4vw,2rem)] tabular-nums">
+                  {formatMnt(dueNow(order, stage))}
+                </p>
+              )}
             </div>
             {deadline && (
               <span
@@ -245,12 +360,60 @@ export default function OrderPage({
             )}
           </div>
 
+          {stage === "balance" && (
+            <p className="mt-3 text-[13px] leading-relaxed text-ink-soft">
+              Бараа тань ирлээ. Үлдэгдлээ төлмөгц бүх барааг тань хамт савлаж
+              хүргэнэ.
+            </p>
+          )}
+          {choosingAmount && (
+            <div className="mt-4">
+              <AmountChooser
+                key={String(order.upfrontMnt)}
+                min={minUpfront(order)}
+                total={toNumber(order.totalMnt)}
+                initial={dueNow(order, "deposit")}
+                busy={savingAmount}
+                error={amountError}
+                onConfirm={confirmAmount}
+                onCancel={
+                  amountChosen ? () => setChangingAmount(false) : undefined
+                }
+              />
+            </div>
+          )}
+          {stage === "deposit" && !choosingAmount && (
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-x-4 text-[13px] leading-relaxed text-ink-soft">
+              <p>
+                {hasBalance(order)
+                  ? `Бараа ирэхэд төлөх үлдэгдэл: ${formatMnt(order.balanceMnt)}`
+                  : "Бүтэн дүнгээр төлж байна"}
+              </p>
+              {!submitted && (
+                <button
+                  type="button"
+                  onClick={changeAmount}
+                  className="link-underline -my-2 min-h-11 font-semibold text-ink"
+                >
+                  Дүн өөрчлөх
+                </button>
+              )}
+            </div>
+          )}
+          {stage === "deposit" && (
+            <p className="mt-2 text-[13px] leading-relaxed text-ink-soft">
+              Урьдчилгаа төлбөр буцаагдахгүйг анхаарна уу.
+            </p>
+          )}
+
           {submitted && (
             <p className="mt-4 rounded-2xl bg-mint px-4 py-3 text-[13px] text-mint-ink">
               Мэдэгдэл хүлээн авлаа. Төлбөр баталгаажмагц танд имэйл илгээнэ.
             </p>
           )}
 
+          {!choosingAmount && (
+          <>
           <div
             className={`mt-5 grid gap-3 ${bank.qpayEnabled ? "sm:grid-cols-2" : ""}`}
           >
@@ -260,7 +423,7 @@ export default function OrderPage({
                 tint="bg-sky text-sky-ink"
                 title="Qpay"
                 sub="Банкны аппаараа уншуулах"
-                onClick={() => setMethod("qpay")}
+                onClick={() => openPayment("qpay")}
               />
             )}
             <PayPick
@@ -268,19 +431,23 @@ export default function OrderPage({
               tint="bg-cream text-cream-ink"
               title="Дансаар шилжүүлэх"
               sub={bank.bankName || "Дансны мэдээлэл харах"}
-              onClick={() => setMethod("bank")}
+              onClick={() => openPayment("bank")}
             />
           </div>
 
           <p className="mt-4 text-[12px] text-ink-faint">
             Гүйлгээний утга:{" "}
             <span className="font-semibold text-ink">{order.orderNumber}</span>
-            {bank.paymentDeadlineHours
+            {stage !== "balance" && bank.paymentDeadlineHours
               ? ` · ${bank.paymentDeadlineHours} цагийн дотор`
               : ""}
           </p>
+          </>
+          )}
         </section>
       )}
+
+      {preorder && <PaymentBreakdown order={order} />}
 
       <section className="o-card mt-4 overflow-hidden">
         <p className="px-5 pt-5 text-[11px] font-semibold uppercase tracking-[.6px] text-ink-faint sm:px-6">
@@ -316,6 +483,9 @@ export default function OrderPage({
                 <span className="mt-1 block text-[12px] text-ink-faint tabular-nums">
                   {formatMnt(i.unitPriceMnt)} × {i.quantity}
                 </span>
+                {i.isPreorder && (
+                  <PreorderTag eta={i.preorderEta} className="mt-1.5" />
+                )}
               </span>
               <span className="shrink-0 text-[14px] font-medium tabular-nums">
                 {formatMnt(i.lineTotalMnt)}
@@ -405,9 +575,14 @@ export default function OrderPage({
         </Link>
       </p>
 
-      {method && bank && (
+      {method && bank && modalStage && (
         <PaymentModal
           order={order}
+          stage={modalStage}
+          amount={dueNow(order, modalStage)}
+          onChangeAmount={
+            modalStage === "deposit" && !submitted ? changeAmount : undefined
+          }
           bank={bank}
           method={method}
           onMethod={setMethod}
@@ -421,7 +596,7 @@ export default function OrderPage({
             await submitProof({
               variables: { orderId: order.id, externalReference },
             });
-            setDone(true);
+            setDoneStage(modalStage);
             refetch();
           }}
           submitting={submitting}
@@ -429,6 +604,115 @@ export default function OrderPage({
         />
       )}
     </div>
+  );
+}
+
+type StepState = "paid" | "checking" | "due" | "later";
+
+const STEP_BADGE: Record<StepState, { tone: Tone; text: string }> = {
+  paid: { tone: "good", text: "✓ Төлсөн" },
+  checking: { tone: "move", text: "Шалгаж байна" },
+  due: { tone: "wait", text: "Төлөх" },
+  later: { tone: "move", text: "Бараа ирэхэд" },
+};
+
+const SETTLED: ReadonlySet<OrderStatus> = new Set([
+  "paid",
+  "packed",
+  "shipped",
+  "delivered",
+]);
+
+function PaymentBreakdown({ order }: { order: Order }) {
+  const status = order.status;
+  const submitted = order.paymentStatus === "submitted";
+  const deposit: StepState =
+    status === "awaiting_payment" ? (submitted ? "checking" : "due") : "paid";
+  const balance: StepState =
+    order.balancePaidAt || (status && SETTLED.has(status))
+      ? "paid"
+      : status === "awaiting_balance"
+        ? submitted
+          ? "checking"
+          : "due"
+        : "later";
+  const closed =
+    status === "cancelled" || status === "refunded" || status === "oversold";
+
+  return (
+    <section className="o-card mt-4 p-5 sm:p-6">
+      <p className="text-[11px] font-semibold uppercase tracking-[.6px] text-ink-faint">
+        Төлбөрийн хуваарь
+      </p>
+      <ul className="mt-3 divide-y divide-line-soft text-[14px]">
+        <BreakdownRow
+          title="Хамгийн бага урьдчилгаа"
+          hint="Үүнээс багагүй төлнө"
+          amount={formatMnt(minUpfront(order))}
+          state={null}
+          muted
+        />
+        <BreakdownRow
+          title={hasBalance(order) ? "Урьдчилгаа" : "Бүтэн дүн"}
+          hint="Таны сонгосон дүн"
+          amount={formatMnt(order.upfrontMnt)}
+          state={closed ? null : deposit}
+        />
+        {hasBalance(order) ? (
+          <BreakdownRow
+            title="Үлдэгдэл"
+            hint={
+              balance === "due" || balance === "checking"
+                ? "Нэхэмжлэл ирсэн"
+                : "Бараа ирэхэд"
+            }
+            amount={formatMnt(order.balanceMnt)}
+            state={closed ? null : balance}
+          />
+        ) : (
+          <li className="py-3 text-[13px] text-ink-soft">
+            Бүтэн дүнгээр төлөх тул үлдэгдэл үлдэхгүй.
+          </li>
+        )}
+      </ul>
+      <p className="mt-3 border-t border-line pt-3 text-[12px] leading-relaxed text-ink-faint">
+        Урьдчилгаа төлбөр буцаагдахгүй. Бүх бараа тань хамт, бүрэн төлөгдсөний
+        дараа хүргэгдэнэ.
+      </p>
+    </section>
+  );
+}
+
+interface BreakdownRowProps {
+  title: string;
+  hint: string;
+  amount: string;
+  state: StepState | null;
+  muted?: boolean;
+}
+
+function BreakdownRow({
+  title,
+  hint,
+  amount,
+  state,
+  muted = false,
+}: BreakdownRowProps) {
+  return (
+    <li className={`flex items-center gap-3 py-3 ${muted ? "text-ink-soft" : ""}`}>
+      <span className="min-w-0 flex-1">
+        <span className="block font-medium">{title}</span>
+        <span className="block text-[12px] text-ink-faint">{hint}</span>
+      </span>
+      {state && (
+        <span className="o-chip shrink-0" data-tone={STEP_BADGE[state].tone}>
+          {STEP_BADGE[state].text}
+        </span>
+      )}
+      <span className="w-[92px] shrink-0 text-right font-medium tabular-nums">
+        {amount}
+      </span>
+    </li>
   );
 }
 
@@ -469,8 +753,14 @@ interface BannerProps {
 }
 
 function Banner({ tone, title, children }: BannerProps) {
-  const bg = tone === "stop" ? "bg-blush" : "bg-cream";
-  const ink = tone === "stop" ? "text-blush-ink" : "text-cream-ink";
+  const bg =
+    tone === "stop" ? "bg-blush" : tone === "move" ? "bg-sky" : "bg-cream";
+  const ink =
+    tone === "stop"
+      ? "text-blush-ink"
+      : tone === "move"
+        ? "text-sky-ink"
+        : "text-cream-ink";
   return (
     <section className={`mt-4 rounded-[20px] ${bg} p-5 sm:p-6`}>
       <p className={`text-[14px] font-semibold ${ink}`}>{title}</p>
