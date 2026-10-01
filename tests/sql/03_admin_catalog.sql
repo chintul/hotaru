@@ -102,18 +102,18 @@ select * from public.submit_review(
   product_id => (select id from public.products where slug='test-mug'),
   rating => 5, title => 'Сайхан', body => 'Гоё');
 
-select test.ok(not (select is_approved from t_r), 'a new review starts unapproved');
+select test.ok((select is_approved from t_r), 'a new review is published immediately');
 select test.ok((select is_verified_purchase from t_r), 'the purchase is verified from order history');
-select test.eq((select rating_count from public.products where slug='test-mug'), 0,
-               'an unapproved review does not count toward the rating');
-
-select test.as_user('22222222-2222-2222-2222-222222222222', false);
-select test.ok((select is_approved from public.admin_set_review_approval((select id from t_r), true)),
-               'admin can approve a review');
 select test.eq((select rating_count from public.products where slug='test-mug'), 1,
-               'approval feeds the derived rating');
+               'a published review counts toward the rating at once');
 select test.eq((select rating_avg from public.products where slug='test-mug'), 5.0::numeric(2,1),
                'the average rating is computed');
+
+select test.as_user('22222222-2222-2222-2222-222222222222', false);
+select test.ok(not (select is_approved from public.admin_set_review_approval((select id from t_r), false)),
+               'admin can hide a review');
+select test.eq((select rating_count from public.products where slug='test-mug'), 0,
+               'a hidden review leaves the derived rating');
 
 select test.as_user('44444444-4444-4444-4444-444444444444', false);
 select test.raises(
@@ -133,9 +133,16 @@ select test.eq((select count(*)::int from public.reviews
                   and profile_id = '11111111-1111-1111-1111-111111111111'),
                1, 'a second review from the same customer edits the first');
 select test.eq((select rating from t_r2), 3, 'the edit takes the new rating');
-select test.ok(not (select is_approved from t_r2), 'an edited review returns to moderation');
-select test.eq((select rating_count from public.products where slug='test-mug'), 0,
-               'an edited review leaves the public rating until it is approved again');
+select test.ok(not (select is_approved from t_r2), 'editing a hidden review does not republish it');
+
+select test.as_user('22222222-2222-2222-2222-222222222222', false);
+select public.admin_set_review_approval((select id from t_r2), true);
+select test.as_user('11111111-1111-1111-1111-111111111111', false);
+select test.ok((select is_approved from public.submit_review(
+  product_id => (select id from public.products where slug='test-mug'),
+  rating => 4, body => 'Дахиад засав')), 'editing a published review keeps it published');
+select test.eq((select rating_avg from public.products where slug='test-mug'), 4.0::numeric(2,1),
+               'the edited rating shows at once');
 
 -- Reviewing without having bought is allowed; it just is not verified. The form
 -- offers itself to any signed-in customer on that basis.
