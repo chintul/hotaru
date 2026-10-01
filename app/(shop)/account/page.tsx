@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import { useMutation, useQuery } from '@apollo/client/react'
 import { ACCOUNT_OVERVIEW, UPDATE_PROFILE } from '@/lib/queries'
 import { orderStatusLabel, formatDate, formatMnt, firstNode, nodes } from '@/lib/format'
@@ -11,6 +11,11 @@ import PhoneVerify from '@/components/PhoneVerify'
 import ProductImage from '@/components/ProductImage'
 import type { Address, Connection, Order, OrderStatus, Profile, WishlistItem } from '@/lib/types'
 import { errorMessage } from '@/lib/errors'
+import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Skeleton } from '@/components/ui/skeleton'
 
 interface AccountOverviewData {
   profileCollection: Connection<Profile> | null
@@ -53,9 +58,9 @@ export default function AccountPage() {
       <div className="mx-auto max-w-[560px] px-5 py-24 text-center">
         <h1 className="text-[22px] font-bold">Профайл</h1>
         <p className="mt-2 text-[14px] text-ink-soft">Үргэлжлүүлэхийн тулд нэвтэрнэ үү.</p>
-        <Link href="/login?next=/account" className="btn-solid mt-6 inline-block px-8 py-3.5">
-          Нэвтрэх
-        </Link>
+        <Button asChild variant="solid" size="cta" className="mt-6">
+          <Link href="/login?next=/account">Нэвтрэх</Link>
+        </Button>
       </div>
     )
   }
@@ -78,9 +83,11 @@ export default function AccountPage() {
         </div>
         <div className="flex items-center gap-3">
           {profile?.role === 'admin' && (
-            <Link href="/admin" className="btn-outline px-5 py-2.5">Админ самбар</Link>
+            <Button asChild variant="line" size="touch" className="px-5">
+              <Link href="/admin">Админ самбар</Link>
+            </Button>
           )}
-          <button onClick={signOut} className="text-[13px] text-ink-soft hover:text-ink">Гарах</button>
+          <button onClick={signOut} className="min-h-11 text-[13px] text-ink-soft hover:text-ink">Гарах</button>
         </div>
       </header>
 
@@ -116,7 +123,9 @@ export default function AccountPage() {
             <div className="mt-4 border border-line bg-shade px-6 py-12 text-center">
               <p className="text-[14px] font-medium">Захиалга алга</p>
               <p className="mt-1 text-[13px] text-ink-soft">Эхний захиалгаа өгөөрэй.</p>
-              <Link href="/shop" className="btn-solid mt-5 inline-block px-7 py-3">Дэлгүүр рүү</Link>
+              <Button asChild variant="solid" size="touch" className="mt-5 px-7">
+                <Link href="/shop">Дэлгүүр рүү</Link>
+              </Button>
             </div>
           ) : (
             <ul className="mt-4 space-y-3">
@@ -169,6 +178,8 @@ function ProfileDetails({ profile, onSaved }: ProfileDetailsProps) {
   const [marketing, setMarketing] = useState(Boolean(profile?.marketingOptIn))
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const nameId = useId()
+  const marketingId = useId()
 
   const dirty =
     fullName !== (profile?.fullName ?? '') || marketing !== Boolean(profile?.marketingOptIn)
@@ -191,26 +202,33 @@ function ProfileDetails({ profile, onSaved }: ProfileDetailsProps) {
           }
         }}
       >
-        <label className="block">
-          <span className="text-[12px] font-medium text-ink-soft">Нэр</span>
-          <input
+        <div>
+          <Label htmlFor={nameId} className="block text-[12px] font-medium leading-normal text-ink-soft">
+            Нэр
+          </Label>
+          <Input
+            id={nameId}
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
             placeholder="Таны нэр"
-            className="mt-1.5 w-full border border-line bg-paper px-3 py-2.5 text-[13px] outline-none focus:border-ink"
+            className="mt-1.5 h-11 rounded-none bg-paper px-3 text-[13px] md:text-[13px]"
           />
-        </label>
+        </div>
 
-        <label className="mt-4 flex cursor-pointer items-start gap-2.5">
-          <input
-            type="checkbox" checked={marketing}
-            onChange={(e) => setMarketing(e.target.checked)}
-            className="mt-0.5 h-4 w-4 accent-primary-strong"
+        <div className="mt-4 flex items-start gap-2.5">
+          <Checkbox
+            id={marketingId}
+            checked={marketing}
+            onCheckedChange={(checked) => setMarketing(checked === true)}
+            className="mt-0.5"
           />
-          <span className="text-[13px] text-ink-soft">
+          <Label
+            htmlFor={marketingId}
+            className="cursor-pointer text-[13px] font-normal leading-normal text-ink-soft"
+          >
             Шинэ бүтээгдэхүүн, хөнгөлөлтийн мэдээлэл имэйлээр авах
-          </span>
-        </label>
+          </Label>
+        </div>
 
         <dl className="mt-5 space-y-2 border-t border-line pt-4 text-[13px]">
           <div className="flex justify-between gap-3">
@@ -231,9 +249,9 @@ function ProfileDetails({ profile, onSaved }: ProfileDetailsProps) {
         {error && <p className="mt-3 text-[13px] text-sale">{error}</p>}
         {saved && !dirty && <p className="mt-3 text-[13px] text-success-ink">Хадгалагдлаа.</p>}
 
-        <button type="submit" disabled={loading || !dirty} className="btn-solid mt-5 w-full py-3">
+        <Button type="submit" variant="solid" size="touch" disabled={loading || !dirty} className="mt-5 w-full">
           {loading ? 'Хадгалж байна…' : 'Хадгалах'}
-        </button>
+        </Button>
       </form>
     </section>
   )
@@ -258,9 +276,9 @@ function Tile({ href, label, value, hint }: TileProps) {
 
 const Loading = () => (
   <div className="mx-auto max-w-[1000px] px-5 py-10 lg:px-8">
-    <div className="h-24 animate-pulse border border-line bg-shade" />
+    <Skeleton className="h-24 rounded-none border border-line bg-shade" />
     <div className="mt-6 grid gap-3 sm:grid-cols-3">
-      {[0, 1, 2].map((i) => <div key={i} className="h-28 animate-pulse border border-line bg-shade" />)}
+      {[0, 1, 2].map((i) => <Skeleton key={i} className="h-28 rounded-none border border-line bg-shade" />)}
     </div>
   </div>
 )

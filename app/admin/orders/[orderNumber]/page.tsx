@@ -13,6 +13,7 @@ import {
   Activity, Button, Card, EmptyState, Input, Row, Status, type ActivityItem,
 } from '@/components/admin/ui'
 import { Back, Truck } from '@/components/admin/icons'
+import { useConfirm } from '@/components/admin/confirm'
 import { errorMessage } from '@/lib/errors'
 import { paymentLabel, paymentTone, statusLabel, statusTone } from '../../_lib/order-status'
 
@@ -52,7 +53,7 @@ export default function AdminOrderPage({ params }: PageProps<'/admin/orders/[ord
   const order = firstNode(data?.orderCollection)
   if (loading && !order) return <p className="text-[13px] text-a-muted">Ачааллаж байна…</p>
   if (!order) {
-    return <EmptyState title="Захиалга олдсонгүй" action={<Link href="/admin"><Button>Буцах</Button></Link>} />
+    return <EmptyState title="Захиалга олдсонгүй" action={<Button asChild><Link href="/admin">Буцах</Link></Button>} />
   }
 
   const items = nodes(order.orderItemCollection)
@@ -177,11 +178,12 @@ function PaymentCard({ order, payment, onDone }: PaymentCardProps) {
   const [error, setError] = useState<string | null>(null)
   const [checkMessage, setCheckMessage] = useState('')
   const [checking, setChecking] = useState(false)
+  const confirmDialog = useConfirm()
 
   const awaiting = order.paymentStatus !== 'confirmed' && order.paymentStatus !== 'refunded'
 
-  const confirmThenRun = async (question: string, mutate: () => Promise<unknown>) => {
-    if (!window.confirm(question)) return
+  const confirmThenRun = async (title: string, description: string, mutate: () => Promise<unknown>) => {
+    if (!(await confirmDialog({ title, description, destructive: true }))) return
     setError(null)
     try {
       await mutate()
@@ -254,8 +256,8 @@ function PaymentCard({ order, payment, onDone }: PaymentCardProps) {
             variant="danger"
             disabled={cancelling}
             onClick={() => confirmThenRun(
-              `${order.orderNumber} захиалгыг цуцлах уу?\n\n`
-              + 'Нөөц агуулах руу буцаж, энэ үйлдлийг буцаах боломжгүй.',
+              `${order.orderNumber} захиалгыг цуцлах уу?`,
+              'Нөөц агуулах руу буцаж, энэ үйлдлийг буцаах боломжгүй.',
               () => cancel({ variables: { orderId: order.id, reason: 'admin cancelled' } }),
             )}
           >
@@ -277,8 +279,8 @@ function PaymentCard({ order, payment, onDone }: PaymentCardProps) {
             variant="danger"
             disabled={refunding}
             onClick={() => confirmThenRun(
-              `${formatMnt(order.totalMnt)} буцаасныг баталгаажуулах уу?\n\n`
-              + 'Мөнгийг банкаар нь буцаасны ДАРАА тэмдэглэнэ. Захиалга "Буцаагдсан" болно.',
+              `${formatMnt(order.totalMnt)} буцаасныг баталгаажуулах уу?`,
+              'Мөнгийг банкаар нь буцаасны ДАРАА тэмдэглэнэ. Захиалга "Буцаагдсан" болно.',
               () => markRefunded({ variables: { orderId: order.id, note: 'refunded from admin' } }),
             )}
           >

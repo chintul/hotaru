@@ -628,7 +628,7 @@ export const ADMIN_PRODUCTS = gql`
             edges { node { title subtitle description careDetails seoTitle seoDescription } }
           }
           variantCollection(first: 20, orderBy: [{ position: AscNullsLast }]) {
-            edges { node { id sku optionLabel optionValue priceMnt compareAtPriceMnt quantity isActive } }
+            edges { node { id sku optionLabel optionValue priceMnt compareAtPriceMnt quantity allowBackorder isActive } }
           }
           productImageCollection(first: 1, orderBy: [{ position: AscNullsLast }]) {
             edges { node { id filePath } }
@@ -822,5 +822,34 @@ export const ADMIN_PRODUCT_DETAIL = gql`
     categoryCollection(first: 30, orderBy: [{ position: AscNullsLast }]) {
       edges { node { id slug categoryTranslationCollection(first: 1) { edges { node { name } } } } }
     }
+  }
+`
+
+export const ADMIN_CATEGORIES = gql`
+  query AdminCategories {
+    categoryCollection(first: 100, orderBy: [{ position: AscNullsLast }]) {
+      edges {
+        node {
+          id slug position isVisible
+          parent { id slug }
+          categoryTranslationCollection(first: 1, filter: { locale: { eq: "mn" } }) {
+            edges { node { name description } }
+          }
+          productCollection { totalCount }
+        }
+      }
+    }
+  }
+`
+
+export const ADMIN_UPSERT_CATEGORY = gql`
+  mutation AdminUpsertCategory(
+    $slug: String!, $name: String!, $description: String, $parentSlug: String,
+    $isVisible: Boolean, $sortOrder: Int, $categoryId: UUID
+  ) {
+    adminUpsertCategory(
+      slug: $slug, name: $name, description: $description, parentSlug: $parentSlug,
+      isVisible: $isVisible, sortOrder: $sortOrder, categoryId: $categoryId
+    ) { id slug position isVisible }
   }
 `

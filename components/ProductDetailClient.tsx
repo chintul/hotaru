@@ -11,6 +11,8 @@ import { useUI } from './UIProvider'
 import ProductImage, { swatchTone } from './ProductImage'
 import { IconCheck, IconHeart, IconMinus, IconPlus, IconShare } from './Icons'
 import { errorMessage } from '@/lib/errors'
+import { Button } from '@/components/ui/button'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 interface ProductDetailClientProps {
   product: Product
@@ -279,16 +281,18 @@ export default function ProductDetailClient({ product, copy, payNote }: ProductD
               </button>
             </div>
 
-            <button
+            <Button
               ref={buyRef}
+              variant="solid"
+              size="touch"
               onClick={onAdd}
               disabled={!purchasable || adding}
-              className="btn-solid order-last col-span-2 h-11 w-full px-8 transition-transform duration-150 active:scale-[.98] sm:order-none sm:col-auto sm:w-auto sm:min-w-[160px] sm:flex-1"
+              className="order-last col-span-2 w-full px-8 active:scale-[.98] sm:order-none sm:col-auto sm:w-auto sm:min-w-[160px] sm:flex-1"
             >
               {justAdded ? (
                 <span className="tick-in inline-flex items-center gap-2"><IconCheck /> Нэмэгдлээ</span>
               ) : adding ? 'Нэмж байна…' : purchasable ? 'Сагсанд нэмэх' : 'Дууссан'}
-            </button>
+            </Button>
 
             <button
               onClick={onSave}
@@ -333,7 +337,7 @@ export default function ProductDetailClient({ product, copy, payNote }: ProductD
       </div>
 
       {showBar && (
-        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-paper/97 backdrop-blur">
+        <div className="fixed inset-x-0 bottom-(--bottom-nav-h) z-30 border-t border-line bg-paper/97 backdrop-blur">
           <div className="mx-auto flex max-w-[1400px] items-center gap-4 px-5 py-3 lg:px-8">
             <div className="relative hidden h-12 w-12 shrink-0 overflow-hidden bg-shade sm:block">
               <ProductImage filePath={images[0]?.filePath} alt="" seed={product.slug} sizes="48px" />
@@ -343,20 +347,31 @@ export default function ProductDetailClient({ product, copy, payNote }: ProductD
               <p className="text-[13px] font-bold">{formatMnt(selected?.priceMnt)}</p>
             </div>
             {hasOptions && (
-              <select
+              <Select
                 value={selectedId ?? ''}
-                onChange={(e) => {
-                  const v = variants.find((x) => x.id === e.target.value)
+                onValueChange={(id) => {
+                  const v = variants.find((x) => x.id === id)
                   if (v) selectVariant(v)
                 }}
-                className="hidden border border-line px-3 py-2 text-[13px] sm:block"
               >
-                {variants.map((v) => <option key={v.id} value={v.id}>{v.optionValue}</option>)}
-              </select>
+                <SelectTrigger
+                  aria-label={variants[0]?.optionLabel ?? undefined}
+                  className="hidden rounded-none px-3 text-[13px] sm:flex"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent position="popper" side="top" align="end" className="rounded-none border-line bg-paper">
+                  {variants.map((v) => (
+                    <SelectItem key={v.id} value={v.id} className="rounded-none text-[13px]">
+                      {v.optionValue}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             )}
-            <button onClick={onAdd} disabled={!purchasable || adding} className="btn-solid px-7 py-3">
+            <Button variant="solid" size="touch" onClick={onAdd} disabled={!purchasable || adding} className="px-7">
               {purchasable ? 'Сагсанд нэмэх' : 'Дууссан'}
-            </button>
+            </Button>
           </div>
         </div>
       )}

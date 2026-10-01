@@ -144,3 +144,40 @@ export const IconMoon = (p: IconProps) => (
     <path d="M20 14.2A8.2 8.2 0 0 1 9.8 4a8.4 8.4 0 1 0 10.2 10.2Z" />
   </svg>
 )
+
+export const IconHome = (p: IconProps) => (
+  <svg viewBox="0 0 24 24" width="22" height="22" {...base} {...p}>
+    <path d="M4 11 12 4l8 7" /><path d="M6 9.5V20h12V9.5" /><path d="M10 20v-5h4v5" />
+  </svg>
+)
+
+export const IconCategories = (p: IconProps) => (
+  <svg viewBox="0 0 24 24" width="22" height="22" {...base} {...p}>
+    <rect x="4" y="4" width="6.5" height="6.5" rx="1.6" /><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.6" />
+    <rect x="4" y="13.5" width="6.5" height="6.5" rx="1.6" /><circle cx="16.75" cy="16.75" r="3.25" />
+  </svg>
+)
+
+export const IconMonitor = (p: IconProps) => (
+  <svg viewBox="0 0 24 24" width="22" height="22" {...base} {...p}>
+    <rect x="3.5" y="4.5" width="17" height="11.5" rx="1.8" /><path d="M9 20h6M12 16v4" />
+  </svg>
+)
+
+export const IconPackage = (p: IconProps) => (
+  <svg viewBox="0 0 24 24" width="22" height="22" {...base} {...p}>
+    <path d="m4 7.5 8-4 8 4v9l-8 4-8-4v-9Z" /><path d="m4 7.5 8 4 8-4M12 11.5v9" />
+  </svg>
+)
+
+export const IconShield = (p: IconProps) => (
+  <svg viewBox="0 0 24 24" width="22" height="22" {...base} {...p}>
+    <path d="M12 3.5 19 6v5.5c0 4.4-3 7.6-7 9-4-1.4-7-4.6-7-9V6l7-2.5Z" /><path d="m9 12 2 2 4-4" />
+  </svg>
+)
+
+export const IconLogOut = (p: IconProps) => (
+  <svg viewBox="0 0 24 24" width="22" height="22" {...base} {...p}>
+    <path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4" /><path d="M10 16 6 12l4-4M6 12h10" />
+  </svg>
+)

@@ -1,15 +1,21 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { formatMnt } from '@/lib/format'
 import { IconBank, IconCheck, IconClose, IconQr } from '@/components/Icons'
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogClose, DialogContent, DialogTitle } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import CopyRow from './CopyRow'
 import type { Order, StoreSettings } from '@/lib/types'
 
 export type PayMethod = 'qpay' | 'bank'
 
 export type QpayState = 'idle' | 'loading' | 'ready' | 'error'
+
+export type PaymentCheckState = 'idle' | 'checking' | 'pending' | 'failed'
 
 export interface QpayDeeplink {
   name?: string | null
@@ -33,6 +39,8 @@ interface PaymentModalProps {
   qpay: QpayInvoice | null
   qpayState: QpayState
   onMintQpay: () => void
+  paymentCheck: PaymentCheckState
+  onCheckPayment: () => void
   onClose: () => void
   onSubmitProof: (externalReference: string | null) => void
   submitting: boolean
@@ -47,6 +55,8 @@ export default function PaymentModal({
   qpay,
   qpayState,
   onMintQpay,
+  paymentCheck,
+  onCheckPayment,
   onClose,
   onSubmitProof,
   submitting,
@@ -55,117 +65,119 @@ export default function PaymentModal({
   const paid = order.status !== 'awaiting_payment'
   const [reference, setReference] = useState('')
   const panelRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
-    window.addEventListener('keydown', onKey)
-    const prev = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    return () => {
-      window.removeEventListener('keydown', onKey)
-      document.body.style.overflow = prev
-    }
-  }, [onClose])
+  const referenceId = useId()
 
   useEffect(() => {
     if (method === 'qpay' && qpayState === 'idle') onMintQpay()
   }, [method, qpayState, onMintQpay])
 
-  useEffect(() => { panelRef.current?.focus() }, [])
-
   return (
-    <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-label="Төлбөр төлөх">
-      <button
-        className="overlay-in absolute inset-0 bg-ink/35 backdrop-blur-[2px]"
-        onClick={onClose}
-        aria-label="Хаах"
-      />
+    <Dialog open onOpenChange={(next) => { if (!next) onClose() }}>
+      <DialogContent
+        ref={panelRef}
+        placement="bottom-on-phone"
+        showCloseButton={false}
+        aria-describedby={undefined}
+        overlayProps={{ className: 'bg-foreground/35 backdrop-blur-[2px]' }}
+        onOpenAutoFocus={(e) => {
+          e.preventDefault()
+          panelRef.current?.focus()
+        }}
+        className="flex flex-col gap-0 overflow-hidden border-0 p-0 shadow-none sm:max-w-[460px] sm:p-0"
+      >
+        <DialogTitle className="sr-only">Төлбөр төлөх</DialogTitle>
+        <div aria-hidden className="mx-auto mt-2.5 h-1 w-10 shrink-0 rounded-full bg-line sm:hidden" />
 
-      <div className="absolute inset-0 flex items-end justify-center sm:items-center sm:p-6">
-        <div
-          ref={panelRef}
-          tabIndex={-1}
-          className="o-modal-in flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-[26px] bg-paper outline-none sm:max-h-[86dvh] sm:max-w-[460px] sm:rounded-[26px]"
-        >
-          <div aria-hidden className="mx-auto mt-2.5 h-1 w-10 shrink-0 rounded-full bg-line sm:hidden" />
-
-          <header className="flex items-start gap-3 px-5 pb-4 pt-4 sm:px-6 sm:pt-6">
-            <div className="min-w-0 flex-1">
-              <p className="text-[11px] font-semibold uppercase tracking-[.6px] text-ink-faint">
-                {order.orderNumber}
-              </p>
-              <p className="display mt-0.5 text-[26px] font-bold tabular-nums leading-none">
-                {formatMnt(order.totalMnt)}
-              </p>
-            </div>
-            <button onClick={onClose} className="icon-btn -mr-1.5 -mt-1 shrink-0" aria-label="Хаах">
+        <header className="flex items-start gap-3 px-5 pb-4 pt-4 sm:px-6 sm:pt-6">
+          <div className="min-w-0 flex-1">
+            <p className="text-[11px] font-semibold uppercase tracking-[.6px] text-ink-faint">
+              {order.orderNumber}
+            </p>
+            <p className="display mt-0.5 text-[26px] font-bold tabular-nums leading-none">
+              {formatMnt(order.totalMnt)}
+            </p>
+          </div>
+          <DialogClose asChild>
+            <Button variant="ghost" size="icon-touch" className="-mr-1.5 -mt-1" aria-label="Хаах">
               <IconClose />
-            </button>
-          </header>
+            </Button>
+          </DialogClose>
+        </header>
 
-          {paid ? (
-            <Confirmed onClose={onClose} />
-          ) : (
-            <>
-              {bank?.qpayEnabled && (
-                <div className="mx-5 mb-4 grid shrink-0 grid-cols-2 gap-1 rounded-full bg-shade p-1 sm:mx-6">
-                  <Tab active={method === 'qpay'} onClick={() => onMethod('qpay')} icon={<IconQr width="16" height="16" />}>
-                    QPay
-                  </Tab>
-                  <Tab active={method === 'bank'} onClick={() => onMethod('bank')} icon={<IconBank width="16" height="16" />}>
-                    Данс
-                  </Tab>
-                </div>
-              )}
-
-              <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-5 sm:px-6 sm:pb-6">
-                {method === 'qpay'
-                  ? <QpayPanel qpay={qpay} state={qpayState} onRetry={onMintQpay} onBank={() => onMethod('bank')} />
-                  : <BankPanel bank={bank} order={order} />}
-
-                <div className="mt-5 border-t border-line pt-4">
-                  {method === 'qpay' ? null : submitted ? (
-                    <p className="rounded-2xl bg-mint px-4 py-3 text-[13px] text-mint-ink">
-                      Мэдэгдэл хүлээн авлаа. Төлбөр баталгаажмагц танд имэйл илгээнэ.
-                    </p>
-                  ) : (
-                    <form
-                      onSubmit={(e) => { e.preventDefault(); onSubmitProof(reference.trim() || null) }}
-                    >
-                      <label className="text-[11px] font-semibold uppercase tracking-[.6px] text-ink-faint" htmlFor="ref">
-                        Гүйлгээний дугаар (заавал биш)
-                      </label>
-                      <input
-                        id="ref"
-                        value={reference}
-                        onChange={(e) => setReference(e.target.value)}
-                        placeholder="Жишээ: 2401159876"
-                        className="mt-2 w-full rounded-2xl border border-line bg-paper-warm px-4 py-3 text-[14px] outline-none transition-colors focus:border-ink"
-                      />
-                      <button
-                        type="submit"
-                        disabled={submitting}
-                        className="mt-3 w-full rounded-full bg-ink-strong px-5 py-3.5 text-[13px] font-bold uppercase tracking-[.7px] text-paper transition-opacity hover:opacity-85 disabled:opacity-40"
-                      >
-                        {submitting ? 'Илгээж байна…' : 'Төлбөр шилжүүлсэн'}
-                      </button>
-                    </form>
-                  )}
-
-                  <p className="mt-3 flex items-center justify-center gap-2 text-[12px] text-ink-faint">
-                    <span aria-hidden className="relative grid h-2 w-2 place-items-center">
-                      <span className="o-ping absolute h-2 w-2 rounded-full bg-mint-ink" />
-                      <span className="h-2 w-2 rounded-full bg-mint-ink" />
-                    </span>
-                    Төлбөрийг автоматаар шалгаж байна
-                  </p>
-                </div>
+        {paid ? (
+          <Confirmed onClose={onClose} />
+        ) : (
+          <>
+            {bank?.qpayEnabled && (
+              <div className="mx-5 mb-4 grid shrink-0 grid-cols-2 gap-1 rounded-full bg-shade p-1 sm:mx-6">
+                <Tab active={method === 'qpay'} onClick={() => onMethod('qpay')} icon={<IconQr width="16" height="16" />}>
+                  QPay
+                </Tab>
+                <Tab active={method === 'bank'} onClick={() => onMethod('bank')} icon={<IconBank width="16" height="16" />}>
+                  Данс
+                </Tab>
               </div>
-            </>
-          )}
-        </div>
-      </div>
-    </div>
+            )}
+
+            <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-5 sm:px-6 sm:pb-6">
+              {method === 'qpay'
+                ? (
+                  <QpayPanel
+                    qpay={qpay}
+                    state={qpayState}
+                    onRetry={onMintQpay}
+                    onBank={() => onMethod('bank')}
+                    check={paymentCheck}
+                    onCheck={onCheckPayment}
+                  />
+                )
+                : <BankPanel bank={bank} order={order} />}
+
+              <div className="mt-5 border-t border-line pt-4">
+                {method === 'qpay' ? null : submitted ? (
+                  <p className="rounded-2xl bg-mint px-4 py-3 text-[13px] text-mint-ink">
+                    Мэдэгдэл хүлээн авлаа. Төлбөр баталгаажмагц танд имэйл илгээнэ.
+                  </p>
+                ) : (
+                  <form
+                    onSubmit={(e) => { e.preventDefault(); onSubmitProof(reference.trim() || null) }}
+                  >
+                    <Label
+                      className="text-[11px] font-semibold uppercase leading-normal tracking-[.6px] text-ink-faint"
+                      htmlFor={referenceId}
+                    >
+                      Гүйлгээний дугаар (заавал биш)
+                    </Label>
+                    <Input
+                      id={referenceId}
+                      value={reference}
+                      onChange={(e) => setReference(e.target.value)}
+                      placeholder="Жишээ: 2401159876"
+                      className="mt-2 h-12 rounded-2xl bg-paper-warm px-4 text-[14px] md:text-[14px]"
+                    />
+                    <button
+                      type="submit"
+                      disabled={submitting}
+                      className="mt-3 w-full rounded-full bg-ink-strong px-5 py-3.5 text-[13px] font-bold uppercase tracking-[.7px] text-paper transition-opacity hover:opacity-85 disabled:opacity-40"
+                    >
+                      {submitting ? 'Илгээж байна…' : 'Төлбөр шилжүүлсэн'}
+                    </button>
+                  </form>
+                )}
+
+                <p className="mt-3 flex items-center justify-center gap-2 text-[12px] text-ink-faint">
+                  <span aria-hidden className="relative grid h-2 w-2 place-items-center">
+                    <span className="o-ping absolute h-2 w-2 rounded-full bg-mint-ink" />
+                    <span className="h-2 w-2 rounded-full bg-mint-ink" />
+                  </span>
+                  Төлбөрийг автоматаар шалгаж байна
+                </p>
+              </div>
+            </div>
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
   )
 }
 
@@ -196,9 +208,16 @@ interface QpayPanelProps {
   state: QpayState
   onRetry: () => void
   onBank: () => void
+  check: PaymentCheckState
+  onCheck: () => void
 }
 
-function QpayPanel({ qpay, state, onRetry, onBank }: QpayPanelProps) {
+const CHECK_MESSAGE: Partial<Record<PaymentCheckState, string>> = {
+  pending: 'Төлбөр хараахан орж ирээгүй байна. Төлсөн бол хэдэн секунд хүлээгээд дахин шалгана уу.',
+  failed: 'Шалгаж чадсангүй. Дахин оролдоно уу.',
+}
+
+function QpayPanel({ qpay, state, onRetry, onBank, check, onCheck }: QpayPanelProps) {
   if (state === 'error') {
     return (
       <div className="rounded-2xl bg-blush px-4 py-5 text-center">
@@ -236,8 +255,22 @@ function QpayPanel({ qpay, state, onRetry, onBank }: QpayPanelProps) {
         Банкны аппаараа уншуулна уу. Төлбөр орсон даруйд захиалга автоматаар баталгаажна.
       </p>
 
+      <Button
+        type="button"
+        variant="solid"
+        size="cta"
+        onClick={onCheck}
+        disabled={check === 'checking'}
+        className="mt-5 w-full rounded-full"
+      >
+        {check === 'checking' ? 'Шалгаж байна…' : 'Төлбөр шалгах'}
+      </Button>
+      {CHECK_MESSAGE[check] && (
+        <p role="status" className="mt-3 text-center text-[13px] text-ink-soft">{CHECK_MESSAGE[check]}</p>
+      )}
+
       {qpay.urls && qpay.urls.length > 0 && (
-        <div className="mt-5 w-full">
+        <div className="mt-5 w-full lg:hidden">
           <p className="text-center text-[11px] font-semibold uppercase tracking-[.6px] text-ink-faint">
             Эсвэл аппаа сонгоно уу
           </p>

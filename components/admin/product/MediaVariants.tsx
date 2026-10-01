@@ -6,10 +6,12 @@ import { useMutation } from '@apollo/client/react'
 import { nodes, toNumber } from '@/lib/format'
 import { linkage, moveItem, orphansOf } from '@/lib/admin/images'
 import ProductImage from '@/components/ProductImage'
-import { Button, Card, Field, Input } from '@/components/admin/ui'
+import { Button, Card, Field, IconButton, Input } from '@/components/admin/ui'
+import { useConfirm } from '@/components/admin/confirm'
 import { Plus } from '@/components/admin/icons'
 import { errorMessage } from '@/lib/errors'
 import VariantRow from './VariantRow'
+import PreorderToggle from './PreorderToggle'
 import {
   ADD_IMAGE,
   DELETE_IMAGE,
@@ -24,6 +26,8 @@ export interface MediaVariantsProps {
   refetch: Refetch
 }
 
+const OVERLAY_BUTTON = 'size-6 rounded-lg text-[14px] text-white/90 hover:bg-white/20 hover:text-white disabled:opacity-30 dark:hover:bg-white/20'
+
 const isFileDrag = (types: readonly string[]) => types.includes('Files')
 
 export default function MediaVariants({ product, refetch }: MediaVariantsProps) {
@@ -37,6 +41,7 @@ export default function MediaVariants({ product, refetch }: MediaVariantsProps) 
   const [dragging, setDragging] = useState(false)
   const [dragIndex, setDragIndex] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const confirm = useConfirm()
 
   const [addImage] = useMutation(ADD_IMAGE)
   const [deleteImage] = useMutation(DELETE_IMAGE)
@@ -86,7 +91,8 @@ export default function MediaVariants({ product, refetch }: MediaVariantsProps) 
     const warning = orphans.length
       ? `Энэ зургийг ${orphans.length} сонголт ашиглаж байна (${orphans.join(', ')}). Устгавал тэд зураггүй үлдэнэ. Үргэлжлүүлэх үү?`
       : 'Энэ зургийг устгах уу?'
-    if (!window.confirm(warning)) return
+    const ok = await confirm({ title: warning, confirmLabel: 'Устгах', destructive: true })
+    if (!ok) return
     setError(null)
     try {
       await deleteImage({ variables: { imageId: img.id } })
@@ -211,23 +217,26 @@ export default function MediaVariants({ product, refetch }: MediaVariantsProps) 
                   <ProductImage filePath={img.filePath} alt={img.alt ?? ''} seed={img.id} sizes="128px" />
 
                   <div className="absolute inset-x-0 bottom-0 flex items-center gap-0.5 bg-gradient-to-t from-black/55 to-transparent p-1.5 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
-                    <button
+                    <IconButton
+                      type="button"
                       onClick={() => moveImage(i, i - 1)}
                       disabled={i === 0}
                       aria-label="Урагш"
-                      className="grid h-6 w-6 place-items-center rounded-lg text-[14px] text-white/90 hover:bg-white/20 disabled:opacity-30"
-                    >←</button>
-                    <button
+                      className={OVERLAY_BUTTON}
+                    >←</IconButton>
+                    <IconButton
+                      type="button"
                       onClick={() => moveImage(i, i + 1)}
                       disabled={i === images.length - 1}
                       aria-label="Хойш"
-                      className="grid h-6 w-6 place-items-center rounded-lg text-[14px] text-white/90 hover:bg-white/20 disabled:opacity-30"
-                    >→</button>
-                    <button
+                      className={OVERLAY_BUTTON}
+                    >→</IconButton>
+                    <IconButton
+                      type="button"
                       onClick={() => onDeleteImage(img)}
                       aria-label="Устгах"
-                      className="ml-auto grid h-6 w-6 place-items-center rounded-lg text-[13px] text-white/90 hover:bg-danger"
-                    >✕</button>
+                      className={`${OVERLAY_BUTTON} ml-auto text-[13px] hover:bg-danger dark:hover:bg-danger`}
+                    >✕</IconButton>
                   </div>
                 </div>
 
@@ -256,13 +265,14 @@ interface NewVariantFields {
   optionValue: string
   priceMnt: string
   quantity: string
+  allowBackorder: boolean
 }
 
 const digitsOnly = (value: string) => value.replace(/\D/g, '')
 
 function VariantForm({ product, onClose, onSaved }: VariantFormProps) {
   const [save, { loading }] = useMutation(UPSERT_VARIANT)
-  const [f, setF] = useState<NewVariantFields>({ sku: '', optionLabel: 'Өнгө', optionValue: '', priceMnt: '', quantity: '0' })
+  const [f, setF] = useState<NewVariantFields>({ sku: '', optionLabel: 'Өнгө', optionValue: '', priceMnt: '', quantity: '0', allowBackorder: false })
   const [error, setError] = useState<string | null>(null)
   const set = (k: keyof NewVariantFields) => (e: ChangeEvent<HTMLInputElement>) => setF({ ...f, [k]: e.target.value })
 
@@ -280,7 +290,7 @@ function VariantForm({ product, onClose, onSaved }: VariantFormProps) {
         optionLabel: f.optionValue ? f.optionLabel : null,
         optionValue: f.optionValue || null,
         compareAtPriceMnt: null,
-        allowBackorder: false,
+        allowBackorder: f.allowBackorder,
         isActive: true,
         sortOrder: appendedPosition,
         variantId: null,
@@ -301,6 +311,11 @@ function VariantForm({ product, onClose, onSaved }: VariantFormProps) {
       <Field label="Үлдэгдэл">
         <Input value={f.quantity} onChange={(e) => setF({ ...f, quantity: digitsOnly(e.target.value) })} />
       </Field>
+      <PreorderToggle
+        className="sm:col-span-5"
+        checked={f.allowBackorder}
+        onCheckedChange={(allowBackorder) => setF({ ...f, allowBackorder })}
+      />
       {error && <p className="text-[13px] text-danger-ink sm:col-span-5">{error}</p>}
       <div className="flex gap-2 sm:col-span-5">
         <Button type="submit" variant="primary" disabled={loading}>Нэмэх</Button>

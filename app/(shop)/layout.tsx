@@ -2,6 +2,7 @@ import dynamic from 'next/dynamic'
 import AnnouncementBar from '@/components/AnnouncementBar'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
+import BottomNav from '@/components/BottomNav'
 import { safeQuery } from '@/lib/apollo/safeQuery'
 import { NAV_CATEGORIES } from '@/lib/queries'
 import { firstNode, nodes, stocked } from '@/lib/format'
@@ -29,8 +30,10 @@ export default async function ShopLayout({ children }: LayoutProps<'/'>) {
       <Header categories={categories} />
       <main className="min-h-[70vh]">{children}</main>
       <Footer />
+      <div aria-hidden className="h-(--bottom-nav-h) lg:hidden" />
+      <BottomNav categories={categories} />
       <CartDrawer />
-      <SearchOverlay />
+      <SearchOverlay categories={categories} />
       <BackToTop />
       <CartHandoff />
     </>

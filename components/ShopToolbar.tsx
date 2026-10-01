@@ -1,8 +1,10 @@
 'use client'
 
-import { useTransition } from 'react'
+import { useId, useTransition } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { IconGrid } from './Icons'
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 const SORTS = [
   ['featured', 'Онцлох'],
@@ -22,6 +24,7 @@ export default function ShopToolbar({ total, cols }: ShopToolbarProps) {
   const router = useRouter()
   const params = useSearchParams()
   const [pending, startTransition] = useTransition()
+  const sortId = useId()
 
   const set = (key: string, value: string) => {
     const next = new URLSearchParams(params.toString())
@@ -49,16 +52,28 @@ export default function ShopToolbar({ total, cols }: ShopToolbarProps) {
 
       <span className="text-[13px] text-ink-soft">{total} бүтээгдэхүүн</span>
 
-      <label className="ml-auto flex items-center gap-2">
-        <span className="hidden text-[12px] uppercase tracking-[0.6px] text-ink-soft sm:inline">Эрэмбэлэх</span>
-        <select
-          value={params.get('sort') ?? 'featured'}
-          onChange={(e) => set('sort', e.target.value)}
-          className="min-h-11 border border-line px-3 py-2 text-[13px] focus:border-ink focus:outline-none sm:min-h-0"
+      <div className="ml-auto flex items-center gap-2">
+        <Label
+          htmlFor={sortId}
+          className="sr-only text-[12px] font-normal uppercase leading-normal tracking-[0.6px] text-ink-soft sm:not-sr-only"
         >
-          {SORTS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-        </select>
-      </label>
+          Эрэмбэлэх
+        </Label>
+        <Select value={params.get('sort') ?? 'featured'} onValueChange={(value) => set('sort', value)}>
+          <SelectTrigger
+            id={sortId}
+            size="touch"
+            className="rounded-none px-3 text-[13px] sm:data-[size=touch]:h-9"
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent position="popper" align="end" className="rounded-none border-line bg-paper">
+            {SORTS.map(([v, l]) => (
+              <SelectItem key={v} value={v} className="rounded-none text-[13px]">{l}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
     </div>
   )
 }

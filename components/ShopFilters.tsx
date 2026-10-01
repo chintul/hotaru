@@ -1,11 +1,15 @@
 'use client'
 
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useState, useTransition } from 'react'
+import { useId, useState, useTransition } from 'react'
 import type { ReactNode } from 'react'
 import { IconChevronDown, IconClose } from './Icons'
 import { useUI } from './UIProvider'
-import { useFocusTrap } from './useFocusTrap'
+import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Sheet, SheetClose, SheetContent, SheetTitle } from '@/components/ui/sheet'
 
 export interface ShopFilterCategory {
   slug: string
@@ -28,7 +32,7 @@ export default function ShopFilters({ categories, counts }: ShopFiltersProps) {
   const stock = params.get('stock')
   const { isOpen, open: openOverlay, close: closeOverlay } = useUI()
   const sheetOpen = isOpen('filters')
-  const sheetRef = useFocusTrap<HTMLDivElement>(sheetOpen)
+  const idBase = useId()
   const [min, setMin] = useState(params.get('min') ?? '')
   const [max, setMax] = useState(params.get('max') ?? '')
 
@@ -59,7 +63,7 @@ export default function ShopFilters({ categories, counts }: ShopFiltersProps) {
     ['out', `Дууссан (${counts.outOfStock})`],
   ]
 
-  const body = (
+  const renderBody = (scope: string) => (
     <>
       <Group title="Ангилал">
         <ul className="space-y-2.5">
@@ -85,37 +89,40 @@ export default function ShopFilters({ categories, counts }: ShopFiltersProps) {
       </Group>
 
       <Group title="Нөөц">
-        {stockOptions.map(([value, label]) => (
-          <label key={value} className="flex cursor-pointer items-center gap-2.5 py-1 text-[13px] text-ink-soft">
-            <input
-              type="checkbox"
-              checked={stock === value}
-              onChange={(e) => setParam('stock', e.target.checked ? value : null)}
-              className="h-4 w-4 accent-primary-strong"
-            />
-            {label}
-          </label>
-        ))}
+        {stockOptions.map(([value, label]) => {
+          const id = `${idBase}-${scope}-stock-${value}`
+          return (
+            <div key={value} className="flex items-center gap-2.5 py-1.5">
+              <Checkbox
+                id={id}
+                checked={stock === value}
+                onCheckedChange={(checked) => setParam('stock', checked === true ? value : null)}
+              />
+              <Label htmlFor={id} className="cursor-pointer text-[13px] font-normal text-ink-soft">
+                {label}
+              </Label>
+            </div>
+          )
+        })}
       </Group>
 
       <Group title="Үнэ">
         <div className="flex items-center gap-2">
-          <input
+          <Input
             value={min} onChange={(e) => setMin(e.target.value)} inputMode="numeric" placeholder="0"
-            className="w-full border border-line px-2 py-2 text-[13px] focus:border-ink focus:outline-none"
+            aria-label="Доод үнэ"
+            className="h-10 rounded-none px-2 text-[13px] md:text-[13px]"
           />
           <span className="text-ink-faint">—</span>
-          <input
+          <Input
             value={max} onChange={(e) => setMax(e.target.value)} inputMode="numeric" placeholder="500000"
-            className="w-full border border-line px-2 py-2 text-[13px] focus:border-ink focus:outline-none"
+            aria-label="Дээд үнэ"
+            className="h-10 rounded-none px-2 text-[13px] md:text-[13px]"
           />
         </div>
-        <button
-          onClick={applyPriceRange}
-          className="btn-solid mt-3 w-full py-2.5"
-        >
+        <Button variant="solid" size="touch" onClick={applyPriceRange} className="mt-3 w-full">
           Шүүх
-        </button>
+        </Button>
       </Group>
     </>
   )
@@ -143,36 +150,35 @@ export default function ShopFilters({ categories, counts }: ShopFiltersProps) {
           pending ? 'opacity-60' : ''
         }`}
       >
-        {body}
+        {renderBody('aside')}
       </aside>
 
-      {sheetOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="Шүүх">
-          <button
-            className="overlay-in absolute inset-0 bg-ink/25"
-            onClick={closeOverlay}
-            aria-label="Хаах"
-          />
-          <div
-            ref={sheetRef}
-            tabIndex={-1}
-            className="sheet-in absolute inset-x-0 bottom-0 flex max-h-[85vh] flex-col rounded-t-2xl bg-paper outline-none"
-          >
-            <div className="flex items-center justify-between border-b border-line px-5 py-4">
-              <span className="nav-link text-[14px]">Шүүх</span>
-              <button onClick={closeOverlay} className="icon-btn -mr-2" aria-label="Хаах">
+      <Sheet open={sheetOpen} onOpenChange={(next) => { if (!next) closeOverlay() }}>
+        <SheetContent
+          side="bottom"
+          showCloseButton={false}
+          aria-describedby={undefined}
+          overlayProps={{ className: 'lg:hidden' }}
+          className="gap-0 lg:hidden"
+        >
+          <div className="flex items-center justify-between border-b border-line px-5 py-4">
+            <SheetTitle className="nav-link text-[14px] font-bold text-ink-strong">Шүүх</SheetTitle>
+            <SheetClose asChild>
+              <Button variant="ghost" size="icon-touch" className="-mr-2" aria-label="Хаах">
                 <IconClose />
-              </button>
-            </div>
-            <div className="min-h-0 flex-1 overflow-y-auto px-5">{body}</div>
-            <div className="border-t border-line px-5 py-4">
-              <button onClick={closeOverlay} className="btn-solid w-full py-4">
-                Үр дүнг харах
-              </button>
-            </div>
+              </Button>
+            </SheetClose>
           </div>
-        </div>
-      )}
+          <div className="min-h-0 flex-1 overflow-y-auto px-5">{renderBody('sheet')}</div>
+          <div className="border-t border-line px-5 py-4">
+            <SheetClose asChild>
+              <Button variant="solid" size="cta" className="w-full">
+                Үр дүнг харах
+              </Button>
+            </SheetClose>
+          </div>
+        </SheetContent>
+      </Sheet>
     </>
   )
 }

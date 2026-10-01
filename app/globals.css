@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 
 @custom-variant dark {
   @media (prefers-color-scheme: dark) {
@@ -60,6 +61,27 @@
   --color-a-line:    var(--t-a-line);
   --color-a-hover:   var(--t-a-hover);
   --color-a-focus:   var(--t-a-focus);
+
+  /* shadcn/ui roles. Each points at a --ui-* alias below, which :root fills
+     from the storefront scale and the admin block refills from --t-a-*. */
+  --color-background:           var(--ui-background);
+  --color-foreground:           var(--ui-foreground);
+  --color-card:                 var(--ui-card);
+  --color-card-foreground:      var(--ui-foreground);
+  --color-popover:              var(--ui-card);
+  --color-popover-foreground:   var(--ui-foreground);
+  --color-primary-foreground:   var(--t-primary-on);
+  --color-secondary:            var(--ui-secondary);
+  --color-secondary-foreground: var(--ui-secondary-foreground);
+  --color-muted:                var(--ui-secondary);
+  --color-muted-foreground:     var(--ui-muted-foreground);
+  --color-accent:               var(--ui-accent);
+  --color-accent-foreground:    var(--ui-accent-foreground);
+  --color-destructive:          var(--t-danger-ink);
+  --color-destructive-foreground: var(--ui-on-destructive);
+  --color-border:               var(--ui-border);
+  --color-input:                var(--ui-input);
+  --color-ring:                 var(--ui-ring);
 }
 
 @theme {
@@ -244,6 +266,46 @@
   --t-lift: 0 8px 22px -12px rgb(0 0 0 / .6);
 }
 
+/* shadcn/ui aliases. Storefront by default; any page that renders a
+   [data-ui="admin"] root swaps the whole set, so Radix portals mounted on
+   <body> pick up the admin scale too. danger-ink takes the on-ink colour in
+   both themes: 4.9:1 light, 6.9:1 dark. */
+:root {
+  --ui-background:         var(--t-paper);
+  --ui-foreground:         var(--t-ink);
+  --ui-card:               var(--t-paper);
+  --ui-secondary:          var(--t-line-soft);
+  --ui-secondary-foreground: var(--t-ink-strong);
+  --ui-muted-foreground:   var(--t-ink-faint);
+  --ui-accent:             var(--t-primary-soft);
+  --ui-accent-foreground:  var(--t-primary-soft-ink);
+  --ui-on-destructive:     var(--t-on-ink);
+  --ui-border:             var(--t-line);
+  --ui-input:              var(--t-line-strong);
+  --ui-ring:               var(--t-primary-strong);
+}
+
+:root:has([data-ui="admin"]) {
+  --ui-background:         var(--t-a-bg);
+  --ui-foreground:         var(--t-a-ink);
+  --ui-card:               var(--t-a-surface);
+  --ui-secondary:          var(--t-a-hover);
+  --ui-secondary-foreground: var(--t-a-ink);
+  --ui-muted-foreground:   var(--t-a-muted);
+  --ui-accent:             var(--t-a-hover);
+  --ui-accent-foreground:  var(--t-a-ink);
+  --ui-on-destructive:     var(--t-a-on-ink);
+  --ui-border:             var(--t-a-line);
+  --ui-input:              var(--t-a-line);
+  --ui-ring:               var(--t-a-focus);
+  --t-primary:             var(--t-a-ink);
+  --t-primary-on:          var(--t-a-on-ink);
+}
+
+@layer base {
+  [data-slot] { border-color: var(--color-border); }
+}
+
 html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 
 body {
@@ -367,16 +429,6 @@ body {
     transform: scale(1.06);
   }
 
-  /* 44px on a phone, 40 where there is a cursor. This is the chrome every page
-     is operated by, one-handed. */
-  .icon-btn {
-    width: 44px; height: 44px; border-radius: 999px;
-    display: grid; place-items: center;
-    transition: background-color .15s ease;
-  }
-  @media (min-width: 640px) { .icon-btn { width: 40px; height: 40px; } }
-  .icon-btn:hover { background: var(--color-line-soft); }
-
   /* Gives a small control a 44px touch area without moving anything around it.
      For controls that are text-sized by design — breadcrumbs, "share", the
      standalone underlined actions.
@@ -394,19 +446,7 @@ body {
     height: 100%; min-height: 44px;
   }
 
-  /* Both icons are in the DOM; CSS shows the one you would switch TO. Keyed on
-     the attribute rather than React state so it is right on the first paint.
-     Same grid cell, so the button does not resize on swap. */
-  .theme-icon { grid-area: 1 / 1; }
-  .theme-icon-sun { display: none; }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme]) .theme-icon-sun { display: block; }
-    :root:not([data-theme]) .theme-icon-moon { display: none; }
-  }
-  [data-theme="dark"] .theme-icon-sun { display: block; }
-  [data-theme="dark"] .theme-icon-moon { display: none; }
-
-  /* Wordmark swap, same mechanism as the icons above. */
+  /* Wordmark swap keyed on the theme attribute, so it is right on first paint. */
   .logo-dark { display: none; }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme]) .logo-light { display: none; }
@@ -415,63 +455,7 @@ body {
   [data-theme="dark"] .logo-light { display: none; }
   [data-theme="dark"] .logo-dark { display: block; }
 
-  /* 14px/700 uppercase is not "large text" to WCAG (that starts at 18.66px
-     bold), so these labels need the full 4.5:1: --on-primary on
-     --primary-strong is 13.86:1 in light and 6.81:1 in dark. Hover is an
-     opacity step so it needs no second token and works in both themes. */
-  .btn-solid {
-    background: var(--color-primary-strong);
-    color: var(--color-on-primary);
-    font-weight: 700;
-    letter-spacing: 0.7px;
-    text-transform: uppercase;
-    font-size: 14px;
-    transition: opacity .15s ease;
-  }
-  .btn-solid:hover { opacity: .85; }
-  .btn-solid:disabled { opacity: .35; cursor: not-allowed; }
-
-  .btn-outline {
-    border: 1px solid var(--color-primary-strong);
-    color: var(--color-primary-strong);
-    font-weight: 700;
-    letter-spacing: .7px;
-    text-transform: uppercase;
-    font-size: 13px;
-    transition: background-color .15s ease, color .15s ease;
-  }
-  .btn-outline:hover { background: var(--color-primary-strong); color: var(--color-on-primary); }
-
   .link-underline { text-decoration: underline; text-underline-offset: 4px; }
-
-  /* Auth screens: larger, rounded fields with a 2px focus ring, matching the
-     reference's hosted sign-in. */
-  /* --line-strong, not --line: WCAG 1.4.11 asks 3:1 of a control boundary, and
-     here the border IS the only cue that the box is typeable. */
-  .auth-input {
-    width: 100%;
-    border-radius: 8px;
-    border: 2px solid var(--color-line-strong);
-    background: var(--color-paper);
-    color: var(--color-ink);
-    padding: 14px 16px;
-    font-size: 14px;
-    outline: none;
-    transition: border-color .15s ease;
-  }
-  .auth-input:focus { border-color: var(--color-primary-strong); }
-  .auth-input::placeholder { color: var(--color-ink-faint); }
-
-  .secondary-action {
-    width: 100%;
-    border-radius: 999px;
-    border: 1px solid var(--color-line-strong);
-    padding: 14px 0;
-    font-size: 14px;
-    font-weight: 500;
-    transition: border-color .15s ease, color .15s ease;
-  }
-  .secondary-action:hover { border-color: var(--color-primary-strong); color: var(--color-primary-strong); }
 }
 
 /* ---------------------------------------------------------------------------
@@ -485,6 +469,7 @@ body {
    Everything here is disarmed by the prefers-reduced-motion block below.
 --------------------------------------------------------------------------- */
 :root {
+  --bottom-nav-h: calc(4rem + env(safe-area-inset-bottom));
   --ease: cubic-bezier(.22, 1, .36, 1);
   --dur-fast: .16s;   /* state flips: press, ring, tick */
   --dur: .28s;        /* entrances, crossfades */
@@ -499,15 +484,8 @@ body {
    the last card waiting two seconds to appear. */
 .stagger > * { animation: fade-up var(--dur) var(--ease) both; animation-delay: calc(min(var(--i, 0), 8) * 40ms); }
 @keyframes overlay-in { from { opacity: 0 } to { opacity: 1 } }
-.overlay-in { animation: overlay-in .2s ease both; }
-/* Same keyframe, different job: a picture replacing another picture. Named
-   separately so changing the overlay timing later does not silently retime
-   every product image on the site. */
+/* A picture replacing another picture. */
 .fade-in { animation: overlay-in var(--dur) var(--ease) both; }
-@keyframes sheet-in { from { transform: translateY(100%) } to { transform: none } }
-.sheet-in { animation: sheet-in .3s var(--ease) both; }
-@keyframes drawer-in { from { transform: translateX(100%) } to { transform: none } }
-.drawer-in { animation: drawer-in .35s var(--ease) both; }
 
 /* The add-to-cart button's three states. `pop` is reused by the header count
    badge, so a successful add reads as one gesture across two places. */
@@ -515,6 +493,10 @@ body {
 .tick-in { animation: tick-in var(--dur) var(--ease) both; }
 @keyframes count-pop { 0% { transform: scale(1) } 40% { transform: scale(1.35) } 100% { transform: scale(1) } }
 .count-pop { animation: count-pop .34s var(--ease); }
+
+@media (min-width: 64rem) {
+  :root { --bottom-nav-h: 0px; }
+}
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
@@ -534,12 +516,12 @@ body {
 /* One visible focus ring for the whole storefront. Before this the only
    :focus-visible rule in the codebase was on order pages, so every shop
    control fell back to the UA default and three inputs removed it outright. */
-/* --primary-strong, not the brand hex: 6.59:1 on light paper and 6.53:1 on
-   dark, so one token rings correctly in both themes. */
-:where(a, button, input, select, textarea, [tabindex]):focus-visible {
-  outline: 2px solid var(--color-primary-strong);
+/* Text fields carry no ring: the caret marks focus. --ring is primary-strong
+   on the storefront (6.59:1 light, 6.53:1 dark) and a-focus in the admin. Unlayered, so it outranks utilities: no border-radius
+   here, the outline follows each control's own corners. */
+:where(a, button, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-ring);
   outline-offset: 2px;
-  border-radius: 2px;
 }
 
 input[type="number"]::-webkit-outer-spin-button,
@@ -617,11 +599,10 @@ input[type="number"] { -moz-appearance: textfield; }
 @keyframes o-ping { 0% { transform: scale(1); opacity: .55 } 70%, 100% { transform: scale(2.1); opacity: 0 } }
 .o-ping { animation: o-ping 1.8s cubic-bezier(0,0,.2,1) infinite; }
 
-/* Modal: rises from slightly below and small, so dismissing feels reversible. */
-@keyframes o-modal-in { from { opacity: 0; transform: translateY(14px) scale(.97) } to { opacity: 1; transform: none } }
-.o-modal-in { animation: o-modal-in .28s cubic-bezier(.22,1,.36,1) both; }
-
 /* Payment confirmed. One overshoot, then settle — the single celebratory
    moment on the page, and only ever fired once per order. */
 @keyframes o-pop { 0% { opacity: 0; transform: scale(.6) } 60% { opacity: 1; transform: scale(1.08) } 100% { transform: scale(1) } }
 .o-pop { animation: o-pop .5s cubic-bezier(.22,1,.36,1) both; }
+
+:where(input, textarea, select):focus,
+:where(input, textarea, select):focus-visible { outline: none; }

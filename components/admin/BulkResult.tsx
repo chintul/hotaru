@@ -37,9 +37,9 @@ export default function BulkResult<Id extends RowId>({ result, labelFor = ownId,
           {ok.length} амжилттай{failed.length > 0 ? ` · ${failed.length} алдаа` : ''}
         </span>
         {failed.length > 0 && (
-          <button onClick={() => setOpen((v) => !v)} className="underline underline-offset-2">
+          <Button variant="link" onClick={() => setOpen((v) => !v)} className="font-normal">
             {open ? 'Нуух' : 'Дэлгэрэнгүй'}
-          </button>
+          </Button>
         )}
         <span className="ml-auto">
           <Button variant="ghost" size="sm" onClick={onDismiss}>Хаах</Button>

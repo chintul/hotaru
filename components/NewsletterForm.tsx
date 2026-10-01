@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, type SubmitEvent } from 'react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 
 type SubmitState = 'idle' | 'sending' | 'done' | 'error'
 
@@ -51,7 +53,7 @@ export default function NewsletterForm() {
   return (
     <form className="mt-4" onSubmit={onSubmit} noValidate>
       <div className="flex">
-        <input
+        <Input
           type="email"
           name="email"
           required
@@ -60,15 +62,16 @@ export default function NewsletterForm() {
           placeholder="Имэйл хаяг"
           aria-label="Имэйл хаяг"
           aria-invalid={state === 'error' || undefined}
-          className="min-w-0 flex-1 border border-white/25 bg-transparent px-3 py-3 text-[13px] placeholder:text-white/40 focus:border-white focus:outline-none"
+          className="h-12 min-w-0 flex-1 rounded-none border-white/25 bg-transparent px-3 text-[13px] text-white placeholder:text-white/40 md:text-[13px]"
         />
-        <button
+        <Button
           type="submit"
+          variant="solid"
           disabled={state === 'sending'}
-          className="bg-white px-5 py-3 text-[13px] font-bold uppercase tracking-[0.7px] text-footer transition-opacity disabled:opacity-60"
+          className="h-12 bg-white px-5 text-[13px] text-footer hover:opacity-90 disabled:opacity-60"
         >
           {state === 'sending' ? '…' : 'Илгээх'}
-        </button>
+        </Button>
       </div>
       {message && (
         <p className="mt-2 text-[12px] text-white/70" role="alert">

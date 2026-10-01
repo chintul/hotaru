@@ -1,13 +1,16 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 import type { TypedDocumentNode } from '@apollo/client'
 import { useQuery } from '@apollo/client/react'
 import { ADMIN_ALL_ORDERS, ADMIN_PRODUCTS } from '@/lib/queries'
 import { copy, formatMnt, nodes } from '@/lib/format'
 import type { Connection, Order, Product } from '@/lib/types'
-import { Search as SearchIcon } from './icons'
+import {
+  Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList,
+} from '@/components/ui/command'
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 
 export interface PaletteNavItem {
   href: string
@@ -55,15 +58,23 @@ const CATALOG_WINDOW = 100
 const escapeLike = (term: string) => term.replace(/[\\%_]/g, (c) => `\\${c}`)
 
 export default function CommandPalette({ open, onClose, nav }: CommandPaletteProps) {
-  if (!open) return null
-  return <Palette onClose={onClose} nav={nav} />
+  return (
+    <Dialog open={open} onOpenChange={(next) => { if (!next) onClose() }}>
+      <DialogContent
+        showCloseButton={false}
+        aria-describedby={undefined}
+        className="top-[15vh] w-[min(560px,92vw)] max-w-none translate-y-0 gap-0 overflow-hidden rounded-xl p-0 sm:max-w-none"
+      >
+        <DialogTitle className="sr-only">Хайх</DialogTitle>
+        <Palette onClose={onClose} nav={nav} />
+      </DialogContent>
+    </Dialog>
+  )
 }
 
 function Palette({ onClose, nav }: Omit<CommandPaletteProps, 'open'>) {
   const router = useRouter()
   const [q, setQ] = useState('')
-  const inputRef = useRef<HTMLInputElement>(null)
-  const [rawCursor, setCursor] = useState(0)
 
   const term = q.trim()
 
@@ -78,8 +89,6 @@ function Palette({ onClose, nav }: Omit<CommandPaletteProps, 'open'>) {
     skip: !term,
   })
   const { data: productData } = useQuery(productsQuery, { variables: { first: CATALOG_WINDOW } })
-
-  useEffect(() => { inputRef.current?.focus({ preventScroll: true }) }, [])
 
   const results = useMemo<PaletteResult[]>(() => {
     const lower = term.toLowerCase()
@@ -110,49 +119,38 @@ function Palette({ onClose, nav }: Omit<CommandPaletteProps, 'open'>) {
     return [...pages, ...orders, ...products]
   }, [term, nav, orderData, productData])
 
-  const cursor = Math.min(rawCursor, Math.max(0, results.length - 1))
+  const groups = useMemo(() => {
+    const byGroup = new Map<string, PaletteResult[]>()
+    for (const r of results) byGroup.set(r.group, [...(byGroup.get(r.group) ?? []), r])
+    return [...byGroup.entries()]
+  }, [results])
 
-  const go = (item: PaletteResult | undefined) => { if (item) { router.push(item.href); onClose() } }
+  const go = (item: PaletteResult) => { router.push(item.href); onClose() }
 
   return (
-    <div className="fixed inset-0 z-50" role="dialog" aria-modal="true">
-      <button className="absolute inset-0 bg-black/25" onClick={onClose} aria-label="Хаах" />
-      <div className="absolute left-1/2 top-[15vh] w-[min(560px,92vw)] -translate-x-1/2 overflow-hidden rounded-xl border border-a-line bg-a-surface shadow-xl">
-        <div className="flex items-center gap-2.5 border-b border-a-line px-4 py-3">
-          <span className="text-a-muted"><SearchIcon /></span>
-          <input
-            ref={inputRef}
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'ArrowDown') { e.preventDefault(); setCursor((c) => Math.min(c + 1, results.length - 1)) }
-              if (e.key === 'ArrowUp') { e.preventDefault(); setCursor((c) => Math.max(c - 1, 0)) }
-              if (e.key === 'Enter') { e.preventDefault(); go(results[cursor]) }
-              if (e.key === 'Escape') onClose()
-            }}
-            placeholder="Захиалгын дугаар, бараа, хуудас…"
-            className="flex-1 bg-transparent text-[14px] outline-none placeholder:text-a-muted"
-          />
-          <kbd className="rounded border border-a-line px-1.5 text-[11px] text-a-muted">esc</kbd>
-        </div>
-
-        <ul className="max-h-[50vh] overflow-y-auto py-1.5">
-          {results.length === 0 && <li className="px-4 py-8 text-center text-[13px] text-a-muted">Илэрц алга</li>}
-          {results.map((r, i) => (
-            <li key={r.id}>
-              <button
-                onMouseEnter={() => setCursor(i)}
-                onClick={() => go(r)}
-                className={`flex w-full items-center gap-3 px-4 py-2 text-left ${i === cursor ? 'bg-a-hover' : ''}`}
-              >
-                <span className="w-[64px] shrink-0 text-[11px] uppercase tracking-wide text-a-muted">{r.group}</span>
-                <span className="min-w-0 flex-1 truncate text-[13px] text-a-ink">{r.label}</span>
-                {r.hint && <span className="shrink-0 text-[12px] tabular-nums text-a-muted">{r.hint}</span>}
-              </button>
-            </li>
-          ))}
-        </ul>
+    <Command shouldFilter={false} className="rounded-none bg-transparent **:data-[slot=command-input-wrapper]:h-12 **:data-[slot=command-input-wrapper]:gap-2.5 **:data-[slot=command-input-wrapper]:px-4">
+      <div className="relative">
+        <CommandInput
+          value={q}
+          onValueChange={setQ}
+          placeholder="Захиалгын дугаар, бараа, хуудас…"
+          className="h-12 pr-12 text-[14px]"
+        />
+        <kbd className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 rounded border border-border px-1.5 text-[11px] text-muted-foreground">esc</kbd>
       </div>
-    </div>
+      <CommandList className="max-h-[50vh] py-1.5">
+        <CommandEmpty className="px-4 py-8 text-center text-[13px] text-muted-foreground">Илэрц алга</CommandEmpty>
+        {groups.map(([group, items]) => (
+          <CommandGroup key={group} heading={group} className="px-1.5 py-0 [&_[cmdk-group-heading]]:px-2.5 [&_[cmdk-group-heading]]:text-[11px] [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wide">
+            {items.map((r) => (
+              <CommandItem key={r.id} value={r.id} onSelect={() => go(r)} className="gap-3 px-2.5 py-2">
+                <span className="min-w-0 flex-1 truncate text-[13px]">{r.label}</span>
+                {r.hint && <span className="shrink-0 text-[12px] tabular-nums text-muted-foreground">{r.hint}</span>}
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        ))}
+      </CommandList>
+    </Command>
   )
 }

@@ -6,6 +6,8 @@ import { useMutation } from '@apollo/client/react'
 import { copy, firstNode } from '@/lib/format'
 import { Button, Card, Field, Input, Select, Textarea } from '@/components/admin/ui'
 import { errorMessage } from '@/lib/errors'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Label } from '@/components/ui/label'
 import { UPSERT_PRODUCT } from './documents'
 import type { EditorCategory, EditorProduct, Refetch } from './types'
 
@@ -138,15 +140,15 @@ export default function ProductForm({ product, categories, refetch }: ProductFor
             <option value="archived">archived</option>
           </Select>
         </Field>
-        <label className="flex items-center gap-2 self-end pb-2 text-[13px]">
-          <input
-            type="checkbox"
+        <div className="flex items-center gap-2 self-end pb-2">
+          <Checkbox
+            id="product-featured"
             checked={f.isFeatured}
-            onChange={(e) => { setSaved(false); setF({ ...f, isFeatured: e.target.checked }) }}
-            className="h-4 w-4 accent-primary-strong"
+            onCheckedChange={(checked) => { setSaved(false); setF({ ...f, isFeatured: checked === true }) }}
+            className="bg-card dark:bg-card"
           />
-          Онцлох
-        </label>
+          <Label htmlFor="product-featured" className="text-[13px] font-normal">Онцлох</Label>
+        </div>
 
         <div className="border-t border-a-line pt-4 sm:col-span-2">
           <h3 className="text-[13px] font-semibold text-a-ink">SEO</h3>

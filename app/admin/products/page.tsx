@@ -14,9 +14,11 @@ import {
   type BulkAction, type Column, type Tone,
 } from '@/components/admin/ui'
 import { useSelection } from '@/components/admin/selection'
+import { useConfirm } from '@/components/admin/confirm'
 import ProductImage from '@/components/ProductImage'
 import { Plus } from '@/components/admin/icons'
 import { errorMessage } from '@/lib/errors'
+import { PreorderBadge } from '@/components/admin/product/PreorderToggle'
 
 const LOW_STOCK = 5
 const DELETE_CONFIRMATION_WORD = 'УСТГАХ'
@@ -63,8 +65,15 @@ export default function ProductsPage() {
       <span className="font-medium">{copy(p).title ?? p.slug}</span>) },
     { key: 'variants', header: 'Сонголт', render: (p) => `${nodes(p.variantCollection).length}` },
     { key: 'stock', header: 'Үлдэгдэл', align: 'right', render: (p) => {
-      const total = nodes(p.variantCollection).reduce((s, v) => s + (v.quantity ?? 0), 0)
-      return <span className={`tabular-nums ${stockClass(total)}`}>{total}</span>
+      const variants = nodes(p.variantCollection)
+      const total = variants.reduce((s, v) => s + (v.quantity ?? 0), 0)
+      const preorder = variants.some((v) => v.allowBackorder)
+      return (
+        <span className="inline-flex items-center justify-end gap-2">
+          {preorder && <PreorderBadge />}
+          <span className={`tabular-nums ${preorder ? '' : stockClass(total)}`}>{total}</span>
+        </span>
+      )
     } },
     { key: 'price', header: 'Үнэ', align: 'right', render: (p) => (
       <span className="tabular-nums">{formatMnt(p.minPriceMnt)}</span>) },
@@ -78,10 +87,11 @@ export default function ProductsPage() {
   const [setCategory] = useMutation<unknown, { productIds: string[]; categorySlug: string }>(ADMIN_BULK_SET_PRODUCT_CATEGORY)
   const [bulkDelete] = useMutation<unknown, { productIds: string[] }>(ADMIN_BULK_DELETE_PRODUCTS)
   const [bulkError, setBulkError] = useState<string | null>(null)
+  const confirm = useConfirm()
   const n = sel.count
 
   const run = async (confirmText: string, fn: (ids: string[]) => Promise<unknown>) => {
-    if (!window.confirm(confirmText)) return
+    if (!(await confirm({ title: confirmText }))) return
     setBulkError(null)
     const ids = sel.ids
     try {
@@ -94,10 +104,14 @@ export default function ProductsPage() {
   }
 
   const deletePermanently = async () => {
-    const typed = window.prompt(
-      `${n} бүтээгдэхүүнийг бүрмөсөн устгана. Захиалгын түүх хэвээр үлдэнэ.\n\n`
-      + `Баталгаажуулахын тулд ${DELETE_CONFIRMATION_WORD} гэж бичнэ үү:`)
-    if (typed !== DELETE_CONFIRMATION_WORD) return
+    const ok = await confirm({
+      title: `${n} бүтээгдэхүүнийг бүрмөсөн устгана. Захиалгын түүх хэвээр үлдэнэ.`,
+      description: `Баталгаажуулахын тулд ${DELETE_CONFIRMATION_WORD} гэж бичнэ үү:`,
+      typeToConfirm: DELETE_CONFIRMATION_WORD,
+      confirmLabel: 'Бүрмөсөн устгах',
+      destructive: true,
+    })
+    if (!ok) return
     setBulkError(null)
     try {
       await bulkDelete({ variables: { productIds: sel.ids } })

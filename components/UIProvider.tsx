@@ -4,7 +4,7 @@ import { usePathname } from 'next/navigation'
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import type { Dispatch, ReactNode, SetStateAction } from 'react'
 
-export const OVERLAYS = ['cart', 'search', 'nav', 'filters'] as const
+export const OVERLAYS = ['cart', 'search', 'nav', 'filters', 'account'] as const
 
 export type Overlay = (typeof OVERLAYS)[number]
 
@@ -47,7 +47,6 @@ export function UIProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOverlay(null)
       const isSearchShortcut = (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k'
       if (isSearchShortcut) {
         e.preventDefault()
@@ -57,15 +56,6 @@ export function UIProvider({ children }: { children: ReactNode }) {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [])
-
-  useEffect(() => {
-    if (!overlay) return undefined
-    const previous = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    return () => {
-      document.body.style.overflow = previous
-    }
-  }, [overlay])
 
   const pushedHistoryEntryRef = useRef(false)
   useEffect(() => {

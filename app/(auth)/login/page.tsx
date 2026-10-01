@@ -9,6 +9,7 @@ import EmailOtp from "@/components/EmailOtp";
 import OAuthButtons, { hasOAuth } from "@/components/OAuthButtons";
 import { useRedeemParkedCart } from "@/components/CartHandoff";
 import Logo from "@/components/Logo";
+import { Button } from "@/components/ui/button";
 
 function SignIn() {
   useRedeemParkedCart();
@@ -25,12 +26,14 @@ function SignIn() {
     return (
       <div className="text-center">
         <p className="text-[14px] text-ink-soft">Та нэвтэрсэн байна.</p>
-        <button
+        <Button
+          variant="solid"
+          size="cta"
           onClick={() => router.push(next)}
-          className="btn-solid mt-5 w-full rounded-full py-4"
+          className="mt-5 w-full rounded-full"
         >
           Үргэлжлүүлэх
-        </button>
+        </Button>
       </div>
     );
   }
@@ -41,17 +44,18 @@ function SignIn() {
       <p className="mt-2 text-[14px] text-ink-soft">
         {next === "/checkout"
           ? "Захиалгаа баталгаажуулахын тулд нэвтэрнэ үү. Сагс хадгалагдана."
-          : "Нэвтрэх эсвэл шинэ бүртгэл үүсгэх."}
+          : "Нууц үг хэрэггүй. Бүртгэлгүй бол автоматаар үүснэ."}
       </p>
 
       {oauthFailed && (
-        <p className="mt-5 rounded-lg bg-sale/10 px-4 py-3 text-[13px] text-sale">
+        <p className="mt-5 rounded-xl border border-danger-line bg-danger-soft px-4 py-3 text-[13px] text-danger-ink">
           Нэвтэрч чадсангүй. Дахин оролдоно уу.
         </p>
       )}
 
       <div className="mt-7">
-        <div className="mb-6 grid grid-cols-2 gap-1 rounded-full bg-shade p-1">
+        <p className="mb-2 text-[13px] font-medium text-ink">Юугаар нэвтрэх вэ?</p>
+        <div role="group" aria-label="Нэвтрэх арга" className="mb-6 grid grid-cols-2 gap-1 rounded-full bg-shade p-1">
           {METHODS.map(([key, label]) => (
             <button
               key={key}
@@ -60,7 +64,7 @@ function SignIn() {
               aria-pressed={method === key}
               className={`min-h-11 rounded-full py-2.5 text-[14px] font-medium transition-colors ${
                 method === key
-                  ? "bg-paper text-ink shadow-[0_1px_2px_rgba(0,0,0,.08)]"
+                  ? "bg-paper text-ink-strong shadow-(--t-lift)"
                   : "text-ink-soft hover:text-ink"
               }`}
             >
@@ -97,7 +101,7 @@ function SignIn() {
 type Method = "phone" | "email";
 
 const METHODS: ReadonlyArray<readonly [Method, string]> = [
-  ["phone", "Утас"],
+  ["phone", "Утасны дугаар"],
   ["email", "Имэйл"],
 ];
 
@@ -111,12 +115,12 @@ const Divider = () => (
 
 export default function LoginPage() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center px-5 py-12">
-      <Link href="/" className="mb-10">
-        <Logo className="h-10 w-auto" />
+    <div className="flex min-h-dvh flex-col items-center justify-center px-4 py-10">
+      <Link href="/" className="mb-8">
+        <Logo className="h-9 w-auto" />
       </Link>
 
-      <div className="w-full max-w-100 bg-paper px-7 py-9 shadow-[0_1px_3px_rgba(0,0,0,.06)] sm:px-9 sm:py-10">
+      <div className="w-full max-w-100 rounded-3xl bg-paper px-6 py-8 shadow-(--t-lift) sm:px-9 sm:py-10">
         <Suspense
           fallback={<p className="text-center text-[13px] text-ink-faint">…</p>}
         >
@@ -126,7 +130,7 @@ export default function LoginPage() {
 
       <Link
         href="/shop"
-        className="mt-8 text-[13px] text-ink-soft hover:text-ink"
+        className="mt-6 flex min-h-11 items-center text-[13px] text-ink-soft hover:text-ink"
       >
         ← Дэлгүүр рүү буцах
       </Link>

@@ -10,6 +10,7 @@ import { slugify } from '@/lib/slug'
 import type { Category, Connection } from '@/lib/types'
 import { Button, Card, Field, Input, PageHeader, Select } from '@/components/admin/ui'
 import { errorMessage } from '@/lib/errors'
+import PreorderToggle from '@/components/admin/product/PreorderToggle'
 
 interface ProductDraft {
   title: string
@@ -18,6 +19,7 @@ interface ProductDraft {
   priceMnt: string
   quantity: string
   status: string
+  allowBackorder: boolean
 }
 
 interface CategoriesData {
@@ -65,7 +67,7 @@ export default function NewProductPage() {
   const categories = nodes(data?.categoryCollection)
 
   const [f, setF] = useState<ProductDraft>({
-    title: '', slug: '', categorySlug: '', priceMnt: '', quantity: '0', status: 'draft',
+    title: '', slug: '', categorySlug: '', priceMnt: '', quantity: '0', status: 'draft', allowBackorder: false,
   })
   const [slugFollowsTitle, setSlugFollowsTitle] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -108,7 +110,7 @@ export default function NewProductPage() {
         optionLabel: null,
         optionValue: null,
         compareAtPriceMnt: null,
-        allowBackorder: false,
+        allowBackorder: f.allowBackorder,
         isActive: true,
         sortOrder: 0,
         variantId: null,
@@ -165,12 +167,17 @@ export default function NewProductPage() {
               onChange={(e) => setF({ ...f, priceMnt: digitsOnly(e.target.value) })}
             />
           </Field>
-          <Field label="Үлдэгдэл">
+          <Field label="Үлдэгдэл" hint={f.allowBackorder ? 'Урьдчилсан захиалгад 0 байж болно' : undefined}>
             <Input
               value={f.quantity}
               onChange={(e) => setF({ ...f, quantity: digitsOnly(e.target.value) })}
             />
           </Field>
+          <PreorderToggle
+            className="sm:col-span-2"
+            checked={f.allowBackorder}
+            onCheckedChange={(allowBackorder) => setF({ ...f, allowBackorder })}
+          />
 
           {error && <p className="text-[13px] text-danger-ink sm:col-span-2">{error}</p>}
           <div className="flex gap-2 sm:col-span-2">

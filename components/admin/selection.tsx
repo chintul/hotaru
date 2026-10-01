@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from 'react'
 import { prune, selectionSummary, toggle, toggleAll } from '@/lib/admin/selection'
-import { Check, Minus } from './icons'
+import { Checkbox } from '@/components/ui/checkbox'
+import { cn } from '@/lib/utils'
 
 export interface SelectableRow {
   id: string
@@ -38,6 +39,13 @@ export function useSelection<T extends SelectableRow>(rows: readonly T[]): Selec
   }
 }
 
+const INDETERMINATE = [
+  'data-[state=indeterminate]:grid data-[state=indeterminate]:place-items-center',
+  'data-[state=indeterminate]:border-primary data-[state=indeterminate]:bg-primary data-[state=indeterminate]:text-primary-foreground',
+  '[&[data-state=indeterminate]>span]:hidden',
+  'data-[state=indeterminate]:after:h-0.5 data-[state=indeterminate]:after:w-2 data-[state=indeterminate]:after:rounded-full data-[state=indeterminate]:after:bg-current',
+].join(' ')
+
 interface BoxProps {
   checked: boolean
   indeterminate?: boolean
@@ -47,20 +55,13 @@ interface BoxProps {
 
 function Box({ checked, indeterminate, onChange, label }: BoxProps) {
   return (
-    <button
-      type="button"
-      role="checkbox"
-      aria-checked={indeterminate ? 'mixed' : checked}
+    <Checkbox
+      checked={indeterminate ? 'indeterminate' : checked}
+      onCheckedChange={() => onChange()}
+      onClick={(e) => e.stopPropagation()}
       aria-label={label}
-      onClick={(e) => { e.stopPropagation(); onChange() }}
-      className={`grid h-4 w-4 shrink-0 place-items-center rounded border transition-colors ${
-        checked || indeterminate
-          ? 'border-a-ink bg-a-ink text-a-on-ink'
-          : 'border-a-line bg-a-surface text-transparent hover:border-a-muted'
-      }`}
-    >
-      <span className="scale-[.6]">{indeterminate ? <Minus /> : <Check />}</span>
-    </button>
+      className={cn('bg-card align-middle dark:bg-card', INDETERMINATE)}
+    />
   )
 }
 

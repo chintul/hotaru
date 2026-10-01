@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import type { FormEvent, ReactNode } from 'react'
 import { useApolloClient, useMutation, useQuery } from '@apollo/client/react'
 import { CHECKOUT_CONTEXT, CREATE_ADDRESS, MY_CART, PLACE_ORDER } from '@/lib/queries'
@@ -12,6 +12,10 @@ import { useSession } from '@/components/useSession'
 import ProductImage from '@/components/ProductImage'
 import type { Address, CartItem, Connection, DeliveryMethod, Order } from '@/lib/types'
 import { errorMessage } from '@/lib/errors'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Skeleton } from '@/components/ui/skeleton'
 
 interface CheckoutContextData {
   addressCollection: Connection<Address> | null
@@ -62,7 +66,9 @@ export default function CheckoutPage() {
         <div className="border border-line px-6 py-20 text-center">
           <p className="text-[15px] font-semibold">Сагс хоосон байна</p>
           <p className="mt-1.5 text-[13px] text-ink-soft">Захиалга өгөхийн тулд бараа нэмнэ үү.</p>
-          <Link href="/shop" className="btn-solid mt-6 inline-block px-8 py-3.5">Дэлгүүр рүү</Link>
+          <Button asChild variant="solid" size="cta" className="mt-6">
+            <Link href="/shop">Дэлгүүр рүү</Link>
+          </Button>
         </div>
       </Shell>
     )
@@ -102,10 +108,10 @@ function CheckoutSkeleton({ note }: { note?: string }) {
       <div className="grid gap-8 lg:grid-cols-[1fr_360px]">
         <div className="space-y-4">
           {[0, 1, 2].map((i) => (
-            <div key={i} className="h-[170px] animate-pulse border border-line bg-shade" />
+            <Skeleton key={i} className="h-[170px] rounded-none border border-line bg-shade" />
           ))}
         </div>
-        <div className="h-[320px] animate-pulse border border-line bg-shade" />
+        <Skeleton className="h-[320px] rounded-none border border-line bg-shade" />
       </div>
       {note && <p className="mt-6 text-center text-[13px] text-ink-soft">{note}</p>}
     </Shell>
@@ -246,13 +252,13 @@ function CheckoutForm({ items, subtotal, profileId }: CheckoutFormProps) {
                 </div>
               </div>
               <div className="mt-5 flex gap-3">
-                <button type="submit" disabled={savingAddress} className="btn-solid px-6 py-3">
+                <Button type="submit" variant="solid" size="touch" disabled={savingAddress}>
                   {savingAddress ? 'Хадгалж байна…' : 'Хаяг хадгалах'}
-                </button>
+                </Button>
                 {addresses.length > 0 && (
-                  <button type="button" onClick={() => setAddingAddress(false)} className="btn-outline px-5 py-3">
+                  <Button type="button" variant="line" size="touch" onClick={() => setAddingAddress(false)} className="px-5">
                     Болих
-                  </button>
+                  </Button>
                 )}
               </div>
             </form>
@@ -321,11 +327,12 @@ function CheckoutForm({ items, subtotal, profileId }: CheckoutFormProps) {
           </ul>
 
           <div className="mt-5 flex gap-2 border-t border-line pt-5">
-            <input
+            <Input
               value={discountCode}
               onChange={(e) => setDiscountCode(e.target.value)}
               placeholder="Хөнгөлөлтийн код"
-              className="min-w-0 flex-1 border border-line bg-paper px-3 py-2.5 text-[13px] outline-none focus:border-ink"
+              aria-label="Хөнгөлөлтийн код"
+              className="h-11 min-w-0 flex-1 rounded-none bg-paper px-3 text-[13px] md:text-[13px]"
             />
             <span className="grid place-items-center border border-line bg-paper px-3 text-[12px] text-ink-faint">
               Захиалахад тооцно
@@ -343,10 +350,10 @@ function CheckoutForm({ items, subtotal, profileId }: CheckoutFormProps) {
 
           {error && <p className="mt-4 text-[13px] text-sale">{error}</p>}
 
-          <button onClick={onPlace} disabled={placing || !addressId || !methodId}
-            className="btn-solid mt-5 w-full py-4">
+          <Button variant="solid" size="cta" onClick={onPlace} disabled={placing || !addressId || !methodId}
+            className="mt-5 w-full">
             {placing ? 'Илгээж байна…' : 'Захиалга баталгаажуулах'}
-          </button>
+          </Button>
           <p className="mt-3 text-[12px] text-ink-faint">
             Хөнгөлөлт сервер дээр тооцогдож эцсийн дүн гарна.
           </p>
@@ -376,14 +383,18 @@ interface FieldProps {
 }
 
 function Field({ label, value, onChange, required = false }: FieldProps) {
+  const id = useId()
   return (
-    <label className="block">
-      <span className="text-[12px] font-medium text-ink-soft">{label}{required && ' *'}</span>
-      <input
+    <div>
+      <Label htmlFor={id} className="block text-[12px] font-medium leading-normal text-ink-soft">
+        {label}{required && ' *'}
+      </Label>
+      <Input
+        id={id}
         value={value} required={required} onChange={(e) => onChange(e.target.value)}
-        className="mt-1.5 w-full border border-line bg-paper px-3 py-2.5 text-[13px] outline-none transition-colors focus:border-ink"
+        className="mt-1.5 h-11 rounded-none bg-paper px-3 text-[13px] md:text-[13px]"
       />
-    </label>
+    </div>
   )
 }
 

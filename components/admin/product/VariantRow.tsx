@@ -1,14 +1,20 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import type { ChangeEvent } from 'react'
 import { useMutation } from '@apollo/client/react'
 import { toNumber } from '@/lib/format'
 import { variantLabel } from '@/lib/admin/images'
-import { Button, IconButton, Input, Popover, Thumb } from '@/components/admin/ui'
+import { Button, IconButton, Input, MENU_CONTENT_CLASS, MENU_ITEM_CLASS, Thumb } from '@/components/admin/ui'
+import { useConfirm } from '@/components/admin/confirm'
+import { Badge } from '@/components/ui/badge'
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { Dots } from '@/components/admin/icons'
 import { errorMessage } from '@/lib/errors'
 import ImagePicker from './ImagePicker'
+import PreorderToggle from './PreorderToggle'
 import {
   DELETE_VARIANT,
   SET_STOCK,
@@ -47,10 +53,9 @@ export default function VariantRow({ product, variant, images, sharedCount, refe
 
   const [f, setF] = useState<VariantFields>(initial)
   const [picking, setPicking] = useState(false)
-  const [menu, setMenu] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const thumbRef = useRef<HTMLDivElement>(null)
-  const menuRef = useRef<HTMLDivElement>(null)
+  const [backorder, setBackorder] = useState(variant.allowBackorder ?? false)
+  const confirm = useConfirm()
 
   const [save, { loading: saving }] = useMutation(UPSERT_VARIANT)
   const [setStock, { loading: stocking }] = useMutation(SET_STOCK)
@@ -78,7 +83,7 @@ export default function VariantRow({ product, variant, images, sharedCount, refe
       optionLabel: f.optionValue ? (variant.optionLabel || DEFAULT_OPTION_LABEL) : null,
       optionValue: f.optionValue || null,
       compareAtPriceMnt: variant.compareAtPriceMnt ?? null,
-      allowBackorder: variant.allowBackorder ?? false,
+      allowBackorder: backorder,
       isActive: variant.isActive,
       sortOrder: variant.position ?? 0,
       imageId: null,
@@ -102,15 +107,28 @@ export default function VariantRow({ product, variant, images, sharedCount, refe
   }
 
   const toggleActive = async () => {
-    setMenu(false)
     setError(null)
     try { await upsert({ isActive: !variant.isActive }) }
     catch (e) { setError(errorMessage(e, 'Алдаа гарлаа.')) }
   }
 
+  const toggleBackorder = async (next: boolean) => {
+    setError(null)
+    setBackorder(next)
+    try { await upsert({ allowBackorder: next }) }
+    catch (e) {
+      setBackorder(!next)
+      setError(errorMessage(e, 'Хадгалахад алдаа гарлаа.'))
+    }
+  }
+
   const onDelete = async () => {
-    setMenu(false)
-    if (!window.confirm(`"${variantLabel(variant)}" сонголтыг устгах уу?`)) return
+    const ok = await confirm({
+      title: `"${variantLabel(variant)}" сонголтыг устгах уу?`,
+      confirmLabel: 'Устгах',
+      destructive: true,
+    })
+    if (!ok) return
     setError(null)
     try {
       await removeVariant({ variables: { variantId: variant.id } })
@@ -120,28 +138,27 @@ export default function VariantRow({ product, variant, images, sharedCount, refe
     }
   }
 
-  const outOfStock = Number(f.quantity || 0) === 0
+  const outOfStock = Number(f.quantity || 0) === 0 && !backorder
 
   return (
     <li className="border-b border-a-line px-6 py-4 last:border-0 hover:bg-a-bg/60">
       <div className="grid grid-cols-[64px_minmax(0,1fr)_128px_136px_104px_40px] items-center gap-4">
-        <div className="relative" ref={thumbRef}>
-          <Thumb
-            filePath={variant.image?.filePath}
-            alt={variant.image?.alt ?? ''}
-            count={sharedCount}
-            onClick={() => setPicking((v) => !v)}
-            title={variant.image ? 'Зураг солих' : 'Зураг сонгох'}
-          />
+        <div className="relative">
           <ImagePicker
             open={picking}
-            onClose={() => setPicking(false)}
-            anchorRef={thumbRef}
+            onOpenChange={setPicking}
             product={product}
             variant={variant}
             images={images}
             refetch={refetch}
-          />
+          >
+            <Thumb
+              filePath={variant.image?.filePath}
+              alt={variant.image?.alt ?? ''}
+              count={sharedCount}
+              title={variant.image ? 'Зураг солих' : 'Зураг сонгох'}
+            />
+          </ImagePicker>
         </div>
 
         <Input value={f.optionValue} onChange={set('optionValue')} placeholder="Өнгө / хэмжээ" />
@@ -165,48 +182,46 @@ export default function VariantRow({ product, variant, images, sharedCount, refe
           className="text-center font-medium tabular-nums"
         />
 
-        <div className="relative flex justify-end" ref={menuRef}>
-          <IconButton onClick={() => setMenu((v) => !v)} aria-label="Цэс"><Dots /></IconButton>
-          <Popover open={menu} onClose={() => setMenu(false)} anchorRef={menuRef} className="right-0 top-9 w-[188px] p-1.5">
-            <button
-              type="button"
-              onClick={toggleActive}
-              className="block w-full rounded-lg px-3 py-2 text-left text-[14px] text-a-ink hover:bg-a-hover"
-            >
-              {variant.isActive ? 'Идэвхгүй болгох' : 'Идэвхтэй болгох'}
-            </button>
-            {canDelete && (
-              <>
-                <div className="my-1 border-t border-a-line" />
-                <button
-                  type="button"
-                  onClick={onDelete}
-                  className="block w-full rounded-lg px-3 py-2 text-left text-[14px] text-danger-ink hover:bg-danger-soft"
-                >
-                  Устгах
-                </button>
-              </>
-            )}
-          </Popover>
+        <div className="flex justify-end">
+          <DropdownMenu modal={false}>
+            <DropdownMenuTrigger asChild>
+              <IconButton aria-label="Цэс"><Dots /></IconButton>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className={MENU_CONTENT_CLASS}>
+              <DropdownMenuItem className={MENU_ITEM_CLASS} onSelect={toggleActive}>
+                {variant.isActive ? 'Идэвхгүй болгох' : 'Идэвхтэй болгох'}
+              </DropdownMenuItem>
+              {canDelete && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem variant="destructive" className={MENU_ITEM_CLASS} onSelect={onDelete}>
+                    Устгах
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
-      {(dirty || !variant.image || !variant.isActive || error) && (
-        <div className="mt-2.5 flex flex-wrap items-center gap-3 pl-20">
-          {dirty && (
-            <Button variant="primary" size="sm" disabled={saving || stocking} onClick={onSave}>
-              Хадгалах
-            </Button>
-          )}
-          {!variant.isActive && (
-            <span className="rounded-full bg-a-hover px-2.5 py-1 text-[12px] text-a-muted">идэвхгүй</span>
-          )}
-          {!variant.image && (
-            <span className="text-[13px] text-a-muted">зураггүй · картад эхний зураг харагдана</span>
-          )}
-          {error && <span className="text-[13px] text-danger-ink">{error}</span>}
-        </div>
-      )}
+      <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-2 pl-20">
+        <PreorderToggle compact checked={backorder} onCheckedChange={toggleBackorder} disabled={saving} />
+        {backorder && (
+          <span className="text-[13px] text-a-muted">үлдэгдэл дууссан ч худалдана</span>
+        )}
+        {dirty && (
+          <Button variant="primary" size="sm" disabled={saving || stocking} onClick={onSave}>
+            Хадгалах
+          </Button>
+        )}
+        {!variant.isActive && (
+          <Badge variant="secondary" className="rounded-full px-2.5 py-1 text-[12px] font-normal text-muted-foreground">идэвхгүй</Badge>
+        )}
+        {!variant.image && (
+          <span className="text-[13px] text-a-muted">зураггүй · картад эхний зураг харагдана</span>
+        )}
+        {error && <span className="text-[13px] text-danger-ink">{error}</span>}
+      </div>
     </li>
   )
 }

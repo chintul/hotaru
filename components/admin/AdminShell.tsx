@@ -12,9 +12,11 @@ import type { Connection, Profile } from '@/lib/types'
 import { useSession } from '@/components/useSession'
 import { useAuthUpgrade } from '@/components/useAuthUpgrade'
 import CommandPalette from './CommandPalette'
+import { ConfirmProvider } from './confirm'
+import { Button, IconButton } from './ui'
 import Logo from '@/components/Logo'
 import {
-  Bell, Chevron, Dots, Orders, Panel, Products,
+  Bell, Chevron, Dots, Folder, Orders, Panel, Products,
   Search as SearchIcon, Settings, Star, Tag,
 } from './icons'
 import type { IconProps } from './icons'
@@ -36,6 +38,7 @@ const NAV: readonly NavItem[] = [
   { href: '/admin', label: 'Захиалга', icon: Orders, badge: 'pending',
     owns: (p) => p === '/admin' || p.startsWith('/admin/orders') },
   { href: '/admin/products', label: 'Бараа', icon: Products },
+  { href: '/admin/categories', label: 'Ангилал', icon: Folder },
   { href: '/admin/discounts', label: 'Хөнгөлөлт', icon: Tag },
   { href: '/admin/reviews', label: 'Сэтгэгдэл', icon: Star },
   { href: '/admin/settings', label: 'Тохиргоо', icon: Settings },
@@ -106,7 +109,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
   }, [])
 
   return (
-    <div className="min-h-screen bg-a-bg text-a-ink">
+    <div data-ui="admin" className="min-h-screen bg-background text-foreground">
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} nav={NAV} />
 
       <aside
@@ -116,21 +119,24 @@ export default function AdminShell({ children }: { children: ReactNode }) {
       >
         <div className="flex items-center gap-2 px-4 py-3">
           <Logo className="h-5 w-auto" />
-          <Link href="/" className="ml-auto grid h-6 w-6 place-items-center rounded-md text-a-muted hover:bg-a-hover hover:text-a-ink" title="Дэлгүүр">
-            <Dots />
-          </Link>
+          <IconButton asChild className="ml-auto size-6">
+            <Link href="/" title="Дэлгүүр">
+              <Dots />
+            </Link>
+          </IconButton>
         </div>
 
         <div className="mx-3 border-t border-dashed border-a-line" />
 
-        <button
+        <Button
+          variant="ghost"
           onClick={() => setPaletteOpen(true)}
-          className="mx-2 mt-2 flex w-[calc(100%-16px)] items-center gap-2.5 rounded-md px-2 py-1.5 text-[14px] text-a-muted transition-colors hover:bg-a-hover hover:text-a-ink"
+          className="mx-2 mt-2 flex h-auto w-[calc(100%-16px)] justify-start gap-2.5 px-2 py-1.5 text-[14px] font-normal has-[>svg]:px-2"
         >
           <SearchIcon />
           <span className="flex-1 text-left">Хайх</span>
-          <kbd className="text-[11px] text-a-muted">⌘K</kbd>
-        </button>
+          <kbd className="text-[11px] text-muted-foreground">⌘K</kbd>
+        </Button>
 
         <nav className="mt-1 px-2">
           {NAV.map((item) => {
@@ -167,12 +173,14 @@ export default function AdminShell({ children }: { children: ReactNode }) {
         <div className="absolute inset-x-0 bottom-0 px-3 py-3">
           <div className="mx-1 border-t border-dashed border-a-line pt-3">
             <p className="truncate px-1 text-[12px] text-a-muted">{me?.email ?? '—'}</p>
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={signOut}
-              className="mt-1 rounded-md px-1 py-1 text-[12px] text-a-muted transition-colors hover:text-a-ink"
+              className="mt-1 h-auto px-1 py-1 font-normal hover:bg-transparent dark:hover:bg-transparent"
             >
               Гарах
-            </button>
+            </Button>
           </div>
         </div>
       </aside>
@@ -183,9 +191,9 @@ export default function AdminShell({ children }: { children: ReactNode }) {
 
       <div className="lg:pl-[240px]">
         <header className="sticky top-0 z-20 flex h-[52px] items-center gap-2 border-b border-a-line bg-a-bg/95 px-4 backdrop-blur">
-          <button onClick={() => setMenuOpen(!menuOpen)} className="grid h-7 w-7 place-items-center rounded-md text-a-muted hover:bg-a-hover lg:hidden">
+          <IconButton onClick={() => setMenuOpen(!menuOpen)} className="lg:hidden">
             <Panel />
-          </button>
+          </IconButton>
           <span className="hidden text-a-muted lg:block"><Panel /></span>
           <nav className="flex items-center gap-1.5 text-[13px]">
             {crumbs.map((c, i) => (
@@ -205,7 +213,9 @@ export default function AdminShell({ children }: { children: ReactNode }) {
           </span>
         </header>
 
-        <main className="mx-auto max-w-[1200px] px-4 py-6 lg:px-8">{children}</main>
+        <main className="mx-auto max-w-[1200px] px-4 py-6 lg:px-8">
+          <ConfirmProvider>{children}</ConfirmProvider>
+        </main>
       </div>
     </div>
   )

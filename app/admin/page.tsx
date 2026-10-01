@@ -9,6 +9,7 @@ import { runBulk, type BulkResult as BulkOutcome } from '@/lib/admin/bulk'
 import type { Connection, Order } from '@/lib/types'
 import { Button, DataTable, PageHeader, Status, TableToolbar, type BulkAction, type Column } from '@/components/admin/ui'
 import { useSelection } from '@/components/admin/selection'
+import { useConfirm } from '@/components/admin/confirm'
 import BulkResult from '@/components/admin/BulkResult'
 import { paymentLabel, paymentTone, statusLabel, statusTone } from './_lib/order-status'
 
@@ -105,15 +106,18 @@ export default function AdminOrdersPage() {
   const [setOrderStatus] = useMutation<unknown, SetOrderStatusVars>(ADMIN_SET_ORDER_STATUS)
   const [result, setResult] = useState<BulkOutcome<string> | null>(null)
   const [running, setRunning] = useState(false)
+  const confirm = useConfirm()
 
   const orderNumberById = useMemo(
     () => Object.fromEntries(orders.map((o) => [o.id, o.orderNumber])),
     [orders])
 
   const runOrders = async (status: string, label: string) => {
-    if (!window.confirm(
-      `${sel.count} захиалгын төлөвийг "${label}" болгох уу?\n\n`
-      + 'Амжилттай болсон бүрд хэрэглэгчид имэйл илгээнэ.')) return
+    const ok = await confirm({
+      title: `${sel.count} захиалгын төлөвийг "${label}" болгох уу?`,
+      description: 'Амжилттай болсон бүрд хэрэглэгчид имэйл илгээнэ.',
+    })
+    if (!ok) return
 
     setRunning(true)
     setResult(null)

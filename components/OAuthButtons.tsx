@@ -5,6 +5,7 @@ import { useApolloClient } from '@apollo/client/react'
 import { ISSUE_CART_TRANSFER } from '@/lib/queries'
 import { ensureSession, supabaseBrowser } from '@/lib/supabase/browser'
 import { CART_HANDOFF_KEY } from './CartHandoff'
+import { Button } from '@/components/ui/button'
 
 type OAuthProvider = 'google' | 'apple'
 
@@ -91,25 +92,26 @@ export default function OAuthButtons({ next = '/account' }: OAuthButtonsProps) {
     <div>
       <div className="space-y-2.5">
         {isEnabled('google') && (
-          <button
+          <Button
+            variant="outline"
             onClick={() => start('google')}
             disabled={busy !== null}
-            className="flex w-full items-center justify-center gap-2.5 rounded-full border border-line bg-paper py-3.5 text-[14px] font-medium transition-colors hover:border-ink disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:border-line"
+            className="h-12.5 w-full gap-2.5 rounded-full border-line text-[14px] hover:border-ink hover:bg-background disabled:opacity-45"
           >
             <GoogleMark />
             {busy === 'google' ? 'Түр хүлээнэ үү…' : 'Google-ээр үргэлжлүүлэх'}
-          </button>
+          </Button>
         )}
 
         {isEnabled('apple') && (
-          <button
+          <Button
             onClick={() => start('apple')}
             disabled={busy !== null}
-            className="flex w-full items-center justify-center gap-2.5 rounded-full bg-ink-strong py-3.5 text-[14px] font-medium text-on-ink transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-45"
+            className="h-12.5 w-full gap-2.5 rounded-full bg-ink-strong text-[14px] text-on-ink hover:bg-ink-strong hover:opacity-90 disabled:opacity-45"
           >
             <AppleMark />
             {busy === 'apple' ? 'Түр хүлээнэ үү…' : 'Apple-ээр үргэлжлүүлэх'}
-          </button>
+          </Button>
         )}
       </div>
 

@@ -97,6 +97,9 @@ export interface CategoryTranslation {
 export interface Category {
   id?: string
   slug: string
+  position?: number | null
+  isVisible?: boolean | null
+  parent?: { id?: string; slug: string } | null
   imagePath?: string | null
   categoryTranslationCollection?: Connection<CategoryTranslation> | null
   productCollection?: Connection<Product> | null

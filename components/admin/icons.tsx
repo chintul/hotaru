@@ -19,6 +19,7 @@ export const Orders = (p: IconProps) => (<svg {...I(p)}><path d="M6 7h12l-1 12H7
 export const Products = (p: IconProps) => (<svg {...I(p)}><path d="m3 10 9-6 9 6v10H3V10Z"/><path d="M9 20v-6h6v6"/></svg>)
 export const Inventory = (p: IconProps) => (<svg {...I(p)}><rect x="3" y="7" width="18" height="13" rx="1.5"/><path d="M3 11h18M9 7V4h6v3"/></svg>)
 export const ImageIcon = (p: IconProps) => (<svg {...I(p)}><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.5"/><path d="m4 17 5-4 4 3 3-2 4 3"/></svg>)
+export const Folder = (p: IconProps) => (<svg {...I(p)}><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/></svg>)
 export const Tag = (p: IconProps) => (<svg {...I(p)}><path d="M3 12V4h8l9 9-8 8-9-9Z"/><circle cx="7.5" cy="7.5" r="1.2"/></svg>)
 export const Star = (p: IconProps) => (<svg {...I(p)}><path d="m12 4 2.3 4.9 5.2.7-3.8 3.6.9 5.3L12 16l-4.6 2.5.9-5.3L4.5 9.6l5.2-.7L12 4Z"/></svg>)
 export const Settings = (p: IconProps) => (<svg {...I(p)}><circle cx="12" cy="12" r="3"/><path d="M12 3v2m0 14v2M3 12h2m14 0h2M5.6 5.6l1.4 1.4m10 10 1.4 1.4m0-12.8-1.4 1.4m-10 10-1.4 1.4"/></svg>)

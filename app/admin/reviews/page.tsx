@@ -10,6 +10,7 @@ import { copy, formatDate, nodes } from '@/lib/format'
 import type { Connection, Review } from '@/lib/types'
 import { BulkBar, Button, Card, EmptyState, PageHeader, Status, type BulkAction } from '@/components/admin/ui'
 import { SelectCell, useSelection } from '@/components/admin/selection'
+import { useConfirm } from '@/components/admin/confirm'
 import { errorMessage } from '@/lib/errors'
 
 type ReviewFilter = 'pending' | 'all'
@@ -29,10 +30,11 @@ export default function ReviewsPage() {
   const [bulkApproval] = useMutation<unknown, { reviewIds: string[]; approved: boolean }>(ADMIN_BULK_SET_REVIEW_APPROVAL)
   const [bulkDelete] = useMutation<unknown, { reviewIds: string[] }>(ADMIN_BULK_DELETE_REVIEWS)
   const [bulkError, setBulkError] = useState<string | null>(null)
+  const confirm = useConfirm()
   const n = sel.count
 
-  const run = async (confirmText: string, fn: (ids: string[]) => Promise<unknown>) => {
-    if (!window.confirm(confirmText)) return
+  const run = async (confirmText: string, fn: (ids: string[]) => Promise<unknown>, destructive = false) => {
+    if (!(await confirm({ title: confirmText, destructive }))) return
     setBulkError(null)
     const ids = sel.ids
     try {
@@ -53,7 +55,7 @@ export default function ReviewsPage() {
         (ids) => bulkApproval({ variables: { reviewIds: ids, approved: false } })) },
     { key: 'delete', label: 'Устгах', tone: 'danger', separatorBefore: true,
       run: () => run(`${n} сэтгэгдлийг устгах уу? Буцаах боломжгүй.`,
-        (ids) => bulkDelete({ variables: { reviewIds: ids } })) },
+        (ids) => bulkDelete({ variables: { reviewIds: ids } }), true) },
   ]
 
   if (loading && !data) return <p className="text-[13px] text-a-muted">Ачааллаж байна…</p>
@@ -89,7 +91,7 @@ export default function ReviewsPage() {
           )}
 
           {sel.count > 0 && (
-            <div className="mb-3 overflow-hidden rounded-xl border border-a-line bg-a-surface">
+            <div className="mb-3 overflow-hidden rounded-xl border border-border bg-card">
               <BulkBar count={sel.count} actions={bulkActions} onClear={sel.clear} />
             </div>
           )}
@@ -124,6 +126,7 @@ function ReviewCard({ review, selected, onToggle, onDone }: ReviewCardProps) {
   const [setApproval, { loading }] = useMutation<unknown, { reviewId: string; approved: boolean }>(ADMIN_SET_REVIEW_APPROVAL)
   const [remove, { loading: removing }] = useMutation<unknown, { reviewId: string }>(ADMIN_DELETE_REVIEW)
   const [error, setError] = useState<string | null>(null)
+  const confirm = useConfirm()
   const title = copy(review.product).title ?? review.product?.slug
 
   const toggleApproval = async () => {
@@ -135,7 +138,8 @@ function ReviewCard({ review, selected, onToggle, onDone }: ReviewCardProps) {
   }
 
   const deleteOne = async () => {
-    if (!window.confirm('Энэ сэтгэгдлийг устгах уу? Буцаах боломжгүй.')) return
+    const ok = await confirm({ title: 'Энэ сэтгэгдлийг устгах уу? Буцаах боломжгүй.', confirmLabel: 'Устгах', destructive: true })
+    if (!ok) return
     setError(null)
     try {
       await remove({ variables: { reviewId: review.id } })

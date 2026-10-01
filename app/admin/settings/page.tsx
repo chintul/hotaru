@@ -7,6 +7,8 @@ import { firstNode } from '@/lib/format'
 import type { Connection, StoreSettings } from '@/lib/types'
 import { Button, Card, Field, Input, PageHeader } from '@/components/admin/ui'
 import { errorMessage } from '@/lib/errors'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Label } from '@/components/ui/label'
 
 type TextSettingKey = {
   [K in keyof StoreSettings]-?: NonNullable<StoreSettings[K]> extends string ? K : never
@@ -157,15 +159,15 @@ function SettingsForm({ settings, refetch }: SettingsFormProps) {
             <div className="space-y-4">
               {group.fields.map((field) => (
                 field.kind === 'toggle' ? (
-                  <label key={field.key} className="flex items-center gap-3">
-                    <input
-                      type="checkbox"
+                  <div key={field.key} className="flex items-center gap-3">
+                    <Checkbox
+                      id={`setting-${field.key}`}
                       checked={Boolean(form[field.key])}
-                      onChange={(e) => setForm({ ...form, [field.key]: e.target.checked })}
-                      className="accent-primary-strong"
+                      onCheckedChange={(checked) => setForm({ ...form, [field.key]: checked === true })}
+                      className="bg-card dark:bg-card"
                     />
-                    <span className="text-[13px]">{field.label}</span>
-                  </label>
+                    <Label htmlFor={`setting-${field.key}`} className="text-[13px] font-normal">{field.label}</Label>
+                  </div>
                 ) : (
                   <Field key={field.key} label={field.label}>
                     <Input

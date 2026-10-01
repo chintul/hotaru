@@ -4,6 +4,11 @@ import { useState, type SubmitEvent } from 'react'
 import { useApolloClient } from '@apollo/client/react'
 import { ISSUE_CART_TRANSFER, REDEEM_CART_TRANSFER } from '@/lib/queries'
 import { ensureSession, supabaseBrowser } from '@/lib/supabase/browser'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+
+const AUTH_FIELD = 'h-13.5 rounded-xl bg-background px-4 text-[16px] md:text-[16px]'
 
 type Phase = 'email' | 'sent' | 'verifying'
 
@@ -89,14 +94,19 @@ export default function EmailOtp({ onVerified, next = '/account' }: EmailOtpProp
   if (phase === 'email' || (phase === 'verifying' && !transferToken && !code)) {
     return (
       <form onSubmit={send}>
-        <input
+        <Label htmlFor="email-otp-input" className="text-[13px] font-medium text-ink">Имэйл хаяг</Label>
+        <Input
+          id="email-otp-input"
           type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
-          placeholder="Имэйл" autoComplete="email" className="auth-input"
+          placeholder="name@example.com" autoComplete="email" className={`${AUTH_FIELD} mt-2`}
         />
-        {error && <p className="mt-3 text-[13px] text-sale">{error}</p>}
-        <button type="submit" disabled={phase === 'verifying'} className="btn-solid mt-4 w-full rounded-full py-4">
+        <p className="mt-2 text-[12px] leading-relaxed text-ink-faint">
+          Имэйлээр нэвтрэх холбоос болон 6 оронтой код ирнэ.
+        </p>
+        {error && <p className="mt-3 text-[13px] text-danger-ink">{error}</p>}
+        <Button type="submit" variant="solid" size="cta" disabled={phase === 'verifying'} className="mt-4 w-full rounded-full">
           {phase === 'verifying' ? 'Илгээж байна…' : 'Код илгээх'}
-        </button>
+        </Button>
       </form>
     )
   }
@@ -108,23 +118,24 @@ export default function EmailOtp({ onVerified, next = '/account' }: EmailOtpProp
         дарж нэвтрэх эсвэл 6 оронтой кодыг доор оруулна уу.
       </p>
 
-      <input
+      <Input
         value={code}
         onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
         inputMode="numeric"
         placeholder="6 оронтой код"
-        className="auth-input mt-4 text-center text-[20px] font-semibold tracking-[8px]"
+        aria-label="6 оронтой код"
+        className={`${AUTH_FIELD} mt-4 text-center text-[20px] font-semibold tracking-[8px] md:text-[20px]`}
       />
 
-      {error && <p className="mt-3 text-[13px] text-sale">{error}</p>}
+      {error && <p className="mt-3 text-[13px] text-danger-ink">{error}</p>}
 
-      <button type="submit" disabled={phase === 'verifying' || code.length < 6}
-        className="btn-solid mt-4 w-full rounded-full py-4">
+      <Button type="submit" variant="solid" size="cta" disabled={phase === 'verifying' || code.length < 6}
+        className="mt-4 w-full rounded-full">
         {phase === 'verifying' ? 'Шалгаж байна…' : 'Нэвтрэх'}
-      </button>
+      </Button>
 
       <button type="button" onClick={() => { setPhase('email'); setCode(''); setError(null) }}
-        className="mt-3 w-full text-[13px] text-ink-soft hover:text-ink">
+        className="mt-3 min-h-11 w-full text-[13px] text-ink-soft hover:text-ink">
         Өөр хаяг ашиглах
       </button>
     </form>

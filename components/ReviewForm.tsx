@@ -9,6 +9,9 @@ import { firstNode } from '@/lib/format'
 import type { Connection, Review } from '@/lib/types'
 import { useSession } from './useSession'
 import { errorMessage } from '@/lib/errors'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 
 interface MyProductReviewData {
   reviewCollection: Connection<Review> | null
@@ -169,31 +172,31 @@ export default function ReviewForm({ productId, slug }: ReviewFormProps) {
 
         <label className="mt-5 block">
           <span className="label text-ink-faint">Гарчиг (заавал биш)</span>
-          <input
+          <Input
             value={value.title}
             onChange={(e) => set({ title: e.target.value })}
             maxLength={120}
-            className="mt-2 w-full border-b border-line bg-transparent py-2 text-[14px] outline-none transition-colors focus:border-ink"
+            className="mt-2 h-10 rounded-none border-0 border-b px-0 text-[14px] md:text-[14px]"
           />
         </label>
 
         <label className="mt-4 block">
           <span className="label text-ink-faint">Сэтгэгдэл (заавал биш)</span>
-          <textarea
+          <Textarea
             value={value.body}
             onChange={(e) => set({ body: e.target.value })}
             rows={4}
             maxLength={2000}
-            className="mt-2 w-full resize-y border border-line bg-transparent p-3 text-[14px] outline-none transition-colors focus:border-ink"
+            className="mt-2 min-h-28 resize-y rounded-none p-3 text-[14px] md:text-[14px]"
           />
         </label>
 
         {error && <p className="mt-3 text-[13px] text-sale">{error}</p>}
 
         <div className="mt-5 flex flex-wrap items-center gap-3">
-          <button type="submit" disabled={loading || unrated} className="btn-outline px-6 py-3">
+          <Button type="submit" variant="line" size="touch" disabled={loading || unrated}>
             {loading ? 'Илгээж байна…' : mine ? 'Хадгалах' : 'Илгээх'}
-          </button>
+          </Button>
           {mine && (
             <button
               type="button"

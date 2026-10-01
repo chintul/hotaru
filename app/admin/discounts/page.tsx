@@ -13,6 +13,7 @@ import {
   type BulkAction, type Column,
 } from '@/components/admin/ui'
 import { useSelection } from '@/components/admin/selection'
+import { useConfirm } from '@/components/admin/confirm'
 import { Plus } from '@/components/admin/icons'
 import { errorMessage } from '@/lib/errors'
 
@@ -80,10 +81,11 @@ export default function DiscountsPage() {
   const [setActive] = useMutation<unknown, { discountIds: string[]; isActive: boolean }>(ADMIN_BULK_SET_DISCOUNT_ACTIVE)
   const [bulkDelete] = useMutation<unknown, { discountIds: string[] }>(ADMIN_BULK_DELETE_DISCOUNTS)
   const [bulkError, setBulkError] = useState<string | null>(null)
+  const confirm = useConfirm()
   const n = sel.count
 
-  const run = async (confirmText: string, fn: (ids: string[]) => Promise<unknown>) => {
-    if (!window.confirm(confirmText)) return
+  const run = async (confirmText: string, fn: (ids: string[]) => Promise<unknown>, destructive = false) => {
+    if (!(await confirm({ title: confirmText, destructive }))) return
     setBulkError(null)
     const ids = sel.ids
     try {
@@ -104,7 +106,7 @@ export default function DiscountsPage() {
         (ids) => setActive({ variables: { discountIds: ids, isActive: false } })) },
     { key: 'delete', label: 'Устгах', tone: 'danger', separatorBefore: true,
       run: () => run(`${n} кодыг устгах уу? Буцаах боломжгүй.`,
-        (ids) => bulkDelete({ variables: { discountIds: ids } })) },
+        (ids) => bulkDelete({ variables: { discountIds: ids } }), true) },
   ]
 
   const onCreate = async (e: FormEvent<HTMLFormElement>) => {

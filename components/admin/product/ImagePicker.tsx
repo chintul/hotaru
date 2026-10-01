@@ -1,10 +1,11 @@
 'use client'
 
 import { useRef, useState } from 'react'
-import type { RefObject } from 'react'
+import type { ReactNode } from 'react'
 import { useMutation } from '@apollo/client/react'
 import ProductImage from '@/components/ProductImage'
-import { Popover } from '@/components/admin/ui'
+import { Button } from '@/components/admin/ui'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Check, Plus } from '@/components/admin/icons'
 import { errorMessage } from '@/lib/errors'
 import { ADD_IMAGE, SET_VARIANT_IMAGE } from './documents'
@@ -13,15 +14,16 @@ import type { EditorImage, EditorProduct, EditorVariant, Refetch } from './types
 
 export interface ImagePickerProps {
   open: boolean
-  onClose: () => void
-  anchorRef: RefObject<HTMLElement | null>
+  onOpenChange: (open: boolean) => void
+  children: ReactNode
   product: EditorProduct
   variant: EditorVariant
   images: readonly EditorImage[]
   refetch: Refetch
 }
 
-export default function ImagePicker({ open, onClose, anchorRef, product, variant, images, refetch }: ImagePickerProps) {
+export default function ImagePicker({ open, onOpenChange, children, product, variant, images, refetch }: ImagePickerProps) {
+  const onClose = () => onOpenChange(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -73,70 +75,74 @@ export default function ImagePicker({ open, onClose, anchorRef, product, variant
   }
 
   return (
-    <Popover open={open} onClose={onClose} anchorRef={anchorRef} className="left-0 top-full w-[340px] p-3">
-      <p className="px-0.5 pb-2 text-[12px] font-medium uppercase tracking-[0.04em] text-a-muted">
-        Бүтээгдэхүүний зураг
-      </p>
+    <Popover open={open} onOpenChange={onOpenChange}>
+      <PopoverTrigger asChild>{children}</PopoverTrigger>
+      <PopoverContent align="start" className="w-[340px] rounded-xl p-3">
+        <p className="px-0.5 pb-2 text-[12px] font-medium uppercase tracking-[0.04em] text-a-muted">
+          Бүтээгдэхүүний зураг
+        </p>
 
-      {images.length === 0 && (
-        <p className="px-0.5 pb-2 text-[13px] text-a-muted">Энэ бараанд зураг алга.</p>
-      )}
+        {images.length === 0 && (
+          <p className="px-0.5 pb-2 text-[13px] text-a-muted">Энэ бараанд зураг алга.</p>
+        )}
 
-      <div className="flex flex-wrap gap-2">
-        {images.map((img) => {
-          const chosen = variant.image?.id === img.id
-          return (
-            <button
-              key={img.id}
-              type="button"
-              disabled={busy}
-              onClick={() => assign(img.id)}
-              title={img.alt ?? ''}
-              className={`relative h-14 w-14 overflow-hidden rounded-xl border-2 transition-all disabled:opacity-40 ${
-                chosen ? 'border-a-ink ring-4 ring-a-ink/10' : 'border-transparent hover:border-a-focus'
-              }`}
-            >
-              <ProductImage filePath={img.filePath} alt={img.alt ?? ''} seed={img.id} width={56} height={56} />
-              {chosen && (
-                <span className="absolute inset-0 grid place-items-center bg-black/45 text-white"><Check /></span>
-              )}
-            </button>
-          )
-        })}
-      </div>
+        <div className="flex flex-wrap gap-2">
+          {images.map((img) => {
+            const chosen = variant.image?.id === img.id
+            return (
+              <button
+                key={img.id}
+                type="button"
+                disabled={busy}
+                onClick={() => assign(img.id)}
+                title={img.alt ?? ''}
+                className={`relative h-14 w-14 overflow-hidden rounded-xl border-2 transition-all disabled:opacity-40 ${
+                  chosen ? 'border-a-ink ring-4 ring-a-ink/10' : 'border-transparent hover:border-a-focus'
+                }`}
+              >
+                <ProductImage filePath={img.filePath} alt={img.alt ?? ''} seed={img.id} width={56} height={56} />
+                {chosen && (
+                  <span className="absolute inset-0 grid place-items-center bg-black/45 text-white"><Check /></span>
+                )}
+              </button>
+            )
+          })}
+        </div>
 
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={(e) => {
-          const file = e.target.files?.[0]
-          if (file) uploadAndAssign(file)
-        }}
-      />
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0]
+            if (file) uploadAndAssign(file)
+          }}
+        />
 
-      <button
-        type="button"
-        disabled={busy}
-        onClick={() => inputRef.current?.click()}
-        className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-a-line px-3 py-3 text-[14px] font-medium text-a-muted transition-colors hover:border-a-focus hover:text-a-ink disabled:opacity-40"
-      >
-        <Plus /> {busy ? 'Байршуулж байна…' : 'шинэ зураг'}
-      </button>
-
-      {variant.image && (
-        <button
+        <Button
           type="button"
           disabled={busy}
-          onClick={() => assign(null)}
-          className="mt-1.5 w-full rounded-xl px-3 py-2 text-[13px] text-a-muted transition-colors hover:bg-a-hover hover:text-a-ink disabled:opacity-40"
+          onClick={() => inputRef.current?.click()}
+          className="mt-3 h-auto w-full rounded-xl border-2 border-dashed px-3 py-3 text-[14px] text-muted-foreground shadow-none hover:border-ring hover:bg-card hover:text-foreground has-[>svg]:px-3"
         >
-          зураг салгах
-        </button>
-      )}
+          <Plus /> {busy ? 'Байршуулж байна…' : 'шинэ зураг'}
+        </Button>
 
-      {error && <p className="mt-2 px-0.5 text-[13px] text-danger-ink">{error}</p>}
+        {variant.image && (
+          <Button
+            type="button"
+            variant="ghost"
+            disabled={busy}
+            onClick={() => assign(null)}
+            className="mt-1.5 h-9 w-full rounded-xl font-normal"
+          >
+            зураг салгах
+          </Button>
+        )}
+
+        {error && <p className="mt-2 px-0.5 text-[13px] text-danger-ink">{error}</p>}
+      </PopoverContent>
     </Popover>
   )
 }

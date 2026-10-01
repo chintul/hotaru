@@ -31,6 +31,7 @@ import type {
   PayMethod,
   QpayInvoice,
   QpayState,
+  PaymentCheckState,
 } from "../_components/PaymentModal";
 import useCountdown, { paymentDeadline } from "../_components/useCountdown";
 import type {
@@ -85,6 +86,7 @@ export default function OrderPage({
 
   const [qpay, setQpay] = useState<QpayInvoice | null>(null);
   const [qpayState, setQpayState] = useState<QpayState>("idle");
+  const [paymentCheck, setPaymentCheck] = useState<PaymentCheckState>("idle");
   const [method, setMethod] = useState<PayMethod | null>(null);
 
   const order = firstNode(data?.orderCollection);
@@ -113,6 +115,17 @@ export default function OrderPage({
       setQpayState("ready");
     } catch {
       setQpayState("error");
+    }
+  };
+
+  const checkPayment = async () => {
+    setPaymentCheck("checking");
+    try {
+      const result = await refetch();
+      const latest = firstNode(result.data?.orderCollection);
+      setPaymentCheck(latest?.status === "awaiting_payment" ? "pending" : "idle");
+    } catch {
+      setPaymentCheck("failed");
     }
   };
 
@@ -401,6 +414,8 @@ export default function OrderPage({
           qpay={qpay}
           qpayState={qpayState}
           onMintQpay={mintQpay}
+          paymentCheck={paymentCheck}
+          onCheckPayment={checkPayment}
           onClose={() => setMethod(null)}
           onSubmitProof={async (externalReference) => {
             await submitProof({
