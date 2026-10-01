@@ -2,7 +2,7 @@
 
 Headless e-commerce storefront and backoffice. Mongolian accessories retail.
 
-**Stack:** Next.js (App Router, JavaScript) · Apollo Client 4 ·
+**Stack:** Next.js (App Router, TypeScript) · Apollo Client 4 ·
 Supabase Postgres + Auth + `pg_graphql` · ImageKit · Resend · Vercel
 
 ## Status
@@ -16,7 +16,7 @@ All three phases built and verified end to end against the live project
 supabase/migrations/   9 migrations, applied to the linked project
 graphql/schema.graphql reference SDL (not deployed; pg_graphql reflects live)
 graphql/operations/    the documented operation set
-lib/queries.js         the documents the app actually sends
+lib/queries.ts         the documents the app actually sends
 app/                   storefront + /admin
 docs/decisions.md      why the schema looks like this
 ```

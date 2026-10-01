@@ -7,9 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --test \"tests/unit/*.test.js\" && ./scripts/test-db.sh",
-    "test:unit": "node --test \"tests/unit/*.test.js\"",
-    "test:db": "./scripts/test-db.sh"
+    "test": "node --test \"tests/unit/*.test.ts\" && ./scripts/test-db.sh",
+    "test:unit": "node --test \"tests/unit/*.test.ts\"",
+    "test:db": "./scripts/test-db.sh",
+    "typecheck": "next typegen && tsc --noEmit"
   },
   "dependencies": {
     "@apollo/client": "^4.2.12",
@@ -24,9 +25,13 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/node": "^26.6.3",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
     "eslint": "^9",
     "eslint-config-next": "16.3.4",
-    "tailwindcss": "^4"
+    "tailwindcss": "^4",
+    "typescript": "^6.0.3"
   },
   "type": "module"
 }
