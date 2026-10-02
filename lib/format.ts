@@ -40,6 +40,8 @@ export const formatDate = (iso: string | number | Date | null | undefined): stri
 
 export const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
   awaiting_payment: 'Төлбөр хүлээгдэж байна',
+  deposit_paid: 'Урьдчилгаа төлсөн · бараа хүлээж байна',
+  awaiting_balance: 'Бараа ирсэн · үлдэгдэл төлөх',
   paid: 'Төлбөр баталгаажсан',
   packed: 'Бэлтгэгдсэн',
   shipped: 'Хүргэлтэд гарсан',

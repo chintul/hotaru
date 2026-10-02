@@ -11,6 +11,8 @@ import { useUI } from './UIProvider'
 import ProductImage, { swatchTone } from './ProductImage'
 import { IconCheck, IconHeart, IconMinus, IconPlus, IconShare } from './Icons'
 import { errorMessage } from '@/lib/errors'
+import { DEFAULT_DEPOSIT_PCT, depositOf, isPreorder, unitPriceOf } from '@/lib/preorder'
+import PreorderTag from './PreorderTag'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
@@ -79,8 +81,15 @@ export default function ProductDetailClient({ product, copy, payNote }: ProductD
   const selected: Variant | undefined = variants.find((v) => v.id === selectedId) ?? variants[0]
   const purchasable = Boolean(selected && variantAvailable(selected))
   const hasOptions = variants.length > 1 && variants.some((v) => v.optionLabel)
-  const subtotal = toNumber(selected?.priceMnt) * qty
+  const normalPrice = toNumber(selected?.priceMnt)
+  const unitPrice = unitPriceOf(selected, qty)
+  const preorderPriced = unitPrice !== normalPrice
+  const subtotal = unitPrice * qty
   const lowStock = (selected?.quantity ?? 0) <= LOW_STOCK_THRESHOLD && !selected?.allowBackorder
+  const preorder = purchasable && isPreorder(selected, qty)
+  const depositPct = product.preorderDepositPct ?? DEFAULT_DEPOSIT_PCT
+  const depositNow = depositOf(subtotal, depositPct)
+  const addLabel = purchasable ? (preorder ? 'Урьдчилан захиалах' : 'Сагсанд нэмэх') : 'Дууссан'
 
   useEffect(() => {
     const onScroll = () => {
@@ -194,8 +203,12 @@ export default function ProductDetailClient({ product, copy, payNote }: ProductD
 
           {copy.subtitle && <p className="mt-1.5 text-[13px] text-ink-soft">{copy.subtitle}</p>}
 
-          <p className="mt-5 text-[24px] font-bold">{formatMnt(selected?.priceMnt)}</p>
-          {selected?.compareAtPriceMnt && (
+          <p className="mt-5 text-[24px] font-bold">{formatMnt(unitPrice)}</p>
+          {preorderPriced ? (
+            <p className="text-[13px] text-ink-soft">
+              Урьдчилсан захиалгын үнэ · Үндсэн үнэ <span className="tabular-nums">{formatMnt(normalPrice)}</span>
+            </p>
+          ) : selected?.compareAtPriceMnt && (
             <p className="text-[14px] text-ink-faint line-through">{formatMnt(selected.compareAtPriceMnt)}</p>
           )}
 
@@ -257,6 +270,29 @@ export default function ProductDetailClient({ product, copy, payNote }: ProductD
             </div>
           )}
 
+          {preorder && (
+            <div className="mt-6 rounded-2xl bg-paper-warm p-4 text-[13px]">
+              <PreorderTag />
+              {product.preorderEta && (
+                <p className="mt-2.5 text-ink-soft">
+                  Ирэх хугацаа: <span className="font-semibold text-ink">{product.preorderEta}</span>
+                </p>
+              )}
+              <div className="mt-3 space-y-1 border-t border-line pt-3">
+                <p className="text-ink-soft">
+                  Урьдчилгаа: <span className="font-semibold text-ink">хамгийн багадаа {depositPct}%</span>
+                </p>
+                <p className="font-semibold tabular-nums">
+                  Хамгийн багадаа {formatMnt(depositNow)} урьдчилж төлнө, бүтэн дүнгээр ч төлж болно.
+                </p>
+                <p className="text-ink-soft">Төлөх дүнгээ төлбөр хийхдээ өөрөө сонгоно. Үлдэгдлийг бараа ирэхэд төлнө.</p>
+              </div>
+              <p className="mt-3 leading-relaxed text-ink-soft">
+                Урьдчилгаа төлбөр буцаагдахгүй тул итгэлтэй байвал захиалаарай. Бараа ирмэгц үлдэгдлийн нэхэмжлэл илгээж, бүрэн төлөгдсөний дараа хүргэнэ.
+              </p>
+            </div>
+          )}
+
           {qty > 1 && (
             <p className="mt-6 text-[13px]">
               <span className="font-semibold">Нийт дүн:</span>{' '}
@@ -291,7 +327,7 @@ export default function ProductDetailClient({ product, copy, payNote }: ProductD
             >
               {justAdded ? (
                 <span className="tick-in inline-flex items-center gap-2"><IconCheck /> Нэмэгдлээ</span>
-              ) : adding ? 'Нэмж байна…' : purchasable ? 'Сагсанд нэмэх' : 'Дууссан'}
+              ) : adding ? 'Нэмж байна…' : addLabel}
             </Button>
 
             <button
@@ -305,13 +341,15 @@ export default function ProductDetailClient({ product, copy, payNote }: ProductD
             </button>
           </div>
 
-          <p className="mt-3 text-[13px] text-ink-soft">
-            {purchasable
-              ? lowStock
-                ? `Үлдэгдэл ${selected?.quantity} ширхэг`
-                : 'Бэлэн байгаа'
-              : 'Түр дууссан'}
-          </p>
+          {!preorder && (
+            <p className="mt-3 text-[13px] text-ink-soft">
+              {purchasable
+                ? lowStock
+                  ? `Үлдэгдэл ${selected?.quantity} ширхэг`
+                  : 'Бэлэн байгаа'
+                : 'Түр дууссан'}
+            </p>
+          )}
 
           {error && <p className="mt-3 text-[13px] text-sale">{error}</p>}
 
@@ -344,7 +382,7 @@ export default function ProductDetailClient({ product, copy, payNote }: ProductD
             </div>
             <div className="min-w-0 flex-1">
               <p className="truncate text-[13px] font-semibold">{copy.title}</p>
-              <p className="text-[13px] font-bold">{formatMnt(selected?.priceMnt)}</p>
+              <p className="text-[13px] font-bold">{formatMnt(unitPrice)}</p>
             </div>
             {hasOptions && (
               <Select
@@ -370,7 +408,7 @@ export default function ProductDetailClient({ product, copy, payNote }: ProductD
               </Select>
             )}
             <Button variant="solid" size="touch" onClick={onAdd} disabled={!purchasable || adding} className="px-7">
-              {purchasable ? 'Сагсанд нэмэх' : 'Дууссан'}
+              {addLabel}
             </Button>
           </div>
         </div>

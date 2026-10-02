@@ -9,6 +9,8 @@ import { Dialog, DialogClose, DialogContent, DialogTitle } from '@/components/ui
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import CopyRow from './CopyRow'
+import { hasBalance, payStage } from './payStage'
+import type { PayStage } from './payStage'
 import type { Order, StoreSettings } from '@/lib/types'
 
 export type PayMethod = 'qpay' | 'bank'
@@ -33,6 +35,9 @@ export interface QpayInvoice {
 
 interface PaymentModalProps {
   order: Order
+  stage: PayStage
+  amount: number
+  onChangeAmount?: () => void
   bank: StoreSettings | undefined
   method: PayMethod
   onMethod: (method: PayMethod) => void
@@ -49,6 +54,9 @@ interface PaymentModalProps {
 
 export default function PaymentModal({
   order,
+  stage,
+  amount,
+  onChangeAmount,
   bank,
   method,
   onMethod,
@@ -62,7 +70,9 @@ export default function PaymentModal({
   submitting,
   submitted,
 }: PaymentModalProps) {
-  const paid = order.status !== 'awaiting_payment'
+  const paid = payStage(order) !== stage
+  const label = stage === 'balance' ? 'Үлдэгдэл' : stage === 'deposit' && hasBalance(order) ? 'Урьдчилгаа' : null
+  const confirmedKey: PayStage = stage === 'deposit' && !hasBalance(order) ? 'full' : stage
   const [reference, setReference] = useState('')
   const panelRef = useRef<HTMLDivElement>(null)
   const referenceId = useId()
@@ -92,10 +102,20 @@ export default function PaymentModal({
           <div className="min-w-0 flex-1">
             <p className="text-[11px] font-semibold uppercase tracking-[.6px] text-ink-faint">
               {order.orderNumber}
+              {label && ` · ${label}`}
             </p>
             <p className="display mt-0.5 text-[26px] font-bold tabular-nums leading-none">
-              {formatMnt(order.totalMnt)}
+              {formatMnt(amount)}
             </p>
+            {onChangeAmount && !paid && !submitted && (
+              <button
+                type="button"
+                onClick={onChangeAmount}
+                className="link-underline -mb-2 min-h-11 text-[13px] font-semibold text-ink-soft"
+              >
+                Дүн өөрчлөх
+              </button>
+            )}
           </div>
           <DialogClose asChild>
             <Button variant="ghost" size="icon-touch" className="-mr-1.5 -mt-1" aria-label="Хаах">
@@ -105,7 +125,7 @@ export default function PaymentModal({
         </header>
 
         {paid ? (
-          <Confirmed onClose={onClose} />
+          <Confirmed stage={confirmedKey} onClose={onClose} />
         ) : (
           <>
             {bank?.qpayEnabled && (
@@ -131,7 +151,7 @@ export default function PaymentModal({
                     onCheck={onCheckPayment}
                   />
                 )
-                : <BankPanel bank={bank} order={order} />}
+                : <BankPanel bank={bank} order={order} amount={amount} />}
 
               <div className="mt-5 border-t border-line pt-4">
                 {method === 'qpay' ? null : submitted ? (
@@ -299,13 +319,19 @@ function QpayPanel({ qpay, state, onRetry, onBank, check, onCheck }: QpayPanelPr
   )
 }
 
-function BankPanel({ bank, order }: { bank: StoreSettings | undefined; order: Order }) {
+interface BankPanelProps {
+  bank: StoreSettings | undefined
+  order: Order
+  amount: number
+}
+
+function BankPanel({ bank, order, amount }: BankPanelProps) {
   return (
     <div className="space-y-2">
       <CopyRow label="Банк" value={bank?.bankName} />
       <CopyRow label="Дансны дугаар" value={bank?.bankAccountNumber} mono />
       <CopyRow label="Хүлээн авагч" value={bank?.bankAccountName} />
-      <CopyRow label="Шилжүүлэх дүн" value={formatMnt(order.totalMnt)} mono />
+      <CopyRow label="Шилжүүлэх дүн" value={formatMnt(amount)} mono />
       <CopyRow label="Гүйлгээний утга" value={order.orderNumber} mono accent />
       {bank?.paymentInstructions && (
         <p className="pt-2 text-[13px] leading-relaxed text-ink-soft">{bank.paymentInstructions}</p>
@@ -314,16 +340,21 @@ function BankPanel({ bank, order }: { bank: StoreSettings | undefined; order: Or
   )
 }
 
-function Confirmed({ onClose }: { onClose: () => void }) {
+const CONFIRMED_COPY: Record<PayStage, readonly [title: string, body: string]> = {
+  full: ['Төлбөр баталгаажлаа', 'Баярлалаа! Захиалгыг тань бэлтгэж эхэллээ.'],
+  deposit: ['Урьдчилгаа баталгаажлаа', 'Баярлалаа! Бараа ирмэгц үлдэгдлийн нэхэмжлэл илгээнэ.'],
+  balance: ['Үлдэгдэл баталгаажлаа', 'Баярлалаа! Захиалгыг тань бэлтгэж эхэллээ.'],
+}
+
+function Confirmed({ stage, onClose }: { stage: PayStage; onClose: () => void }) {
+  const [title, body] = CONFIRMED_COPY[stage]
   return (
     <div className="px-6 pb-8 pt-2 text-center">
       <span className="o-pop mx-auto grid h-16 w-16 place-items-center rounded-full bg-mint text-mint-ink">
         <IconCheck width="30" height="30" strokeWidth={2.2} />
       </span>
-      <p className="mt-4 text-[17px] font-semibold">Төлбөр баталгаажлаа</p>
-      <p className="mt-1.5 text-[13px] text-ink-soft">
-        Баярлалаа! Захиалгыг тань бэлтгэж эхэллээ.
-      </p>
+      <p className="mt-4 text-[17px] font-semibold">{title}</p>
+      <p className="mt-1.5 text-[13px] text-ink-soft">{body}</p>
       <button
         onClick={onClose}
         className="mt-6 w-full rounded-full bg-ink-strong px-5 py-3.5 text-[13px] font-bold uppercase tracking-[.7px] text-paper transition-opacity hover:opacity-85"

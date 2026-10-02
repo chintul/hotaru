@@ -44,6 +44,12 @@ export default function OrdersPage() {
                 <span className="label text-ink-faint">{formatDate(o.placedAt)}</span>
                 <span className="label text-ink-soft">{orderStatusLabel(o.status)}</span>
                 <span className="ml-auto tabular-nums">{formatMnt(o.totalMnt)}</span>
+                {o.status === 'awaiting_balance' && (
+                  <span className="mt-2 flex w-full items-center justify-between gap-3 rounded-full bg-ink-strong px-4 py-2.5 text-[13px] font-semibold text-paper">
+                    <span>Үлдэгдэл төлөх</span>
+                    <span className="tabular-nums">{formatMnt(o.balanceMnt)}</span>
+                  </span>
+                )}
               </Link>
             </li>
           ))}

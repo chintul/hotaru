@@ -14,6 +14,8 @@ export interface Connection<T> {
 
 export type OrderStatus =
   | 'awaiting_payment'
+  | 'deposit_paid'
+  | 'awaiting_balance'
   | 'paid'
   | 'packed'
   | 'shipped'
@@ -24,7 +26,9 @@ export type OrderStatus =
 
 export type ProductStatus = 'draft' | 'active' | 'archived'
 
-export type PaymentStatus = 'unpaid' | 'submitted' | 'confirmed' | 'failed' | 'refunded'
+export type PaymentStatus = 'unpaid' | 'submitted' | 'partially_paid' | 'confirmed' | 'failed' | 'refunded'
+
+export type PaymentKind = 'full' | 'deposit' | 'balance'
 
 export interface ProductTranslation {
   title?: string | null
@@ -57,6 +61,7 @@ export interface Variant {
   position?: number | null
   image?: ProductImage | null
   product?: Product | null
+  preorderPriceMnt?: Mnt | null
 }
 
 export interface Review {
@@ -82,6 +87,8 @@ export interface Product {
   ratingAvg?: number | string | null
   ratingCount?: number | null
   publishedAt?: string | null
+  preorderDepositPct?: number | null
+  preorderEta?: string | null
   category?: { slug: string } | null
   productTranslationCollection?: Connection<ProductTranslation> | null
   productImageCollection?: Connection<ProductImage> | null
@@ -163,12 +170,16 @@ export interface OrderItem {
   quantity?: number | null
   unitPriceMnt?: Mnt | null
   lineTotalMnt?: Mnt | null
+  isPreorder?: boolean | null
+  depositPct?: number | null
+  preorderEta?: string | null
 }
 
 export interface Payment {
   id: string
   provider?: string | null
   status?: string | null
+  kind?: PaymentKind | null
   amountMnt?: Mnt | null
   externalReference?: string | null
   payerNote?: string | null
@@ -187,8 +198,13 @@ export interface Order {
   discountMnt?: Mnt | null
   deliveryMnt?: Mnt | null
   totalMnt?: Mnt | null
+  upfrontMnt?: Mnt | null
+  balanceMnt?: Mnt | null
+  minUpfrontMnt?: Mnt | null
   placedAt?: string | null
   paidAt?: string | null
+  balanceRequestedAt?: string | null
+  balancePaidAt?: string | null
   shippedAt?: string | null
   cancelledAt?: string | null
   trackingNumber?: string | null

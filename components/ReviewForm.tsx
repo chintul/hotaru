@@ -93,7 +93,7 @@ export default function ReviewForm({ productId, slug }: ReviewFormProps) {
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
           <Stars value={mine.rating} />
           <span className="text-[13px] text-ink-soft">
-            {mine.isApproved ? 'Таны сэтгэгдэл нийтлэгдсэн.' : 'Таны сэтгэгдэл хянагдаж байна.'}
+            {mine.isApproved ? 'Таны сэтгэгдэл нийтлэгдсэн.' : 'Таны сэтгэгдлийг дэлгүүр нуусан байна.'}
           </span>
         </div>
         {mine.title && <p className="mt-2 font-medium">{mine.title}</p>}
@@ -113,7 +113,7 @@ export default function ReviewForm({ productId, slug }: ReviewFormProps) {
       <Shell>
         <p className="text-[14px]">Баярлалаа! 🎀</p>
         <p className="mt-1 text-[14px] text-ink-soft">
-          Сэтгэгдлийг чинь хянаад нийтэлнэ.
+          Сэтгэгдэл тань нийтлэгдлээ.
         </p>
         <button
           onClick={() => { setJustSent(false); setEditing(true); setDraft(null) }}
@@ -212,7 +212,7 @@ export default function ReviewForm({ productId, slug }: ReviewFormProps) {
         </div>
 
         <p className="mt-4 text-[12px] text-ink-faint">
-          Сэтгэгдэл хянагдсаны дараа нийтлэгдэнэ.
+          Илгээмэгц шууд нийтлэгдэнэ.
           {mine?.isVerifiedPurchase && ' Таны худалдан авалт баталгаажсан.'}
         </p>
       </form>

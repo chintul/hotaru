@@ -4,6 +4,7 @@ export const PRODUCT_CARD = gql`
   fragment ProductCard on Product {
     id
     slug
+    preorderEta
     minPriceMnt
     maxPriceMnt
     inStock
@@ -16,7 +17,7 @@ export const PRODUCT_CARD = gql`
       edges { node { filePath alt width height position } }
     }
     variantCollection(first: 8, filter: { isActive: { eq: true } }, orderBy: [{ position: AscNullsLast }]) {
-      edges { node { id optionLabel optionValue priceMnt quantity allowBackorder image { filePath alt } } }
+      edges { node { id optionLabel optionValue priceMnt preorderPriceMnt quantity allowBackorder image { filePath alt } } }
     }
   }
 `
@@ -98,6 +99,8 @@ export const PRODUCT_DETAIL = gql`
           ratingAvg
           ratingCount
           minPriceMnt
+          preorderDepositPct
+          preorderEta
           productTranslationCollection(first: 1, filter: { locale: { eq: "mn" } }) {
             edges { node { title subtitle description careDetails seoTitle seoDescription } }
           }
@@ -111,7 +114,7 @@ export const PRODUCT_DETAIL = gql`
           ) {
             edges {
               node {
-                id sku optionLabel optionValue priceMnt compareAtPriceMnt quantity allowBackorder
+                id sku optionLabel optionValue priceMnt preorderPriceMnt compareAtPriceMnt quantity allowBackorder
                 image { id filePath alt }
               }
             }
@@ -151,10 +154,13 @@ export const CART_CONTENTS = gql`
             optionLabel
             optionValue
             priceMnt
+            preorderPriceMnt
             quantity
             allowBackorder
             product {
               slug
+              preorderDepositPct
+              preorderEta
               productTranslationCollection(first: 1, filter: { locale: { eq: "mn" } }) {
                 edges { node { title } }
               }
@@ -253,10 +259,10 @@ export const MY_ORDERS = gql`
       totalCount
       edges {
         node {
-          id orderNumber status paymentStatus totalMnt placedAt trackingNumber
+          id orderNumber status paymentStatus totalMnt upfrontMnt balanceMnt placedAt trackingNumber
           deliveryMethod { name kind }
           orderItemCollection(first: 20) {
-            edges { node { id productTitle variantLabel quantity unitPriceMnt lineTotalMnt } }
+            edges { node { id productTitle variantLabel quantity unitPriceMnt lineTotalMnt isPreorder } }
           }
         }
       }
@@ -273,17 +279,20 @@ export const ORDER_DETAIL = gql`
       edges {
         node {
           id orderNumber status paymentStatus
-          subtotalMnt discountMnt deliveryMnt totalMnt
-          placedAt paidAt shippedAt cancelledAt
+          subtotalMnt discountMnt deliveryMnt totalMnt upfrontMnt balanceMnt minUpfrontMnt
+          placedAt paidAt shippedAt cancelledAt balanceRequestedAt balancePaidAt
           trackingNumber shippingAddress customerNote
           deliveryMethod { name kind }
           orderItemCollection(first: 30) {
             edges {
               node {
                 id productTitle variantLabel sku quantity unitPriceMnt lineTotalMnt
-                imagePath
+                imagePath isPreorder depositPct preorderEta
               }
             }
+          }
+          paymentCollection(first: 5, orderBy: [{ createdAt: AscNullsLast }]) {
+            edges { node { id kind status amountMnt confirmedAt createdAt } }
           }
         }
       }
@@ -352,7 +361,7 @@ export const ADMIN_PENDING = gql`
       totalCount
       edges {
         node {
-          id orderNumber email phone totalMnt placedAt paymentStatus customerNote shippingAddress
+          id orderNumber email phone totalMnt upfrontMnt balanceMnt minUpfrontMnt placedAt paymentStatus customerNote shippingAddress
           deliveryMethod { name }
           orderItemCollection(first: 30) {
             edges { node { id productTitle variantLabel sku quantity unitPriceMnt lineTotalMnt } }
@@ -364,6 +373,31 @@ export const ADMIN_PENDING = gql`
       totalCount
       edges { node { id orderNumber email phone totalMnt placedAt } }
     }
+    depositPaid: orderCollection(
+      first: 50
+      filter: { status: { eq: deposit_paid } }
+      orderBy: [{ paidAt: AscNullsLast }]
+    ) {
+      totalCount
+      edges {
+        node {
+          id orderNumber email phone totalMnt upfrontMnt balanceMnt paidAt
+          orderItemCollection(first: 30, filter: { isPreorder: { eq: true } }) {
+            edges { node { id productTitle variantLabel quantity preorderEta } }
+          }
+        }
+      }
+    }
+    awaitingBalance: orderCollection(
+      first: 50
+      filter: { status: { eq: awaiting_balance } }
+      orderBy: [{ balanceRequestedAt: AscNullsLast }]
+    ) {
+      totalCount
+      edges {
+        node { id orderNumber email phone totalMnt balanceMnt paymentStatus balanceRequestedAt }
+      }
+    }
   }
 `
 
@@ -373,7 +407,7 @@ export const ADMIN_ALL_ORDERS = gql`
       totalCount
       pageInfo { hasNextPage }
       edges {
-        node { id orderNumber email phone status paymentStatus totalMnt placedAt trackingNumber }
+        node { id orderNumber email phone status paymentStatus totalMnt balanceMnt minUpfrontMnt placedAt trackingNumber }
       }
     }
   }
@@ -623,6 +657,7 @@ export const ADMIN_PRODUCTS = gql`
       edges {
         node {
           id slug status isFeatured position minPriceMnt inStock
+          preorderDepositPct preorderEta
           category { slug }
           productTranslationCollection(first: 1, filter: { locale: { eq: "mn" } }) {
             edges { node { title subtitle description careDetails seoTitle seoDescription } }
@@ -670,15 +705,18 @@ export const ADMIN_ORDER_DETAIL = gql`
       edges {
         node {
           id orderNumber email phone status paymentStatus
-          subtotalMnt discountMnt deliveryMnt totalMnt
-          placedAt paidAt shippedAt cancelledAt trackingNumber
+          subtotalMnt discountMnt deliveryMnt totalMnt upfrontMnt balanceMnt minUpfrontMnt
+          placedAt paidAt shippedAt cancelledAt trackingNumber balanceRequestedAt balancePaidAt
           shippingAddress customerNote internalNote
           deliveryMethod { name kind feeMnt }
           orderItemCollection(first: 50) {
-            edges { node { id productTitle variantLabel sku imagePath quantity unitPriceMnt lineTotalMnt } }
+            edges { node {
+              id productTitle variantLabel sku imagePath quantity unitPriceMnt lineTotalMnt
+              isPreorder depositPct preorderEta
+            } }
           }
-          paymentCollection(first: 5) {
-            edges { node { id provider status amountMnt externalReference payerNote confirmedAt createdAt } }
+          paymentCollection(first: 5, orderBy: [{ createdAt: AscNullsLast }]) {
+            edges { node { id provider kind status amountMnt externalReference payerNote confirmedAt createdAt } }
           }
         }
       }
@@ -802,13 +840,14 @@ export const ADMIN_PRODUCT_DETAIL = gql`
       edges {
         node {
           id slug status isFeatured position minPriceMnt inStock
+          preorderDepositPct preorderEta
           category { slug }
           productTranslationCollection(first: 1, filter: { locale: { eq: "mn" } }) {
             edges { node { title subtitle description careDetails seoTitle seoDescription } }
           }
           variantCollection(first: 50, orderBy: [{ position: AscNullsLast }]) {
             edges { node {
-              id sku optionLabel optionValue priceMnt compareAtPriceMnt quantity isActive
+              id sku optionLabel optionValue priceMnt preorderPriceMnt compareAtPriceMnt quantity isActive
               allowBackorder position
               image { id filePath alt }
             } }
@@ -851,5 +890,33 @@ export const ADMIN_UPSERT_CATEGORY = gql`
       slug: $slug, name: $name, description: $description, parentSlug: $parentSlug,
       isVisible: $isVisible, sortOrder: $sortOrder, categoryId: $categoryId
     ) { id slug position isVisible }
+  }
+`
+
+export const ADMIN_REQUEST_BALANCE = gql`
+  mutation AdminRequestBalance($orderId: UUID!) {
+    adminRequestBalance(orderId: $orderId) { id orderNumber status paymentStatus balanceRequestedAt }
+  }
+`
+
+export const ADMIN_SET_PRODUCT_PREORDER = gql`
+  mutation AdminSetProductPreorder($productId: UUID!, $depositPct: Int!, $eta: String) {
+    adminSetProductPreorder(productId: $productId, depositPct: $depositPct, eta: $eta) {
+      id preorderDepositPct preorderEta
+    }
+  }
+`
+
+export const SET_UPFRONT_AMOUNT = gql`
+  mutation SetUpfrontAmount($orderId: UUID!, $amountMnt: BigInt!) {
+    setUpfrontAmount(orderId: $orderId, amountMnt: $amountMnt) {
+      id status paymentStatus totalMnt upfrontMnt balanceMnt minUpfrontMnt
+    }
+  }
+`
+
+export const ADMIN_SET_VARIANT_PREORDER_PRICE = gql`
+  mutation AdminSetVariantPreorderPrice($variantId: UUID!, $priceMnt: BigInt) {
+    adminSetVariantPreorderPrice(variantId: $variantId, priceMnt: $priceMnt) { id preorderPriceMnt }
   }
 `

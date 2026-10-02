@@ -3,6 +3,7 @@
 import { formatDate } from '@/lib/format'
 import { IconCheck } from '@/components/Icons'
 import type { Order, OrderStatus } from '@/lib/types'
+import { hasBalance } from './payStage'
 
 const STOPS = [
   { key: 'placed', label: 'Захиалсан' },
@@ -12,7 +13,16 @@ const STOPS = [
   { key: 'delivered', label: 'Хүрсэн' },
 ] as const
 
-type StopKey = (typeof STOPS)[number]['key']
+const PREORDER_STOPS = [
+  { key: 'placed', label: 'Захиалсан' },
+  { key: 'paid', label: 'Урьдчилгаа' },
+  { key: 'balance', label: 'Үлдэгдэл' },
+  { key: 'packed', label: 'Бэлтгэсэн' },
+  { key: 'shipped', label: 'Замдаа' },
+  { key: 'delivered', label: 'Хүрсэн' },
+] as const
+
+type StopKey = (typeof PREORDER_STOPS)[number]['key']
 
 const STOP_INDEX: Partial<Record<OrderStatus, number>> = {
   awaiting_payment: 0,
@@ -22,36 +32,61 @@ const STOP_INDEX: Partial<Record<OrderStatus, number>> = {
   delivered: 4,
 }
 
+const PREORDER_STOP_INDEX: Partial<Record<OrderStatus, number>> = {
+  awaiting_payment: 0,
+  deposit_paid: 1,
+  awaiting_balance: 1,
+  paid: 2,
+  packed: 3,
+  shipped: 4,
+  delivered: 5,
+}
+
+const WAITING_ON_SHOPPER: ReadonlySet<OrderStatus> = new Set(['awaiting_payment', 'awaiting_balance'])
+
 export function trailApplies(status: string | null | undefined): boolean {
-  return typeof status === 'string' && status in STOP_INDEX
+  return typeof status === 'string' && status in PREORDER_STOP_INDEX
 }
 
 export default function OrderTrail({ order }: { order: Order }) {
-  const current = (order.status && STOP_INDEX[order.status]) ?? 0
+  const preorder = hasBalance(order)
+  const stops = preorder ? PREORDER_STOPS : STOPS
+  const index = preorder ? PREORDER_STOP_INDEX : STOP_INDEX
+  const current = (order.status && index[order.status]) ?? 0
   const dates: Partial<Record<StopKey, string | null | undefined>> = {
     placed: order.placedAt,
     paid: order.paidAt,
+    balance: order.balancePaidAt,
     shipped: order.shippedAt,
   }
-  const fill = (current / (STOPS.length - 1)) * 100
+  const edge = 50 / stops.length
+  const fill = (current / (stops.length - 1)) * (100 - 2 * edge)
+  const waiting = Boolean(order.status && WAITING_ON_SHOPPER.has(order.status))
 
   return (
-    <ol className="relative mt-2 grid grid-cols-5">
-      <div aria-hidden className="absolute left-[10%] right-[10%] top-[11px] h-[2px] rounded-full bg-line" />
+    <ol
+      className="relative mt-2 grid"
+      style={{ gridTemplateColumns: `repeat(${stops.length}, minmax(0, 1fr))` }}
+    >
       <div
         aria-hidden
-        className="absolute left-[10%] top-[11px] h-[2px] rounded-full bg-ink transition-[width] duration-700 ease-out"
-        style={{ width: `calc(${fill} * 0.8%)` }}
+        className="absolute top-[11px] h-[2px] rounded-full bg-line"
+        style={{ left: `${edge}%`, right: `${edge}%` }}
+      />
+      <div
+        aria-hidden
+        className="absolute top-[11px] h-[2px] rounded-full bg-ink transition-[width] duration-700 ease-out"
+        style={{ left: `${edge}%`, width: `${fill}%` }}
       />
 
-      {STOPS.map((stop, i) => {
+      {stops.map((stop, i) => {
         const done = i < current
         const here = i === current
         const at = dates[stop.key]
         return (
           <li key={stop.key} className="relative flex flex-col items-center gap-2 text-center">
             <span className="relative grid h-6 w-6 place-items-center">
-              {here && order.status === 'awaiting_payment' && (
+              {here && waiting && (
                 <span aria-hidden className="o-ping absolute h-6 w-6 rounded-full border-2 border-ink" />
               )}
               <span

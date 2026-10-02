@@ -13,7 +13,7 @@ import { SelectCell, useSelection } from '@/components/admin/selection'
 import { useConfirm } from '@/components/admin/confirm'
 import { errorMessage } from '@/lib/errors'
 
-type ReviewFilter = 'pending' | 'all'
+type ReviewFilter = 'hidden' | 'all'
 
 interface ReviewsData {
   reviewCollection: Connection<Review> | null
@@ -21,10 +21,10 @@ interface ReviewsData {
 
 export default function ReviewsPage() {
   const { data, loading, refetch } = useQuery<ReviewsData>(ADMIN_REVIEWS, { fetchPolicy: 'cache-and-network' })
-  const [filter, setFilter] = useState<ReviewFilter>('pending')
+  const [filter, setFilter] = useState<ReviewFilter>('all')
   const all = nodes(data?.reviewCollection)
-  const pending = all.filter((r) => !r.isApproved)
-  const shown = filter === 'pending' ? pending : all
+  const hidden = all.filter((r) => !r.isApproved)
+  const shown = filter === 'hidden' ? hidden : all
 
   const sel = useSelection(shown)
   const [bulkApproval] = useMutation<unknown, { reviewIds: string[]; approved: boolean }>(ADMIN_BULK_SET_REVIEW_APPROVAL)
@@ -47,7 +47,7 @@ export default function ReviewsPage() {
   }
 
   const bulkActions: BulkAction[] = [
-    { key: 'approve', label: 'Зөвшөөрөх',
+    { key: 'approve', label: 'Нийтлэх',
       run: () => run(`${n} сэтгэгдлийг нийтлэх үү?`,
         (ids) => bulkApproval({ variables: { reviewIds: ids, approved: true } })) },
     { key: 'hide', label: 'Нуух',
@@ -64,14 +64,14 @@ export default function ReviewsPage() {
     <>
       <PageHeader
         title="Сэтгэгдэл"
-        subtitle="Зөвшөөрсний дараа л дэлгүүр дээр харагдана."
+        subtitle="Сэтгэгдэл илгээмэгц дэлгүүрт шууд харагдана. Тохиромжгүйг нь нууж болно."
         actions={
           <>
-            <Button variant={filter === 'pending' ? 'primary' : 'secondary'} onClick={() => setFilter('pending')}>
-              Хүлээгдэж буй{pending.length ? ` (${pending.length})` : ''}
-            </Button>
             <Button variant={filter === 'all' ? 'primary' : 'secondary'} onClick={() => setFilter('all')}>
               Бүгд ({all.length})
+            </Button>
+            <Button variant={filter === 'hidden' ? 'primary' : 'secondary'} onClick={() => setFilter('hidden')}>
+              Нуусан{hidden.length ? ` (${hidden.length})` : ''}
             </Button>
           </>
         }
@@ -79,7 +79,7 @@ export default function ReviewsPage() {
 
       {shown.length === 0 ? (
         <EmptyState
-          title={filter === 'pending' ? 'Хүлээгдэж буй сэтгэгдэл алга' : 'Сэтгэгдэл алга'}
+          title={filter === 'hidden' ? 'Нуусан сэтгэгдэл алга' : 'Сэтгэгдэл алга'}
           body="Худалдан авалт хийсэн хэрэглэгч сэтгэгдэл үлдээх боломжтой."
         />
       ) : (
@@ -175,7 +175,7 @@ function ReviewCard({ review, selected, onToggle, onDone }: ReviewCardProps) {
           disabled={loading}
           onClick={toggleApproval}
         >
-          {review.isApproved ? 'Нуух' : 'Зөвшөөрөх'}
+          {review.isApproved ? 'Нуух' : 'Нийтлэх'}
         </Button>
         <Button
           variant="danger"

@@ -11,13 +11,17 @@ import { Button, DataTable, PageHeader, Status, TableToolbar, type BulkAction, t
 import { useSelection } from '@/components/admin/selection'
 import { useConfirm } from '@/components/admin/confirm'
 import BulkResult from '@/components/admin/BulkResult'
+import PreorderQueues from '@/components/admin/PreorderQueues'
+import { isDepositOrder, upfrontOf } from '@/components/admin/preorder'
 import { paymentLabel, paymentTone, statusLabel, statusTone } from './_lib/order-status'
 
-type FilterValue = 'all' | 'awaiting_payment' | 'paid' | 'shipped' | 'oversold'
+type FilterValue = 'all' | 'awaiting_payment' | 'deposit_paid' | 'awaiting_balance' | 'paid' | 'shipped' | 'oversold'
 
 const FILTERS: ReadonlyArray<readonly [FilterValue, string]> = [
   ['all', 'Бүгд'],
   ['awaiting_payment', 'Төлбөр хүлээж буй'],
+  ['deposit_paid', 'Бараа хүлээж буй'],
+  ['awaiting_balance', 'Үлдэгдэл хүлээж буй'],
   ['paid', 'Бэлтгэх'],
   ['shipped', 'Илгээсэн'],
   ['oversold', 'Нөөцгүй'],
@@ -43,7 +47,11 @@ interface AllOrdersVars {
 interface PendingData {
   awaiting: Connection<Order> | null
   oversold: Connection<Order> | null
+  depositPaid: Connection<Order> | null
+  awaitingBalance: Connection<Order> | null
 }
+
+const PREORDER_BULK_SKIP = 'Урьдчилсан захиалга — төлбөрийг захиалгын хуудаснаас баталгаажуулна.'
 
 interface SetOrderStatusVars {
   orderId: string
@@ -87,19 +95,44 @@ export default function AdminOrdersPage() {
     variables: { first: limit, filter: queryFilter },
     fetchPolicy: 'cache-and-network',
   })
-  const { data: counts } = useQuery<PendingData>(ADMIN_PENDING, { fetchPolicy: 'cache-and-network' })
+  const { data: counts, refetch: refetchPending } = useQuery<PendingData>(ADMIN_PENDING, { fetchPolicy: 'cache-and-network' })
 
   const orders = nodes(data?.orderCollection)
   const matched = data?.orderCollection?.totalCount ?? 0
   const hasMore = Boolean(data?.orderCollection?.pageInfo?.hasNextPage)
 
   const columns: Column<Order>[] = [
-    { key: 'order', header: 'Захиалга', render: (o) => <span className="font-medium tabular-nums">{o.orderNumber}</span> },
+    {
+      key: 'order',
+      header: 'Захиалга',
+      render: (o) => (
+        <span className="inline-flex items-center gap-1.5">
+          <span className="font-medium tabular-nums">{o.orderNumber}</span>
+          {isDepositOrder(o) && (
+            <span className="rounded-full border border-info-line bg-info-soft px-1.5 text-[11px] font-medium text-info-ink">
+              урьдчилсан
+            </span>
+          )}
+        </span>
+      ),
+    },
     { key: 'date', header: 'Огноо', render: (o) => <span className="text-a-muted">{formatDate(o.placedAt)}</span> },
     { key: 'customer', header: 'Худалдан авагч', render: (o) => o.email },
     { key: 'payment', header: 'Төлбөр', render: (o) => <Status tone={paymentTone(o.paymentStatus)}>{paymentLabel(o.paymentStatus)}</Status> },
     { key: 'status', header: 'Явц', render: (o) => <Status tone={statusTone(o.status)}>{statusLabel(o.status)}</Status> },
-    { key: 'total', header: 'Дүн', align: 'right', render: (o) => <span className="tabular-nums">{formatMnt(o.totalMnt)}</span> },
+    {
+      key: 'total',
+      header: 'Дүн',
+      align: 'right',
+      render: (o) => isDepositOrder(o) && o.status === 'awaiting_payment'
+        ? (
+          <span className="tabular-nums">
+            Хамгийн бага урьдчилгаа <span className="font-medium">{formatMnt(o.minUpfrontMnt ?? upfrontOf(o))}</span>
+            <span className="text-a-muted"> / нийт {formatMnt(o.totalMnt)}</span>
+          </span>
+        )
+        : <span className="tabular-nums">{formatMnt(o.totalMnt)}</span>,
+    },
   ]
 
   const sel = useSelection(orders)
@@ -112,6 +145,12 @@ export default function AdminOrdersPage() {
     () => Object.fromEntries(orders.map((o) => [o.id, o.orderNumber])),
     [orders])
 
+  const unpaidPreorderIds = useMemo(
+    () => new Set(orders.filter((o) => isDepositOrder(o) && o.paymentStatus !== 'confirmed').map((o) => o.id)),
+    [orders])
+
+  const refetchAll = () => Promise.all([refetch(), refetchPending()])
+
   const runOrders = async (status: string, label: string) => {
     const ok = await confirm({
       title: `${sel.count} захиалгын төлөвийг "${label}" болгох уу?`,
@@ -122,11 +161,13 @@ export default function AdminOrdersPage() {
     setRunning(true)
     setResult(null)
     const res = await runBulk(sel.ids, (orderId: string) =>
-      setOrderStatus({ variables: { orderId, status, trackingNumber: null, internalNote: null } }))
+      status === 'paid' && unpaidPreorderIds.has(orderId)
+        ? Promise.reject(new Error(PREORDER_BULK_SKIP))
+        : setOrderStatus({ variables: { orderId, status, trackingNumber: null, internalNote: null } }))
     setRunning(false)
     setResult(res)
     if (res.ok.length > 0) sel.clear()
-    await refetch()
+    await refetchAll()
   }
 
   const bulkActions: BulkAction[] = [
@@ -136,15 +177,27 @@ export default function AdminOrdersPage() {
     { key: 'delivered', label: 'Хүргэгдсэн', run: () => runOrders('delivered', 'Хүргэгдсэн') },
   ]
 
-  const pendingCount = (value: FilterValue) =>
-    value === 'awaiting_payment' ? counts?.awaiting?.totalCount
-      : value === 'oversold' ? counts?.oversold?.totalCount : null
+  const pendingCount = (value: FilterValue) => {
+    switch (value) {
+      case 'awaiting_payment': return counts?.awaiting?.totalCount
+      case 'deposit_paid': return counts?.depositPaid?.totalCount
+      case 'awaiting_balance': return counts?.awaitingBalance?.totalCount
+      case 'oversold': return counts?.oversold?.totalCount
+      default: return null
+    }
+  }
 
   return (
     <>
       <PageHeader
         title="Захиалга"
         subtitle="Мөр дээр дарж дэлгэрэнгүйг харна. Дансаар шилжүүлсэн төлбөрийг тэндээс баталгаажуулна."
+      />
+
+      <PreorderQueues
+        depositPaid={counts?.depositPaid}
+        awaitingBalance={counts?.awaitingBalance}
+        onDone={refetchAll}
       />
 
       <BulkResult result={result} labelFor={(id: string) => orderNumberById[id] ?? id} onDismiss={() => setResult(null)} />

@@ -26,6 +26,8 @@ interface AccountOverviewData {
 
 const STATUS_TONE: Record<OrderStatus, string> = {
   awaiting_payment: 'border-warn-line text-warn-ink bg-warn-soft',
+  deposit_paid: 'border-info-line text-info-ink bg-info-soft',
+  awaiting_balance: 'border-warn-line text-warn-ink bg-warn-soft',
   paid: 'border-success-line text-success-ink bg-success-soft',
   packed: 'border-info-line text-info-ink bg-info-soft',
   shipped: 'border-info-line text-info-ink bg-info-soft',
@@ -147,9 +149,15 @@ export default function AccountPage() {
                         <span className="block text-[14px] font-semibold tabular-nums">{o.orderNumber}</span>
                         <span className="block text-[12px] text-ink-faint">{formatDate(o.placedAt)}</span>
                       </span>
-                      <span className={`shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-semibold ${(o.status && STATUS_TONE[o.status]) || 'border-line text-ink-soft'}`}>
-                        {orderStatusLabel(o.status)}
-                      </span>
+                      {o.status === 'awaiting_balance' ? (
+                        <span className="shrink-0 rounded-full bg-ink-strong px-3 py-1.5 text-[11px] font-bold text-paper">
+                          Үлдэгдэл төлөх
+                        </span>
+                      ) : (
+                        <span className={`shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-semibold ${(o.status && STATUS_TONE[o.status]) || 'border-line text-ink-soft'}`}>
+                          {orderStatusLabel(o.status)}
+                        </span>
+                      )}
                       <span className="shrink-0 text-[14px] font-semibold tabular-nums">
                         {formatMnt(o.totalMnt)}
                       </span>
