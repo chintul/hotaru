@@ -28,7 +28,7 @@ const clampPct = (raw: string): number | null => {
 export default function PreorderTerms({ product, refetch }: PreorderTermsProps) {
   const variants = nodes(product.variantCollection)
   const preorderVariant = variants.find((v) => v.allowBackorder)
-  const price = toNumber(preorderVariant?.priceMnt ?? product.minPriceMnt) || SAMPLE_PRICE
+  const price = toNumber(preorderVariant?.preorderPriceMnt ?? preorderVariant?.priceMnt ?? product.minPriceMnt) || SAMPLE_PRICE
 
   const form = (
     <TermsForm

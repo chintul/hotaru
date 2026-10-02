@@ -6,6 +6,7 @@ import {
   ADMIN_REORDER_IMAGES,
   ADMIN_SET_PRODUCT_PREORDER,
   ADMIN_SET_STOCK,
+  ADMIN_SET_VARIANT_PREORDER_PRICE,
   ADMIN_SET_VARIANT_IMAGE,
   ADMIN_UPSERT_PRODUCT,
   ADMIN_UPSERT_VARIANT,
@@ -52,7 +53,10 @@ export interface UpsertVariantVars {
   imageId: string | null
 }
 
-export const UPSERT_VARIANT: TypedDocumentNode<unknown, UpsertVariantVars> = ADMIN_UPSERT_VARIANT
+export const UPSERT_VARIANT: TypedDocumentNode<
+  { adminUpsertVariant: { id: string } | null },
+  UpsertVariantVars
+> = ADMIN_UPSERT_VARIANT
 
 export const SET_STOCK: TypedDocumentNode<
   unknown,
@@ -88,3 +92,8 @@ export const SET_PRODUCT_PREORDER: TypedDocumentNode<
   { adminSetProductPreorder: PreorderTerms | null },
   { productId: string; depositPct: number; eta: string | null }
 > = ADMIN_SET_PRODUCT_PREORDER
+
+export const SET_VARIANT_PREORDER_PRICE: TypedDocumentNode<
+  unknown,
+  { variantId: string; priceMnt: string | null }
+> = ADMIN_SET_VARIANT_PREORDER_PRICE

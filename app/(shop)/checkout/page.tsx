@@ -12,7 +12,7 @@ import { useSession } from '@/components/useSession'
 import ProductImage from '@/components/ProductImage'
 import PreorderTag from '@/components/PreorderTag'
 import { cartSplit } from '@/components/cartSplit'
-import { DEFAULT_DEPOSIT_PCT, isPreorder } from '@/lib/preorder'
+import { DEFAULT_DEPOSIT_PCT, isPreorder, unitPriceOf } from '@/lib/preorder'
 import type { Address, CartItem, Connection, DeliveryMethod, Order } from '@/lib/types'
 import { errorMessage } from '@/lib/errors'
 import { Button } from '@/components/ui/button'
@@ -331,7 +331,7 @@ function CheckoutForm({ items, subtotal, profileId }: CheckoutFormProps) {
                     )}
                   </span>
                   <span className="shrink-0 text-[13px] tabular-nums">
-                    {formatMnt(toNumber(i.variant?.priceMnt) * i.quantity)}
+                    {formatMnt(unitPriceOf(i.variant, i.quantity) * i.quantity)}
                   </span>
                 </li>
               )

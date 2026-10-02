@@ -11,7 +11,7 @@ import { useUI } from './UIProvider'
 import ProductImage, { swatchTone } from './ProductImage'
 import { IconCheck, IconHeart, IconMinus, IconPlus, IconShare } from './Icons'
 import { errorMessage } from '@/lib/errors'
-import { DEFAULT_DEPOSIT_PCT, depositOf, isPreorder } from '@/lib/preorder'
+import { DEFAULT_DEPOSIT_PCT, depositOf, isPreorder, unitPriceOf } from '@/lib/preorder'
 import PreorderTag from './PreorderTag'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -81,7 +81,10 @@ export default function ProductDetailClient({ product, copy, payNote }: ProductD
   const selected: Variant | undefined = variants.find((v) => v.id === selectedId) ?? variants[0]
   const purchasable = Boolean(selected && variantAvailable(selected))
   const hasOptions = variants.length > 1 && variants.some((v) => v.optionLabel)
-  const subtotal = toNumber(selected?.priceMnt) * qty
+  const normalPrice = toNumber(selected?.priceMnt)
+  const unitPrice = unitPriceOf(selected, qty)
+  const preorderPriced = unitPrice !== normalPrice
+  const subtotal = unitPrice * qty
   const lowStock = (selected?.quantity ?? 0) <= LOW_STOCK_THRESHOLD && !selected?.allowBackorder
   const preorder = purchasable && isPreorder(selected, qty)
   const depositPct = product.preorderDepositPct ?? DEFAULT_DEPOSIT_PCT
@@ -200,8 +203,12 @@ export default function ProductDetailClient({ product, copy, payNote }: ProductD
 
           {copy.subtitle && <p className="mt-1.5 text-[13px] text-ink-soft">{copy.subtitle}</p>}
 
-          <p className="mt-5 text-[24px] font-bold">{formatMnt(selected?.priceMnt)}</p>
-          {selected?.compareAtPriceMnt && (
+          <p className="mt-5 text-[24px] font-bold">{formatMnt(unitPrice)}</p>
+          {preorderPriced ? (
+            <p className="text-[13px] text-ink-soft">
+              Урьдчилсан захиалгын үнэ · Үндсэн үнэ <span className="tabular-nums">{formatMnt(normalPrice)}</span>
+            </p>
+          ) : selected?.compareAtPriceMnt && (
             <p className="text-[14px] text-ink-faint line-through">{formatMnt(selected.compareAtPriceMnt)}</p>
           )}
 
@@ -375,7 +382,7 @@ export default function ProductDetailClient({ product, copy, payNote }: ProductD
             </div>
             <div className="min-w-0 flex-1">
               <p className="truncate text-[13px] font-semibold">{copy.title}</p>
-              <p className="text-[13px] font-bold">{formatMnt(selected?.priceMnt)}</p>
+              <p className="text-[13px] font-bold">{formatMnt(unitPrice)}</p>
             </div>
             {hasOptions && (
               <Select

@@ -6,10 +6,17 @@ export const DEFAULT_DEPOSIT_PCT = 50
 export interface PreorderStock {
   quantity?: number | null
   allowBackorder?: boolean | null
+  priceMnt?: Mnt | null
+  preorderPriceMnt?: Mnt | null
 }
 
 export const isPreorder = (variant: PreorderStock | null | undefined, wanted = 1): boolean =>
   Boolean(variant?.allowBackorder) && (variant?.quantity ?? 0) < wanted
+
+export const unitPriceOf = (variant: PreorderStock | null | undefined, wanted = 1, fallback?: Mnt | null): number => {
+  const normal = toNumber(variant?.priceMnt ?? fallback)
+  return isPreorder(variant, wanted) && variant?.preorderPriceMnt != null ? toNumber(variant.preorderPriceMnt) : normal
+}
 
 export const depositOf = (lineTotal: number, pct: number): number => Math.ceil((lineTotal * pct) / 100)
 
@@ -32,7 +39,7 @@ export function splitPayment(lines: readonly SplitLine[], extrasMnt = 0): Paymen
   let balance = 0
   let hasPreorder = false
   for (const line of lines) {
-    const lineTotal = toNumber(line.priceMnt) * line.quantity
+    const lineTotal = unitPriceOf(line.variant, line.quantity, line.priceMnt) * line.quantity
     subtotal += lineTotal
     if (isPreorder(line.variant, line.quantity)) {
       hasPreorder = true

@@ -186,10 +186,44 @@ select test.raises(
   format($$select public.admin_set_product_preorder(%L, 0)$$, (select id from public.products where slug = 'test-preorder')),
   '22023', 'a zero deposit is rejected');
 
+-- ---- a separate pre-order price ------------------------------------------
+select test.as_user('22222222-2222-2222-2222-222222222222', false);
+select public.admin_set_product_preorder((select id from public.products where slug = 'test-preorder'), 30);
+select test.eq((select preorder_price_mnt from public.admin_set_variant_preorder_price(
+  (select id from public.variants where sku = 'TEST-PRE-1'), 90000)), 90000::bigint, 'owner sets a pre-order price');
+
+select test.as_user('a0a0a0a0-0000-0000-0000-0000000000e0', false);
+select test.raises(format($$select public.admin_set_variant_preorder_price(%L, 1)$$,
+  (select id from public.variants where sku = 'TEST-PRE-1')), '42501', 'a customer cannot set a pre-order price');
+
+select public.add_to_cart((select id from public.variants where sku = 'TEST-PRE-1'), 1);
+create temp table t_pp as
+select * from public.place_order('aaaa0000-0000-0000-0000-000000000099',
+  (select id from public.delivery_methods where code = 'ub_courier'));
+select test.eq((select unit_price_mnt from public.order_items where order_id = (select id from t_pp)), 90000::bigint,
+  'a pre-order line is charged the pre-order price');
+select test.eq((select balance_mnt from t_pp), 63000::bigint, 'the deposit split uses the pre-order price');
+
+select test.as_service();
+update public.variants set quantity = 5 where sku = 'TEST-PRE-1';
+select test.as_user('a0a0a0a0-0000-0000-0000-0000000000e0', false);
+select public.add_to_cart((select id from public.variants where sku = 'TEST-PRE-1'), 1);
+create temp table t_pp2 as
+select * from public.place_order('aaaa0000-0000-0000-0000-000000000099',
+  (select id from public.delivery_methods where code = 'ub_courier'));
+select test.eq((select unit_price_mnt from public.order_items where order_id = (select id from t_pp2)), 100000::bigint,
+  'a line covered by stock keeps the normal price');
+
+select test.as_user('22222222-2222-2222-2222-222222222222', false);
+select test.eq((select preorder_price_mnt from public.admin_set_variant_preorder_price(
+  (select id from public.variants where sku = 'TEST-PRE-1'))), null::bigint, 'clearing returns to the normal price');
+
 select test.ok(
   not has_function_privilege('anon', 'public.admin_request_balance(uuid)', 'EXECUTE')
   and not has_function_privilege('anon', 'public.admin_set_product_preorder(uuid, int, text)', 'EXECUTE'),
   'pre-order admin functions are not anon-executable');
+select test.ok(not has_function_privilege('anon', 'public.admin_set_variant_preorder_price(uuid, bigint)', 'EXECUTE'),
+  'admin_set_variant_preorder_price is not anon-executable');
 select test.ok(not has_function_privilege('anon', 'public.set_upfront_amount(uuid, bigint)', 'EXECUTE'),
   'set_upfront_amount is not anon-executable');
 

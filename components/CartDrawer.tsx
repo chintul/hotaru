@@ -10,7 +10,7 @@ import { IconClose, IconMinus, IconPlus } from './Icons'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetClose, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { Skeleton } from '@/components/ui/skeleton'
-import { DEFAULT_DEPOSIT_PCT, depositOf, isPreorder } from '@/lib/preorder'
+import { DEFAULT_DEPOSIT_PCT, depositOf, isPreorder, unitPriceOf } from '@/lib/preorder'
 import PreorderTag from './PreorderTag'
 import { cartSplit } from './cartSplit'
 
@@ -128,7 +128,9 @@ function CartPanel({ confirmClear, setConfirmClear, onClose }: CartPanelProps) {
             const product = variant?.product
             const title = copy(product).title ?? 'Бүтээгдэхүүн'
             const image = firstNode(product?.productImageCollection)
-            const line = toNumber(variant?.priceMnt) * item.quantity
+            const normalPrice = toNumber(variant?.priceMnt)
+            const unitPrice = unitPriceOf(variant, item.quantity)
+            const line = unitPrice * item.quantity
             const staggerStyle: StaggerStyle = { '--i': i }
             const preorder = isPreorder(variant, item.quantity)
             const pct = product?.preorderDepositPct ?? DEFAULT_DEPOSIT_PCT
@@ -154,7 +156,11 @@ function CartPanel({ confirmClear, setConfirmClear, onClose }: CartPanelProps) {
                     <>
                       <PreorderTag eta={product?.preorderEta} className="mt-1.5" />
                       <p className="mt-1.5 text-[13px] text-ink-soft">
-                        Үндсэн үнэ <span className="tabular-nums">{formatMnt(variant?.priceMnt)}</span>
+                        {unitPrice !== normalPrice ? 'Урьдчилсан үнэ' : 'Үндсэн үнэ'}{' '}
+                        <span className="tabular-nums">{formatMnt(unitPrice)}</span>
+                        {unitPrice !== normalPrice && (
+                          <span className="ml-1.5 tabular-nums text-ink-faint line-through">{formatMnt(normalPrice)}</span>
+                        )}
                       </p>
                       <p className="text-[13px] text-ink-soft">
                         Хамгийн багадаа {pct}% ·{' '}

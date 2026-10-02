@@ -10,7 +10,7 @@ import { useCart } from "./useCart";
 import { useUI } from "./UIProvider";
 import { IconBag, IconCheck } from "./Icons";
 import PreorderTag from "./PreorderTag";
-import { isPreorder } from "@/lib/preorder";
+import { isPreorder, unitPriceOf } from "@/lib/preorder";
 
 const MAX_SWATCHES_PER_ROW = 4;
 const ADDED_CONFIRMATION_MS = 1600;
@@ -81,14 +81,18 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
     }
   };
 
-  const min = toNumber(product.minPriceMnt);
-  const max = toNumber(product.maxPriceMnt);
-  const ranged = max > min;
   const showVariantPill = variant?.optionValue && !primaryImage?.filePath;
   const preorderOnly =
     variants.length > 0 &&
     !variants.some((v) => (v.quantity ?? 0) > 0) &&
     variants.some((v) => v.allowBackorder);
+  const preorderVariants = variants.filter((v) => v.allowBackorder);
+  const preorderPrices = preorderOnly && preorderVariants.some((v) => v.preorderPriceMnt != null)
+    ? preorderVariants.map((v) => unitPriceOf(v, 1))
+    : [];
+  const min = preorderPrices.length ? Math.min(...preorderPrices) : toNumber(product.minPriceMnt);
+  const max = preorderPrices.length ? Math.max(...preorderPrices) : toNumber(product.maxPriceMnt);
+  const ranged = max > min;
 
   return (
     <div className="group">

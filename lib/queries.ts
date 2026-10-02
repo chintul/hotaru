@@ -17,7 +17,7 @@ export const PRODUCT_CARD = gql`
       edges { node { filePath alt width height position } }
     }
     variantCollection(first: 8, filter: { isActive: { eq: true } }, orderBy: [{ position: AscNullsLast }]) {
-      edges { node { id optionLabel optionValue priceMnt quantity allowBackorder image { filePath alt } } }
+      edges { node { id optionLabel optionValue priceMnt preorderPriceMnt quantity allowBackorder image { filePath alt } } }
     }
   }
 `
@@ -114,7 +114,7 @@ export const PRODUCT_DETAIL = gql`
           ) {
             edges {
               node {
-                id sku optionLabel optionValue priceMnt compareAtPriceMnt quantity allowBackorder
+                id sku optionLabel optionValue priceMnt preorderPriceMnt compareAtPriceMnt quantity allowBackorder
                 image { id filePath alt }
               }
             }
@@ -154,6 +154,7 @@ export const CART_CONTENTS = gql`
             optionLabel
             optionValue
             priceMnt
+            preorderPriceMnt
             quantity
             allowBackorder
             product {
@@ -846,7 +847,7 @@ export const ADMIN_PRODUCT_DETAIL = gql`
           }
           variantCollection(first: 50, orderBy: [{ position: AscNullsLast }]) {
             edges { node {
-              id sku optionLabel optionValue priceMnt compareAtPriceMnt quantity isActive
+              id sku optionLabel optionValue priceMnt preorderPriceMnt compareAtPriceMnt quantity isActive
               allowBackorder position
               image { id filePath alt }
             } }
@@ -911,5 +912,11 @@ export const SET_UPFRONT_AMOUNT = gql`
     setUpfrontAmount(orderId: $orderId, amountMnt: $amountMnt) {
       id status paymentStatus totalMnt upfrontMnt balanceMnt minUpfrontMnt
     }
+  }
+`
+
+export const ADMIN_SET_VARIANT_PREORDER_PRICE = gql`
+  mutation AdminSetVariantPreorderPrice($variantId: UUID!, $priceMnt: BigInt) {
+    adminSetVariantPreorderPrice(variantId: $variantId, priceMnt: $priceMnt) { id preorderPriceMnt }
   }
 `

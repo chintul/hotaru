@@ -16,6 +16,7 @@ import {
   ADD_IMAGE,
   DELETE_IMAGE,
   REORDER_IMAGES,
+  SET_VARIANT_PREORDER_PRICE,
   UPSERT_VARIANT,
 } from './documents'
 import { uploadProductImage } from './uploadImage'
@@ -266,38 +267,59 @@ interface NewVariantFields {
   priceMnt: string
   quantity: string
   allowBackorder: boolean
+  preorderPriceMnt: string
 }
 
 const digitsOnly = (value: string) => value.replace(/\D/g, '')
 
 function VariantForm({ product, onClose, onSaved }: VariantFormProps) {
   const [save, { loading }] = useMutation(UPSERT_VARIANT)
-  const [f, setF] = useState<NewVariantFields>({ sku: '', optionLabel: 'Өнгө', optionValue: '', priceMnt: '', quantity: '0', allowBackorder: false })
+  const [savePreorderPrice, { loading: pricing }] = useMutation(SET_VARIANT_PREORDER_PRICE)
+  const [f, setF] = useState<NewVariantFields>({ sku: '', optionLabel: 'Өнгө', optionValue: '', priceMnt: '', quantity: '0', allowBackorder: false, preorderPriceMnt: '' })
   const [error, setError] = useState<string | null>(null)
+  const [createdId, setCreatedId] = useState<string | null>(null)
   const set = (k: keyof NewVariantFields) => (e: ChangeEvent<HTMLInputElement>) => setF({ ...f, [k]: e.target.value })
 
   const appendedPosition = nodes(product.variantCollection).length
 
+  const createVariant = async (): Promise<string | null> => {
+    const { data } = await save({ variables: {
+      productId: product.id,
+      priceMnt: String(toNumber(f.priceMnt)),
+      quantity: Number(f.quantity || 0),
+      sku: f.sku || null,
+      optionLabel: f.optionValue ? f.optionLabel : null,
+      optionValue: f.optionValue || null,
+      compareAtPriceMnt: null,
+      allowBackorder: f.allowBackorder,
+      isActive: true,
+      sortOrder: appendedPosition,
+      variantId: null,
+      imageId: null,
+    } })
+    return data?.adminUpsertVariant?.id ?? null
+  }
+
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setError(null)
+    let variantId = createdId
     try {
-      await save({ variables: {
-        productId: product.id,
-        priceMnt: String(toNumber(f.priceMnt)),
-        quantity: Number(f.quantity || 0),
-        sku: f.sku || null,
-        optionLabel: f.optionValue ? f.optionLabel : null,
-        optionValue: f.optionValue || null,
-        compareAtPriceMnt: null,
-        allowBackorder: f.allowBackorder,
-        isActive: true,
-        sortOrder: appendedPosition,
-        variantId: null,
-        imageId: null,
-      } })
-      onSaved()
-    } catch (err) { setError(errorMessage(err, 'Алдаа гарлаа.')) }
+      variantId ??= await createVariant()
+    } catch (err) {
+      setError(errorMessage(err, 'Алдаа гарлаа.'))
+      return
+    }
+    setCreatedId(variantId)
+    if (variantId && f.allowBackorder && f.preorderPriceMnt) {
+      try {
+        await savePreorderPrice({ variables: { variantId, priceMnt: String(toNumber(f.preorderPriceMnt)) } })
+      } catch (err) {
+        setError(errorMessage(err, 'Сонголт нэмэгдсэн ч урьдчилсан үнийг хадгалж чадсангүй.'))
+        return
+      }
+    }
+    onSaved()
   }
 
   return (
@@ -311,14 +333,25 @@ function VariantForm({ product, onClose, onSaved }: VariantFormProps) {
       <Field label="Үлдэгдэл">
         <Input value={f.quantity} onChange={(e) => setF({ ...f, quantity: digitsOnly(e.target.value) })} />
       </Field>
-      <PreorderToggle
-        className="sm:col-span-5"
-        checked={f.allowBackorder}
-        onCheckedChange={(allowBackorder) => setF({ ...f, allowBackorder })}
-      />
+      <div className="flex flex-wrap items-end gap-4 sm:col-span-5">
+        <PreorderToggle
+          checked={f.allowBackorder}
+          onCheckedChange={(allowBackorder) => setF({ ...f, allowBackorder })}
+        />
+        {f.allowBackorder && (
+          <Field label="Урьдчилсан үнэ (₮)" hint="Хоосон бол үндсэн үнэ">
+            <Input
+              inputMode="numeric"
+              value={f.preorderPriceMnt}
+              placeholder={f.priceMnt}
+              onChange={(e) => setF({ ...f, preorderPriceMnt: digitsOnly(e.target.value) })}
+            />
+          </Field>
+        )}
+      </div>
       {error && <p className="text-[13px] text-danger-ink sm:col-span-5">{error}</p>}
       <div className="flex gap-2 sm:col-span-5">
-        <Button type="submit" variant="primary" disabled={loading}>Нэмэх</Button>
+        <Button type="submit" variant="primary" disabled={loading || pricing}>Нэмэх</Button>
         <Button type="button" onClick={onClose}>Болих</Button>
       </div>
     </form>

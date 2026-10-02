@@ -4,6 +4,7 @@ import { useCallback } from 'react'
 import { useMutation, useQuery } from '@apollo/client/react'
 import { ADD_TO_CART, CLEAR_CART, MY_CART, SET_CART_QTY } from '@/lib/queries'
 import { cartTotals, firstNode, nodes } from '@/lib/format'
+import { cartSplit } from './cartSplit'
 import { ensureSession } from '@/lib/supabase/browser'
 import type { Cart, Connection } from '@/lib/types'
 import { useSession } from './useSession'
@@ -59,7 +60,8 @@ export function useCart() {
 
   const cart = firstNode(data?.cartCollection)
   const items = nodes(cart?.cartItemCollection)
-  const { subtotal, count } = cartTotals(items)
+  const { count } = cartTotals(items)
+  const subtotal = cartSplit(items).total
 
   const settleUntilItemsVisible = useCallback(async () => {
     for (const wait of SETTLE_RETRY_DELAYS_MS) {

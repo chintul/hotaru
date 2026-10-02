@@ -61,6 +61,7 @@ export interface Variant {
   position?: number | null
   image?: ProductImage | null
   product?: Product | null
+  preorderPriceMnt?: Mnt | null
 }
 
 export interface Review {

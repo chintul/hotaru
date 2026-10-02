@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import type { ChangeEvent } from 'react'
+import type { ChangeEvent, KeyboardEvent } from 'react'
 import { useMutation } from '@apollo/client/react'
 import { toNumber } from '@/lib/format'
 import { variantLabel } from '@/lib/admin/images'
@@ -18,6 +18,7 @@ import PreorderToggle from './PreorderToggle'
 import {
   DELETE_VARIANT,
   SET_STOCK,
+  SET_VARIANT_PREORDER_PRICE,
   UPSERT_VARIANT,
 } from './documents'
 import type { UpsertVariantVars } from './documents'
@@ -209,6 +210,16 @@ export default function VariantRow({ product, variant, images, sharedCount, refe
         {backorder && (
           <span className="text-[13px] text-a-muted">үлдэгдэл дууссан ч худалдана</span>
         )}
+        {backorder && (
+          <PreorderPriceInput
+            key={String(variant.preorderPriceMnt ?? '')}
+            variantId={variant.id}
+            preorderPriceMnt={variant.preorderPriceMnt}
+            normalPrice={toNumber(f.priceMnt)}
+            refetch={refetch}
+            onError={setError}
+          />
+        )}
         {dirty && (
           <Button variant="primary" size="sm" disabled={saving || stocking} onClick={onSave}>
             Хадгалах
@@ -223,5 +234,58 @@ export default function VariantRow({ product, variant, images, sharedCount, refe
         {error && <span className="text-[13px] text-danger-ink">{error}</span>}
       </div>
     </li>
+  )
+}
+
+interface PreorderPriceInputProps {
+  variantId: string
+  preorderPriceMnt: EditorVariant['preorderPriceMnt']
+  normalPrice: number
+  refetch: Refetch
+  onError: (message: string | null) => void
+}
+
+function PreorderPriceInput({ variantId, preorderPriceMnt, normalPrice, refetch, onError }: PreorderPriceInputProps) {
+  const initial = preorderPriceMnt == null ? '' : String(toNumber(preorderPriceMnt))
+  const [value, setValue] = useState(initial)
+  const [savePrice, { loading }] = useMutation(SET_VARIANT_PREORDER_PRICE)
+
+  const commit = async () => {
+    if (value === initial || loading) return
+    onError(null)
+    try {
+      await savePrice({ variables: { variantId, priceMnt: value ? String(toNumber(value)) : null } })
+      await refetch()
+    } catch (e) {
+      setValue(initial)
+      onError(errorMessage(e, 'Урьдчилсан үнийг хадгалахад алдаа гарлаа.'))
+    }
+  }
+
+  const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') { e.preventDefault(); void commit() }
+    if (e.key === 'Escape') setValue(initial)
+  }
+
+  return (
+    <label className="flex items-center gap-2 text-[13px] text-a-muted">
+      <span className="text-a-ink">Урьдчилсан үнэ</span>
+      <span className="relative">
+        <Input
+          inputMode="numeric"
+          value={value}
+          placeholder={normalPrice ? String(normalPrice) : ''}
+          disabled={loading}
+          onChange={(e) => setValue(e.target.value.replace(/\D/g, ''))}
+          onBlur={() => void commit()}
+          onKeyDown={onKeyDown}
+          className="h-8 w-32 pr-7 text-right tabular-nums"
+        />
+        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-a-muted">₮</span>
+      </span>
+      {loading
+        ? <span>Хадгалж байна…</span>
+        : !value && <span>Хоосон бол үндсэн үнэ</span>}
+    </label>
   )
 }
