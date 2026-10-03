@@ -24,6 +24,8 @@ than an accident.
 | 16 | v1 = discounts, search, wishlist, reviews | All four have schema from day one |
 | 17 | Pre-orders pay a deposit, then a balance | Owner's call. A backorder line the stock can't cover is a pre-order: the shopper pays in-stock lines in full plus each pre-order line's deposit share (per product, default 50%), the owner invoices the balance when the goods arrive. One order even for a mixed cart; it ships when fully paid. Deposits are non-refundable and the shopper is told before paying |
 | 18 | Reviews publish on submit | Owner's call, reversing pre-moderation. Moderation becomes "hide"; editing a hidden review does not republish it |
+| 19 | Colour and size together | Owner's call, reversing decision 8's single axis for shoes and clothing. `option_label`/`option_value` stays the colour axis and `variants.size` is the second; each colour × size is a variant with its own stock. A colour may repeat only across sizes. Admin creates sizes from presets in one call |
+| 20 | PostHog for traffic, the database for stock and sales | Owner's call. PostHog records page views (automatic), product views, add to cart, checkout start and order placed; signed-in shoppers are identified by account id only, admin pages are never sent. Stock, sales, carts and order stages come from `admin_analytics`, because only the database knows them. "Low stock" is below half of `variants.stock_baseline`, the level the stock was last raised to |
 
 ## Consequences worth remembering
 

@@ -2,19 +2,22 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useEffect, useId, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import type { FormEvent, ReactNode } from 'react'
 import { useApolloClient, useMutation, useQuery } from '@apollo/client/react'
 import { CHECKOUT_CONTEXT, CREATE_ADDRESS, MY_CART, PLACE_ORDER } from '@/lib/queries'
 import { copy, firstNode, formatMnt, nodes, toNumber } from '@/lib/format'
 import { useCart } from '@/components/useCart'
 import { useSession } from '@/components/useSession'
+import { useTrack } from '@/components/useTrack'
 import ProductImage from '@/components/ProductImage'
 import PreorderTag from '@/components/PreorderTag'
 import { cartSplit } from '@/components/cartSplit'
 import { DEFAULT_DEPOSIT_PCT, isPreorder, unitPriceOf } from '@/lib/preorder'
+import { saleOf } from '@/lib/sale'
 import type { Address, CartItem, Connection, DeliveryMethod, Order } from '@/lib/types'
 import { errorMessage } from '@/lib/errors'
+import { describeVariant } from '@/lib/sizes'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -136,6 +139,14 @@ function CheckoutForm({ items, subtotal, profileId }: CheckoutFormProps) {
   })
   const [placeOrder, { loading: placing }] = useMutation<PlaceOrderData>(PLACE_ORDER)
   const [createAddress, { loading: savingAddress }] = useMutation<CreateAddressData>(CREATE_ADDRESS)
+  const track = useTrack()
+  const checkoutTracked = useRef(false)
+
+  useEffect(() => {
+    if (checkoutTracked.current || items.length === 0) return
+    checkoutTracked.current = true
+    track('checkout_start')
+  }, [items.length, track])
 
   const addresses = nodes(data?.addressCollection)
   const methods = nodes(data?.deliveryMethodCollection)
@@ -192,6 +203,7 @@ function CheckoutForm({ items, subtotal, profileId }: CheckoutFormProps) {
       })
       const order = res.data?.placeOrder
       if (order?.orderNumber) {
+        track('order_placed', { orderNumber: order.orderNumber })
         await apollo.refetchQueries({ include: [MY_CART] })
         router.push(`/orders/${order.orderNumber}`)
       }
@@ -308,6 +320,10 @@ function CheckoutForm({ items, subtotal, profileId }: CheckoutFormProps) {
               const product = i.variant?.product
               const title = copy(product).title
               const image = i.variant?.image ?? firstNode(product?.productImageCollection)
+              const unitPrice = unitPriceOf(i.variant, i.quantity)
+              const sale = unitPrice === toNumber(i.variant?.priceMnt)
+                ? saleOf(i.variant?.priceMnt, i.variant?.compareAtPriceMnt)
+                : null
               return (
                 <li key={i.id} className="flex items-center gap-3">
                   <span className="relative h-14 w-14 shrink-0 overflow-hidden border border-line bg-paper">
@@ -318,8 +334,8 @@ function CheckoutForm({ items, subtotal, profileId }: CheckoutFormProps) {
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[13px] font-medium">{title}</span>
-                    {i.variant?.optionValue && (
-                      <span className="block text-[12px] text-ink-faint">{i.variant.optionValue}</span>
+                    {describeVariant(i.variant) && (
+                      <span className="block text-[12px] text-ink-faint">{describeVariant(i.variant)}</span>
                     )}
                     {isPreorder(i.variant, i.quantity) && (
                       <>
@@ -330,8 +346,9 @@ function CheckoutForm({ items, subtotal, profileId }: CheckoutFormProps) {
                       </>
                     )}
                   </span>
-                  <span className="shrink-0 text-[13px] tabular-nums">
-                    {formatMnt(unitPriceOf(i.variant, i.quantity) * i.quantity)}
+                  <span className="flex shrink-0 flex-col items-end text-[13px] tabular-nums">
+                    <span className={sale ? 'text-sale' : undefined}>{formatMnt(unitPrice * i.quantity)}</span>
+                    {sale && <s className="text-[12px] text-ink-faint">{formatMnt(sale.was * i.quantity)}</s>}
                   </span>
                 </li>
               )

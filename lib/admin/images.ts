@@ -1,6 +1,7 @@
 export interface LinkableVariant {
   id?: string | null
   optionValue?: string | null
+  size?: string | null
   sku?: string | null
   image?: { id?: string | null } | null
 }
@@ -8,7 +9,8 @@ export interface LinkableVariant {
 export type ImageUsage = Record<string, string[]>
 
 export function variantLabel(variant: LinkableVariant | null | undefined): string {
-  return variant?.optionValue || variant?.sku || 'Нэргүй сонголт'
+  const named = [variant?.optionValue, variant?.size].filter(Boolean).join(' · ')
+  return named || variant?.sku || 'Нэргүй сонголт'
 }
 
 export function linkage(variants: readonly (LinkableVariant | null | undefined)[] = []): {

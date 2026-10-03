@@ -62,6 +62,7 @@ export interface Variant {
   image?: ProductImage | null
   product?: Product | null
   preorderPriceMnt?: Mnt | null
+  size?: string | null
 }
 
 export interface Review {
