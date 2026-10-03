@@ -11,7 +11,9 @@ import { Button } from '@/components/ui/button'
 import { Sheet, SheetClose, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { Skeleton } from '@/components/ui/skeleton'
 import { DEFAULT_DEPOSIT_PCT, depositOf, isPreorder, unitPriceOf } from '@/lib/preorder'
+import { saleOf } from '@/lib/sale'
 import PreorderTag from './PreorderTag'
+import { describeVariant } from '@/lib/sizes'
 import { cartSplit } from './cartSplit'
 
 type StaggerStyle = CSSProperties & { '--i': number }
@@ -131,6 +133,7 @@ function CartPanel({ confirmClear, setConfirmClear, onClose }: CartPanelProps) {
             const normalPrice = toNumber(variant?.priceMnt)
             const unitPrice = unitPriceOf(variant, item.quantity)
             const line = unitPrice * item.quantity
+            const sale = unitPrice === normalPrice ? saleOf(variant?.priceMnt, variant?.compareAtPriceMnt) : null
             const staggerStyle: StaggerStyle = { '--i': i }
             const preorder = isPreorder(variant, item.quantity)
             const pct = product?.preorderDepositPct ?? DEFAULT_DEPOSIT_PCT
@@ -147,10 +150,8 @@ function CartPanel({ confirmClear, setConfirmClear, onClose }: CartPanelProps) {
                 </Link>
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-medium">{title}</p>
-                  {variant?.optionLabel && (
-                    <p className="label mt-0.5 text-ink-faint">
-                      {variant.optionLabel}: {variant.optionValue}
-                    </p>
+                  {describeVariant(variant) && (
+                    <p className="label mt-0.5 text-ink-faint">{describeVariant(variant)}</p>
                   )}
                   {preorder ? (
                     <>
@@ -196,7 +197,12 @@ function CartPanel({ confirmClear, setConfirmClear, onClose }: CartPanelProps) {
                     >
                       Хасах
                     </button>
-                    <span className="ml-auto tabular-nums">{formatMnt(line)}</span>
+                    <span className="ml-auto flex flex-wrap items-baseline justify-end gap-x-1.5">
+                      {sale && (
+                        <s className="text-[12px] tabular-nums text-ink-faint">{formatMnt(sale.was * item.quantity)}</s>
+                      )}
+                      <span className={sale ? 'tabular-nums text-sale' : 'tabular-nums'}>{formatMnt(line)}</span>
+                    </span>
                   </div>
                 </div>
               </li>

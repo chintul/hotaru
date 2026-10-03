@@ -12,6 +12,7 @@ const CartDrawer = dynamic(() => import('@/components/CartDrawer'))
 const SearchOverlay = dynamic(() => import('@/components/SearchOverlay'))
 const BackToTop = dynamic(() => import('@/components/BackToTop'))
 const CartHandoff = dynamic(() => import('@/components/CartHandoff'))
+const AnalyticsIdentity = dynamic(() => import('@/components/AnalyticsIdentity'))
 
 interface NavCategoriesData {
   categoryCollection: Connection<Category> | null
@@ -36,6 +37,7 @@ export default async function ShopLayout({ children }: LayoutProps<'/'>) {
       <SearchOverlay categories={categories} />
       <BackToTop />
       <CartHandoff />
+      <AnalyticsIdentity />
     </>
   )
 }

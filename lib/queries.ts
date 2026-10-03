@@ -17,7 +17,7 @@ export const PRODUCT_CARD = gql`
       edges { node { filePath alt width height position } }
     }
     variantCollection(first: 8, filter: { isActive: { eq: true } }, orderBy: [{ position: AscNullsLast }]) {
-      edges { node { id optionLabel optionValue priceMnt preorderPriceMnt quantity allowBackorder image { filePath alt } } }
+      edges { node { id optionLabel optionValue size priceMnt preorderPriceMnt compareAtPriceMnt quantity allowBackorder image { filePath alt } } }
     }
   }
 `
@@ -114,7 +114,7 @@ export const PRODUCT_DETAIL = gql`
           ) {
             edges {
               node {
-                id sku optionLabel optionValue priceMnt preorderPriceMnt compareAtPriceMnt quantity allowBackorder
+                id sku optionLabel optionValue size priceMnt preorderPriceMnt compareAtPriceMnt quantity allowBackorder
                 image { id filePath alt }
               }
             }
@@ -153,8 +153,10 @@ export const CART_CONTENTS = gql`
             sku
             optionLabel
             optionValue
+            size
             priceMnt
             preorderPriceMnt
+            compareAtPriceMnt
             quantity
             allowBackorder
             product {
@@ -600,7 +602,7 @@ export const ADMIN_UPSERT_VARIANT = gql`
       optionLabel: $optionLabel, optionValue: $optionValue, compareAtPriceMnt: $compareAtPriceMnt,
       allowBackorder: $allowBackorder, isActive: $isActive, sortOrder: $sortOrder, variantId: $variantId,
       imageId: $imageId
-    ) { id sku optionValue priceMnt quantity isActive image { id filePath alt } }
+    ) { id sku optionValue size priceMnt quantity isActive image { id filePath alt } }
   }
 `
 
@@ -663,7 +665,7 @@ export const ADMIN_PRODUCTS = gql`
             edges { node { title subtitle description careDetails seoTitle seoDescription } }
           }
           variantCollection(first: 20, orderBy: [{ position: AscNullsLast }]) {
-            edges { node { id sku optionLabel optionValue priceMnt compareAtPriceMnt quantity allowBackorder isActive } }
+            edges { node { id sku optionLabel optionValue size priceMnt compareAtPriceMnt quantity allowBackorder isActive } }
           }
           productImageCollection(first: 1, orderBy: [{ position: AscNullsLast }]) {
             edges { node { id filePath } }
@@ -847,7 +849,7 @@ export const ADMIN_PRODUCT_DETAIL = gql`
           }
           variantCollection(first: 50, orderBy: [{ position: AscNullsLast }]) {
             edges { node {
-              id sku optionLabel optionValue priceMnt preorderPriceMnt compareAtPriceMnt quantity isActive
+              id sku optionLabel optionValue size priceMnt preorderPriceMnt compareAtPriceMnt quantity isActive
               allowBackorder position
               image { id filePath alt }
             } }
@@ -918,5 +920,31 @@ export const SET_UPFRONT_AMOUNT = gql`
 export const ADMIN_SET_VARIANT_PREORDER_PRICE = gql`
   mutation AdminSetVariantPreorderPrice($variantId: UUID!, $priceMnt: BigInt) {
     adminSetVariantPreorderPrice(variantId: $variantId, priceMnt: $priceMnt) { id preorderPriceMnt }
+  }
+`
+
+export const ADMIN_SET_VARIANT_SIZE = gql`
+  mutation AdminSetVariantSize($variantId: UUID!, $size: String) {
+    adminSetVariantSize(variantId: $variantId, size: $size) { id size }
+  }
+`
+
+export const ADMIN_CREATE_SIZE_GRID = gql`
+  mutation AdminCreateSizeGrid(
+    $productId: UUID!, $sizes: [String]!, $priceMnt: BigInt!, $colours: [String],
+    $quantity: Int, $allowBackorder: Boolean
+  ) {
+    adminCreateSizeGrid(
+      productId: $productId, sizes: $sizes, priceMnt: $priceMnt, colours: $colours,
+      quantity: $quantity, allowBackorder: $allowBackorder
+    ) {
+      edges { node { id optionValue size } }
+    }
+  }
+`
+
+export const ADMIN_ANALYTICS = gql`
+  query AdminAnalytics($since: Datetime!, $until: Datetime) {
+    adminAnalytics(since: $since, until: $until)
   }
 `

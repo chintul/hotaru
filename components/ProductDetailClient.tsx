@@ -7,14 +7,17 @@ import { TOGGLE_WISHLIST } from '@/lib/queries'
 import { ensureSession } from '@/lib/supabase/browser'
 import type { Product, ProductTranslation, Variant } from '@/lib/types'
 import { useCart } from './useCart'
+import { useTrack } from './useTrack'
 import { useUI } from './UIProvider'
 import ProductImage, { swatchTone } from './ProductImage'
 import { IconCheck, IconHeart, IconMinus, IconPlus, IconShare } from './Icons'
 import { errorMessage } from '@/lib/errors'
 import { DEFAULT_DEPOSIT_PCT, depositOf, isPreorder, unitPriceOf } from '@/lib/preorder'
 import PreorderTag from './PreorderTag'
+import { saleOf } from '@/lib/sale'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { hasSizes, uniqueColours } from '@/lib/sizes'
 
 interface ProductDetailClientProps {
   product: Product
@@ -30,7 +33,13 @@ interface ToggleWishlistVars {
   productId?: string
 }
 
+interface SizedPick {
+  colour: string | null
+  size: string | null
+}
+
 const CONFIRMATION_MS = 1600
+const SIZE_NUDGE_MS = 1400
 const FALLBACK_BUY_BAR_SCROLL_Y = 620
 const LOW_STOCK_THRESHOLD = 3
 
@@ -41,11 +50,36 @@ const noVariantIdOnServer = () => null
 const ignoreDismissal = () => undefined
 
 const variantAvailable = (v: Variant) => (v.quantity ?? 0) > 0 || Boolean(v.allowBackorder)
+const preorderOnly = (v: Variant) => (v.quantity ?? 0) <= 0 && Boolean(v.allowBackorder)
+
+const uniqueBySize = (list: readonly Variant[]): Variant[] => {
+  const seen = new Set<string>()
+  return list.filter((v) => {
+    if (!v.size || seen.has(v.size)) return false
+    seen.add(v.size)
+    return true
+  })
+}
+
+const syncUrlVariant = (id: string | null) => {
+  const url = new URL(window.location.href)
+  if (id) url.searchParams.set('v', id)
+  else url.searchParams.delete('v')
+  window.history.replaceState(null, '', url)
+}
 
 export default function ProductDetailClient({ product, copy, payNote }: ProductDetailClientProps) {
   const variants = nodes(product.variantCollection)
   const images = nodes(product.productImageCollection)
   const { add, adding } = useCart()
+  const track = useTrack()
+  const viewedSlug = useRef<string | null>(null)
+
+  useEffect(() => {
+    if (viewedSlug.current === product.slug) return
+    viewedSlug.current = product.slug
+    track('product_view', { productSlug: product.slug })
+  }, [product.slug, track])
   const { open: openOverlay, close: closeOverlay, setAddPending } = useUI()
 
   const imageIndexOf = (v: Variant): number | null => {
@@ -61,10 +95,57 @@ export default function ProductDetailClient({ product, copy, payNote }: ProductD
   const selectedId = chosenId ?? urlVariant?.id ?? variants[0]?.id ?? null
   const activeImage = chosenImage ?? (urlVariant ? imageIndexOf(urlVariant) : null) ?? 0
 
+  const sized = hasSizes(variants)
+  const colours = sized ? uniqueColours(variants) : []
+  const optionLabel = variants.find((v) => v.optionLabel)?.optionLabel ?? null
+  const [pick, setPick] = useState<SizedPick | null>(null)
+  const colour = pick ? pick.colour : (urlVariant?.optionValue ?? colours[0] ?? null)
+  const ofColour = (c: string | null) => (colours.length ? variants.filter((v) => v.optionValue === c) : variants)
+  const colourFace = (c: string | null) => {
+    const list = ofColour(c)
+    return list.find((v) => v.image?.filePath) ?? list[0]
+  }
+  const sizeOptions = sized ? uniqueBySize(ofColour(colour)) : []
+  const wantedSize = pick ? pick.size : (urlVariant?.size ?? null)
+  const sizedVariant =
+    sizeOptions.find((v) => v.size === wantedSize) ?? (sizeOptions.length === 1 ? sizeOptions[0] : undefined)
+
+  const showImageOf = (v: Variant | undefined) => {
+    const idx = v ? imageIndexOf(v) : null
+    if (idx !== null) setChosenImage(idx)
+  }
+
   const selectVariant = (v: Variant) => {
     setChosenId(v.id)
-    const idx = imageIndexOf(v)
-    if (idx !== null) setChosenImage(idx)
+    showImageOf(v)
+    syncUrlVariant(v.id)
+  }
+
+  const pickColour = (c: string) => {
+    const keep = sizedVariant ? ofColour(c).find((v) => v.size === sizedVariant.size) : undefined
+    setPick({ colour: c, size: keep?.size ?? null })
+    showImageOf(keep?.image?.filePath ? keep : colourFace(c))
+    syncUrlVariant(keep?.id ?? null)
+  }
+
+  const pickSize = (v: Variant) => {
+    setPick({ colour, size: v.size ?? null })
+    if (v.image?.filePath) showImageOf(v)
+    syncUrlVariant(v.id)
+  }
+
+  const sizeRowRef = useRef<HTMLDivElement>(null)
+  const [nudged, setNudged] = useState(false)
+  const nudgeTimer = useRef<number | undefined>(undefined)
+  useEffect(() => () => window.clearTimeout(nudgeTimer.current), [])
+  const promptSize = () => {
+    const row = sizeRowRef.current
+    if (!row) return
+    row.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    row.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus({ preventScroll: true })
+    setNudged(true)
+    window.clearTimeout(nudgeTimer.current)
+    nudgeTimer.current = window.setTimeout(() => setNudged(false), SIZE_NUDGE_MS)
   }
 
   const [qty, setQty] = useState(1)
@@ -78,18 +159,39 @@ export default function ProductDetailClient({ product, copy, payNote }: ProductD
   const [showBar, setShowBar] = useState(false)
 
   const [toggleWishlist] = useMutation<ToggleWishlistData, ToggleWishlistVars>(TOGGLE_WISHLIST)
-  const selected: Variant | undefined = variants.find((v) => v.id === selectedId) ?? variants[0]
+  const selected: Variant | undefined = sized
+    ? sizedVariant
+    : (variants.find((v) => v.id === selectedId) ?? variants[0])
+  const needsSize = sized && !selected
+  const shown: Variant | undefined = selected ?? colourFace(colour) ?? variants[0]
   const purchasable = Boolean(selected && variantAvailable(selected))
-  const hasOptions = variants.length > 1 && variants.some((v) => v.optionLabel)
-  const normalPrice = toNumber(selected?.priceMnt)
-  const unitPrice = unitPriceOf(selected, qty)
+  const hasOptions = sized ? colours.length > 1 : variants.length > 1 && variants.some((v) => v.optionLabel)
+  const normalPrice = toNumber(shown?.priceMnt)
+  const unitPrice = selected ? unitPriceOf(selected, qty) : normalPrice
   const preorderPriced = unitPrice !== normalPrice
+  const sale = preorderPriced ? null : saleOf(shown?.priceMnt, shown?.compareAtPriceMnt)
   const subtotal = unitPrice * qty
   const lowStock = (selected?.quantity ?? 0) <= LOW_STOCK_THRESHOLD && !selected?.allowBackorder
   const preorder = purchasable && isPreorder(selected, qty)
   const depositPct = product.preorderDepositPct ?? DEFAULT_DEPOSIT_PCT
   const depositNow = depositOf(subtotal, depositPct)
-  const addLabel = purchasable ? (preorder ? 'Урьдчилан захиалах' : 'Сагсанд нэмэх') : 'Дууссан'
+  const addLabel = needsSize
+    ? 'Хэмжээ сонгоно уу'
+    : purchasable ? (preorder ? 'Урьдчилан захиалах' : 'Сагсанд нэмэх') : 'Дууссан'
+  const onBuy = needsSize ? promptSize : onAddSelected
+  const buyDisabled = needsSize ? false : !purchasable || adding
+  const swatches = sized
+    ? colours.map((c) => ({ key: c, value: c, face: colourFace(c), active: c === colour, out: !ofColour(c).some(variantAvailable) }))
+    : variants.map((v) => ({ key: v.id, value: v.optionValue ?? null, face: v, active: v.id === selectedId, out: !variantAvailable(v) }))
+  const onSwatch = (value: string | null, face: Variant | undefined) => {
+    if (sized) {
+      if (value) pickColour(value)
+    } else if (face) {
+      selectVariant(face)
+    }
+  }
+  const barOptions = sized ? sizeOptions : variants
+  const showBarSelect = sized ? sizeOptions.length > 1 : hasOptions
 
   useEffect(() => {
     const onScroll = () => {
@@ -117,13 +219,14 @@ export default function ProductDetailClient({ product, copy, payNote }: ProductD
     window.setTimeout(() => setShared(false), CONFIRMATION_MS)
   }
 
-  const onAdd = async () => {
+  async function onAddSelected() {
     if (!selected) return
     setError(null)
     openOverlay('cart')
     setAddPending(true)
     try {
       await add(selected.id, qty)
+      track('add_to_cart', { productSlug: product.slug })
       setJustAdded(true)
       window.clearTimeout(addedTimer.current)
       addedTimer.current = window.setTimeout(() => setJustAdded(false), CONFIRMATION_MS)
@@ -159,13 +262,13 @@ export default function ProductDetailClient({ product, copy, payNote }: ProductD
                 sizes="(min-width: 768px) 50vw, 100vw"
               />
             </div>
-            {selected?.optionValue && !images[activeImage]?.filePath && (
+            {shown?.optionValue && !images[activeImage]?.filePath && (
               <span
                 className="badge-pill absolute left-4 top-4 text-[15px]"
-                style={{ background: swatchTone(selected.optionValue) }}
+                style={{ background: swatchTone(shown.optionValue) }}
               >
                 <span className="badge-knob">◍</span>
-                {selected.optionValue}
+                {shown.optionValue}
               </span>
             )}
           </div>
@@ -203,32 +306,43 @@ export default function ProductDetailClient({ product, copy, payNote }: ProductD
 
           {copy.subtitle && <p className="mt-1.5 text-[13px] text-ink-soft">{copy.subtitle}</p>}
 
-          <p className="mt-5 text-[24px] font-bold">{formatMnt(unitPrice)}</p>
-          {preorderPriced ? (
+          {sale ? (
+            <>
+              <p className="mt-5 flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
+                <span className="text-[24px] font-bold tabular-nums text-sale">{formatMnt(sale.price)}</span>
+                <s className="text-[15px] tabular-nums text-ink-faint">{formatMnt(sale.was)}</s>
+                <span className="self-center rounded-full border border-sale/40 px-2 py-0.5 text-[12px] font-semibold tabular-nums text-sale">
+                  −{sale.pct}%
+                </span>
+              </p>
+              <p className="mt-1 text-[13px] text-ink-soft">
+                <span className="tabular-nums">{formatMnt(sale.was - sale.price)}</span> хэмнэнэ
+              </p>
+            </>
+          ) : (
+            <p className="mt-5 text-[24px] font-bold">{formatMnt(unitPrice)}</p>
+          )}
+          {preorderPriced && (
             <p className="text-[13px] text-ink-soft">
               Урьдчилсан захиалгын үнэ · Үндсэн үнэ <span className="tabular-nums">{formatMnt(normalPrice)}</span>
             </p>
-          ) : selected?.compareAtPriceMnt && (
-            <p className="text-[14px] text-ink-faint line-through">{formatMnt(selected.compareAtPriceMnt)}</p>
           )}
 
           {hasOptions && (
             <div className="mt-7">
               <p className="text-[13px]">
-                <span className="font-semibold">{variants[0]?.optionLabel}:</span>{' '}
-                <span className="text-ink-soft">{selected?.optionValue}</span>
+                <span className="font-semibold">{optionLabel}:</span>{' '}
+                <span className="text-ink-soft">{shown?.optionValue}</span>
               </p>
               <div className="mt-3 flex flex-wrap gap-3">
-                {variants.map((v) => {
-                  const out = !variantAvailable(v)
-                  const active = v.id === selectedId
+                {swatches.map(({ key, value, face, active, out }) => {
                   return (
                     <button
-                      key={v.id}
-                      onClick={() => selectVariant(v)}
+                      key={key}
+                      onClick={() => onSwatch(value, face)}
                       disabled={out}
                       aria-pressed={active}
-                      aria-label={v.optionValue ?? ''}
+                      aria-label={value ?? ''}
                       className={`group flex w-[74px] flex-col items-center gap-1.5 ${
                         out ? 'cursor-not-allowed opacity-40' : ''
                       }`}
@@ -240,11 +354,11 @@ export default function ProductDetailClient({ product, copy, payNote }: ProductD
                             : 'border-line group-hover:border-ink'
                         }`}
                       >
-                        {v.image?.filePath ? (
+                        {face?.image?.filePath ? (
                           <ProductImage
-                            filePath={v.image.filePath}
+                            filePath={face.image.filePath}
                             alt=""
-                            seed={v.id}
+                            seed={key}
                             width={52}
                             height={52}
                             className="h-full w-full"
@@ -252,7 +366,7 @@ export default function ProductDetailClient({ product, copy, payNote }: ProductD
                         ) : (
                           <span
                             className="block h-full w-full"
-                            style={{ background: swatchTone(v.optionValue) }}
+                            style={{ background: swatchTone(value) }}
                           />
                         )}
                       </span>
@@ -261,8 +375,56 @@ export default function ProductDetailClient({ product, copy, payNote }: ProductD
                           active ? 'font-medium text-ink' : 'text-ink-soft'
                         }`}
                       >
-                        {v.optionValue}
+                        {value}
                       </span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {sized && sizeOptions.length > 0 && (
+            <div
+              ref={sizeRowRef}
+              className={`-mx-3 mt-6 scroll-mt-24 rounded-2xl px-3 py-2 transition-colors duration-500 ${
+                nudged ? 'bg-primary-soft' : 'bg-transparent'
+              }`}
+            >
+              <p className="text-[13px]">
+                <span className="font-semibold">Хэмжээ:</span>{' '}
+                {selected?.size ? (
+                  <span className="text-ink-soft">{selected.size}</span>
+                ) : (
+                  <span className={nudged ? 'text-primary-soft-ink' : 'text-ink-faint'}>сонгоно уу</span>
+                )}
+              </p>
+              <div role="group" aria-label="Хэмжээ" className="mt-3 flex flex-wrap gap-2">
+                {sizeOptions.map((v) => {
+                  const out = !variantAvailable(v)
+                  const active = v.id === selected?.id
+                  const early = preorderOnly(v)
+                  return (
+                    <button
+                      key={v.id}
+                      onClick={() => pickSize(v)}
+                      disabled={out}
+                      aria-pressed={active}
+                      aria-label={early ? `${v.size} — урьдчилсан захиалга` : out ? `${v.size} — дууссан` : (v.size ?? '')}
+                      className={`flex min-h-11 min-w-11 flex-col items-center justify-center rounded-xl border px-3 text-[14px] tabular-nums transition-[border-color,background-color,transform] duration-150 active:scale-95 ${
+                        active
+                          ? 'border-ink-strong bg-ink-strong font-semibold text-on-ink'
+                          : out
+                            ? 'cursor-not-allowed border-line text-ink-faint line-through'
+                            : 'border-line-strong text-ink hover:border-ink'
+                      }`}
+                    >
+                      <span className="leading-none">{v.size}</span>
+                      {early && (
+                        <span className={`mt-1 text-[10px] leading-none ${active ? 'text-on-ink' : 'text-ink-soft'}`}>
+                          урьдчилсан
+                        </span>
+                      )}
                     </button>
                   )
                 })}
@@ -321,8 +483,8 @@ export default function ProductDetailClient({ product, copy, payNote }: ProductD
               ref={buyRef}
               variant="solid"
               size="touch"
-              onClick={onAdd}
-              disabled={!purchasable || adding}
+              onClick={onBuy}
+              disabled={buyDisabled}
               className="order-last col-span-2 w-full px-8 active:scale-[.98] sm:order-none sm:col-auto sm:w-auto sm:min-w-[160px] sm:flex-1"
             >
               {justAdded ? (
@@ -341,7 +503,7 @@ export default function ProductDetailClient({ product, copy, payNote }: ProductD
             </button>
           </div>
 
-          {!preorder && (
+          {!preorder && !needsSize && (
             <p className="mt-3 text-[13px] text-ink-soft">
               {purchasable
                 ? lowStock
@@ -384,30 +546,37 @@ export default function ProductDetailClient({ product, copy, payNote }: ProductD
               <p className="truncate text-[13px] font-semibold">{copy.title}</p>
               <p className="text-[13px] font-bold">{formatMnt(unitPrice)}</p>
             </div>
-            {hasOptions && (
+            {showBarSelect && (
               <Select
-                value={selectedId ?? ''}
+                value={(sized ? selected?.id : selectedId) ?? ''}
                 onValueChange={(id) => {
-                  const v = variants.find((x) => x.id === id)
-                  if (v) selectVariant(v)
+                  const v = barOptions.find((x) => x.id === id)
+                  if (!v) return
+                  if (sized) pickSize(v)
+                  else selectVariant(v)
                 }}
               >
                 <SelectTrigger
-                  aria-label={variants[0]?.optionLabel ?? undefined}
+                  aria-label={sized ? 'Хэмжээ' : (optionLabel ?? undefined)}
                   className="hidden rounded-none px-3 text-[13px] sm:flex"
                 >
-                  <SelectValue />
+                  <SelectValue placeholder={sized ? 'Хэмжээ' : undefined} />
                 </SelectTrigger>
                 <SelectContent position="popper" side="top" align="end" className="rounded-none border-line bg-paper">
-                  {variants.map((v) => (
-                    <SelectItem key={v.id} value={v.id} className="rounded-none text-[13px]">
-                      {v.optionValue}
+                  {barOptions.map((v) => (
+                    <SelectItem
+                      key={v.id}
+                      value={v.id}
+                      disabled={sized && !variantAvailable(v)}
+                      className="rounded-none text-[13px]"
+                    >
+                      {sized ? v.size : v.optionValue}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             )}
-            <Button variant="solid" size="touch" onClick={onAdd} disabled={!purchasable || adding} className="px-7">
+            <Button variant="solid" size="touch" onClick={onBuy} disabled={buyDisabled} className="px-7">
               {addLabel}
             </Button>
           </div>
