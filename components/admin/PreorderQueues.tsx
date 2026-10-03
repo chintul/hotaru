@@ -63,11 +63,11 @@ function WaitingForGoods({ orders, count, onDone }: QueueProps) {
         {orders.map((o) => {
           const items = nodes(o.orderItemCollection)
           return (
-            <li key={o.id} className="grid gap-2 border-b border-a-line px-6 py-3 last:border-0">
+            <li key={o.id} className="grid gap-2 border-b border-a-line px-4 py-3 last:border-0 sm:px-6">
               <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 text-[13px]">
                 <span className="flex min-w-0 items-baseline gap-2">
                   <OrderLink order={o} />
-                  <span className="truncate text-a-muted">{customerOf(o)}</span>
+                  <span className="min-w-0 truncate text-a-muted">{customerOf(o)}</span>
                 </span>
                 <span className="text-[12px] text-a-muted">
                   {o.paidAt ? `Урьдчилгаа ${formatDate(o.paidAt)}` : ''}
@@ -89,7 +89,7 @@ function WaitingForGoods({ orders, count, onDone }: QueueProps) {
                   Төлсөн <span className="text-a-ink">{formatMnt(upfrontOf(o))}</span>
                   {' · '}үлдэгдэл <span className="font-semibold text-a-ink">{formatMnt(o.balanceMnt)}</span>
                 </span>
-                <Button size="sm" variant="primary" disabled={requestBalance.loading} onClick={() => requestBalance.run(o)}>
+                <Button size="sm" variant="primary" className="max-sm:w-full" disabled={requestBalance.loading} onClick={() => requestBalance.run(o)}>
                   {REQUEST_BALANCE_LABEL}
                 </Button>
               </div>
@@ -98,7 +98,7 @@ function WaitingForGoods({ orders, count, onDone }: QueueProps) {
         })}
       </ul>
       {requestBalance.error && (
-        <p className="border-t border-a-line px-6 py-3 text-[13px] text-danger-ink">{requestBalance.error}</p>
+        <p className="border-t border-a-line px-4 py-3 text-[13px] text-danger-ink sm:px-6">{requestBalance.error}</p>
       )}
     </Card>
   )
@@ -139,14 +139,14 @@ function AwaitingBalance({ orders, count, onDone }: QueueProps) {
           return (
             <li
               key={o.id}
-              className={`flex flex-wrap items-center justify-between gap-3 border-b border-a-line px-6 py-3 last:border-0 ${
+              className={`flex flex-wrap items-center justify-between gap-3 border-b border-a-line px-4 py-3 last:border-0 sm:px-6 ${
                 submitted ? 'bg-warn-soft' : ''
               }`}
             >
               <div className="grid min-w-0 gap-0.5 text-[13px]">
                 <span className="flex min-w-0 items-baseline gap-2">
                   <OrderLink order={o} />
-                  <span className="truncate text-a-muted">{customerOf(o)}</span>
+                  <span className="min-w-0 truncate text-a-muted">{customerOf(o)}</span>
                 </span>
                 <span className="text-[12px] tabular-nums text-a-muted">
                   Үлдэгдэл <span className="font-semibold text-a-ink">{formatMnt(o.balanceMnt)}</span>
@@ -154,9 +154,9 @@ function AwaitingBalance({ orders, count, onDone }: QueueProps) {
                 </span>
               </div>
               {submitted ? (
-                <span className="flex flex-wrap items-center gap-2">
+                <span className="flex flex-wrap items-center gap-2 max-sm:w-full">
                   <Status tone="amber">Төлсөн гэж мэдэгдсэн</Status>
-                  <Button size="sm" variant="primary" disabled={loading} onClick={() => onConfirm(o)}>
+                  <Button size="sm" variant="primary" className="max-sm:w-full" disabled={loading} onClick={() => onConfirm(o)}>
                     Үлдэгдэл баталгаажуулах
                   </Button>
                 </span>
@@ -167,7 +167,7 @@ function AwaitingBalance({ orders, count, onDone }: QueueProps) {
           )
         })}
       </ul>
-      {error && <p className="border-t border-a-line px-6 py-3 text-[13px] text-danger-ink">{error}</p>}
+      {error && <p className="border-t border-a-line px-4 py-3 text-[13px] text-danger-ink sm:px-6">{error}</p>}
     </Card>
   )
 }

@@ -9,6 +9,7 @@ import { errorMessage } from '@/lib/errors'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
 import { UPSERT_PRODUCT } from './documents'
+import { TOUCH_INPUT } from './touch'
 import type { EditorCategory, EditorProduct, Refetch } from './types'
 
 export interface ProductFormProps {
@@ -38,6 +39,9 @@ const FIELD_NAMES: readonly (keyof ProductFields)[] = [
 ]
 
 type TextControl = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+
+const TOUCH_SELECT = 'h-10 text-[16px] md:h-8 md:text-[13px]'
+const TOUCH_TEXTAREA = 'text-[16px] md:text-[13px]'
 
 export default function ProductForm({ product, categories, refetch }: ProductFormProps) {
   const c = copy(product)
@@ -104,21 +108,21 @@ export default function ProductForm({ product, categories, refetch }: ProductFor
       actions={
         <>
           {saved && !dirty && <span className="text-[12px] text-success-ink">Хадгалсан</span>}
-          {dirty && <span className="text-[12px] text-warn-ink">Хадгалаагүй өөрчлөлт</span>}
-          <Button form="product-form" type="submit" variant="primary" disabled={!dirty || loading}>
+          {dirty && <span className="hidden text-[12px] text-warn-ink md:inline">Хадгалаагүй өөрчлөлт</span>}
+          <Button form="product-form" type="submit" variant="primary" disabled={!dirty || loading} className="hidden md:inline-flex">
             {loading ? 'Хадгалж байна…' : 'Хадгалах'}
           </Button>
         </>
       }
     >
       <form id="product-form" className="grid gap-4 sm:grid-cols-2" onSubmit={onSubmit}>
-        <Field label="Нэр" required><Input required value={f.title} onChange={set('title')} /></Field>
+        <Field label="Нэр" required><Input required value={f.title} onChange={set('title')} className={TOUCH_INPUT} /></Field>
         <Field label="Slug" required hint="URL дээр харагдана">
-          <Input required value={f.slug} onChange={set('slug')} />
+          <Input required value={f.slug} onChange={set('slug')} className={TOUCH_INPUT} />
         </Field>
-        <Field label="Дэд гарчиг"><Input value={f.subtitle} onChange={set('subtitle')} /></Field>
+        <Field label="Дэд гарчиг"><Input value={f.subtitle} onChange={set('subtitle')} className={TOUCH_INPUT} /></Field>
         <Field label="Ангилал">
-          <Select value={f.categorySlug} onChange={set('categorySlug')}>
+          <Select value={f.categorySlug} onChange={set('categorySlug')} className={TOUCH_SELECT}>
             <option value="">—</option>
             {categories.map((cat) => (
               <option key={cat.id} value={cat.slug}>
@@ -128,19 +132,19 @@ export default function ProductForm({ product, categories, refetch }: ProductFor
           </Select>
         </Field>
         <div className="sm:col-span-2">
-          <Field label="Тайлбар"><Textarea rows={4} value={f.description} onChange={set('description')} /></Field>
+          <Field label="Тайлбар"><Textarea rows={4} value={f.description} onChange={set('description')} className={TOUCH_TEXTAREA} /></Field>
         </div>
         <div className="sm:col-span-2">
-          <Field label="Арчилгаа"><Textarea rows={2} value={f.careDetails} onChange={set('careDetails')} /></Field>
+          <Field label="Арчилгаа"><Textarea rows={2} value={f.careDetails} onChange={set('careDetails')} className={TOUCH_TEXTAREA} /></Field>
         </div>
         <Field label="Төлөв">
-          <Select value={f.status} onChange={set('status')}>
+          <Select value={f.status} onChange={set('status')} className={TOUCH_SELECT}>
             <option value="draft">draft</option>
             <option value="active">active</option>
             <option value="archived">archived</option>
           </Select>
         </Field>
-        <div className="flex items-center gap-2 self-end pb-2">
+        <div className="flex min-h-10 items-center gap-2 self-end md:min-h-0 md:pb-2">
           <Checkbox
             id="product-featured"
             checked={f.isFeatured}
@@ -155,19 +159,28 @@ export default function ProductForm({ product, categories, refetch }: ProductFor
           <p className="mt-0.5 text-[12px] text-a-muted">Хоосон бол дээрх нэр, тайлбарыг ашиглана.</p>
         </div>
         <Field label="SEO гарчиг" hint={`${f.seoTitle.length}/60 тэмдэгт`}>
-          <Input value={f.seoTitle} onChange={set('seoTitle')} />
+          <Input value={f.seoTitle} onChange={set('seoTitle')} className={TOUCH_INPUT} />
         </Field>
         <Field label="SEO тайлбар" hint={`${f.seoDescription.length}/160 тэмдэгт`}>
-          <Input value={f.seoDescription} onChange={set('seoDescription')} />
+          <Input value={f.seoDescription} onChange={set('seoDescription')} className={TOUCH_INPUT} />
         </Field>
         <div className="rounded-lg border border-a-line bg-a-bg px-4 py-3 sm:col-span-2">
           <p className="mb-2 text-[12px] font-medium text-a-muted">Хайлтад ийм харагдана</p>
           <p className="truncate text-[16px] text-info-ink">{previewTitle}</p>
-          <p className="text-[12px] text-success-ink">hotaru.mn/shop/{product.slug}</p>
+          <p className="text-[12px] text-success-ink [overflow-wrap:anywhere]">hotaru.mn/shop/{product.slug}</p>
           <p className="line-clamp-2 text-[13px] text-a-muted">{previewDescription}</p>
         </div>
 
         {error && <p className="text-[13px] text-danger-ink sm:col-span-2">{error}</p>}
+
+        {(dirty || loading) && (
+          <div className="sticky bottom-3 z-10 flex items-center gap-3 rounded-xl border border-a-line bg-card/95 p-2 pl-3 shadow-lg backdrop-blur sm:col-span-2 md:hidden">
+            <span className="min-w-0 flex-1 truncate text-[12px] text-warn-ink">Хадгалаагүй өөрчлөлт</span>
+            <Button type="submit" variant="primary" disabled={loading} className="h-10 shrink-0 px-5 text-[14px]">
+              {loading ? 'Хадгалж байна…' : 'Хадгалах'}
+            </Button>
+          </div>
+        )}
       </form>
     </Card>
   )

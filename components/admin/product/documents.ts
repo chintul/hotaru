@@ -1,6 +1,8 @@
 import type { TypedDocumentNode } from '@apollo/client'
+import type { Connection } from '@/lib/types'
 import {
   ADMIN_ADD_IMAGE,
+  ADMIN_CREATE_SIZE_GRID,
   ADMIN_DELETE_IMAGE,
   ADMIN_DELETE_VARIANT,
   ADMIN_REORDER_IMAGES,
@@ -8,6 +10,7 @@ import {
   ADMIN_SET_STOCK,
   ADMIN_SET_VARIANT_PREORDER_PRICE,
   ADMIN_SET_VARIANT_IMAGE,
+  ADMIN_SET_VARIANT_SIZE,
   ADMIN_UPSERT_PRODUCT,
   ADMIN_UPSERT_VARIANT,
 } from '@/lib/queries'
@@ -97,3 +100,28 @@ export const SET_VARIANT_PREORDER_PRICE: TypedDocumentNode<
   unknown,
   { variantId: string; priceMnt: string | null }
 > = ADMIN_SET_VARIANT_PREORDER_PRICE
+
+export const SET_VARIANT_SIZE: TypedDocumentNode<
+  { adminSetVariantSize: { id: string; size?: string | null } | null },
+  { variantId: string; size: string | null }
+> = ADMIN_SET_VARIANT_SIZE
+
+export interface CreateSizeGridVars {
+  productId: string
+  sizes: string[]
+  priceMnt: string
+  colours: string[] | null
+  quantity: number
+  allowBackorder: boolean
+}
+
+export interface CreatedGridVariant {
+  id: string
+  optionValue?: string | null
+  size?: string | null
+}
+
+export const CREATE_SIZE_GRID: TypedDocumentNode<
+  { adminCreateSizeGrid: Connection<CreatedGridVariant> | null },
+  CreateSizeGridVars
+> = ADMIN_CREATE_SIZE_GRID

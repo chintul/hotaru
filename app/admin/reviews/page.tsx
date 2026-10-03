@@ -91,12 +91,12 @@ export default function ReviewsPage() {
           )}
 
           {sel.count > 0 && (
-            <div className="mb-3 overflow-hidden rounded-xl border border-border bg-card">
+            <div className="md:mb-3 md:overflow-hidden md:rounded-xl md:border md:border-border md:bg-card">
               <BulkBar count={sel.count} actions={bulkActions} onClear={sel.clear} />
             </div>
           )}
 
-          <div className="space-y-3">
+          <div className={sel.count > 0 ? 'space-y-3 max-md:pb-20' : 'space-y-3'}>
             {shown.map((r) => (
               <ReviewCard
                 key={r.id}
@@ -153,7 +153,7 @@ function ReviewCard({ review, selected, onToggle, onDone }: ReviewCardProps) {
         <span className="flex flex-wrap items-center gap-2">
           <SelectCell checked={selected} onChange={onToggle} />
           <span className="tabular-nums text-[15px]">{'★'.repeat(review.rating)}{'☆'.repeat(MAX_RATING - review.rating)}</span>
-          <span>{title}</span>
+          <span className="min-w-0 [overflow-wrap:anywhere]">{title}</span>
         </span>
       }
       subtitle={formatDate(review.createdAt)}
@@ -169,7 +169,7 @@ function ReviewCard({ review, selected, onToggle, onDone }: ReviewCardProps) {
       {review.title && <p className="text-[13px] font-medium text-a-ink">{review.title}</p>}
       {review.body && <p className="mt-1 text-[13px] text-a-muted">{review.body}</p>}
 
-      <div className="mt-4 flex flex-wrap items-center gap-2">
+      <div className="mt-4 flex flex-wrap items-center gap-2 max-sm:*:flex-1">
         <Button
           variant={review.isApproved ? 'secondary' : 'primary'}
           disabled={loading}
@@ -184,7 +184,7 @@ function ReviewCard({ review, selected, onToggle, onDone }: ReviewCardProps) {
         >
           {removing ? 'Устгаж байна…' : 'Устгах'}
         </Button>
-        {error && <span className="text-[13px] text-danger-ink">{error}</span>}
+        {error && <span className="text-[13px] text-danger-ink max-sm:basis-full">{error}</span>}
       </div>
     </Card>
   )

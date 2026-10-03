@@ -60,8 +60,8 @@ function Editor() {
       </Link>
 
       <PageHeader
-        title={copy(product).title ?? product.slug}
-        subtitle={product.slug}
+        title={<span className="[overflow-wrap:anywhere]">{copy(product).title ?? product.slug}</span>}
+        subtitle={<span className="[overflow-wrap:anywhere]">{product.slug}</span>}
         actions={<Status tone={STATUS_TONE[product.status ?? ''] ?? 'grey'}>{product.status}</Status>}
       />
 
