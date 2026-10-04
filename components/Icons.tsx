@@ -181,3 +181,10 @@ export const IconLogOut = (p: IconProps) => (
     <path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4" /><path d="M10 16 6 12l4-4M6 12h10" />
   </svg>
 )
+
+export const IconSparkle = (p: IconProps) => (
+  <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" {...p}>
+    <path d="M12 2.5c.5 4.6 2.9 7 7.5 7.5-4.6.5-7 2.9-7.5 7.5-.5-4.6-2.9-7-7.5-7.5 4.6-.5 7-2.9 7.5-7.5Z" />
+    <path d="M19 15.5c.2 1.8 1.1 2.7 2.9 2.9-1.8.2-2.7 1.1-2.9 2.9-.2-1.8-1.1-2.7-2.9-2.9 1.8-.2 2.7-1.1 2.9-2.9Z" opacity=".55" />
+  </svg>
+)
