@@ -413,7 +413,8 @@ body {
      below is what reads as glow. Opaque where backdrop-filter is missing,
      because 72% paper over unblurred photos is unreadable. */
   .glass-header {
-    background: color-mix(in oklab, var(--color-paper) 72%, transparent);
+    background-color: color-mix(in oklab, var(--color-paper) 72%, transparent);
+    transition: background-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
     -webkit-backdrop-filter: blur(18px) saturate(1.8);
     backdrop-filter: blur(18px) saturate(1.8);
     box-shadow:
@@ -422,7 +423,17 @@ body {
       0 12px 32px -20px color-mix(in oklab, var(--color-primary) 55%, transparent);
   }
   @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-    .glass-header { background: var(--color-paper); }
+    .glass-header { background-color: var(--color-paper); }
+  }
+  /* At the top of the home page the cover runs under the header. A soft paper
+     fade instead of a fill keeps the nav legible on the light campaign
+     photos, and keeps light dark-mode text off a bare photo. */
+  .glass-header[data-clear="true"] {
+    background-color: transparent;
+    background-image: linear-gradient(to bottom, color-mix(in oklab, var(--color-paper) 55%, transparent), transparent);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    box-shadow: none;
   }
 
   /* Variant name pill sitting over the image, with its little circular knob. */

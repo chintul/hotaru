@@ -13,7 +13,7 @@ export interface HeroSlide {
 
 const ADVANCE_MS = 6000
 
-export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
+export default function HeroCarousel({ slides, className = '' }: { slides: HeroSlide[]; className?: string }) {
   const track = useRef<HTMLDivElement>(null)
   const [current, setCurrent] = useState(0)
   const [held, setHeld] = useState(false)
@@ -43,7 +43,7 @@ export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
     <section
       aria-roledescription="carousel"
       aria-label="Онцлох"
-      className="relative bg-shade"
+      className={`relative bg-shade ${className}`}
       onPointerDown={() => setHeld(true)}
       onFocusCapture={() => setHeld(true)}
       onMouseEnter={() => setHovered(true)}

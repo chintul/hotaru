@@ -75,7 +75,6 @@ export default async function HomePage() {
   const featured = featuredOnly.length
     ? featuredOnly
     : nodes(catalogData?.productCollection);
-  const latest = nodes(newData?.productCollection);
   const covers = coverSlides(heroCategoriesData);
   const slides: HeroSlide[] = covers.length
     ? covers
@@ -95,9 +94,9 @@ export default async function HomePage() {
       <h1 className="sr-only">
         {hero.heroHeadline || "hotaru.mn — өдөр бүрийг гэрэлтүүлэх зүйлс"}
       </h1>
-      <HeroCarousel slides={slides} />
+      <HeroCarousel slides={slides} className="-mt-14 lg:-mt-[72px]" />
 
-      <NewArrivalsRail products={latest} />
+      <NewArrivalsRail products={nodes(newData?.productCollection)} />
 
       <section className="mx-auto max-w-350 px-5 py-14 lg:px-8">
         <SectionHeading

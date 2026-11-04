@@ -3,6 +3,7 @@ import { Unbounded } from 'next/font/google'
 import { copy, formatMnt, nodes, toNumber } from '@/lib/format'
 import { unitPriceOf } from '@/lib/preorder'
 import type { Product } from '@/lib/types'
+import AutoScroller from './AutoScroller'
 import ProductImage from './ProductImage'
 
 const display = Unbounded({
@@ -10,7 +11,6 @@ const display = Unbounded({
   display: 'swap',
 })
 
-const TILTS = ['-3deg', '2deg', '-1.5deg', '2.5deg', '-2deg']
 const TAGS = [
   'bg-blush text-blush-ink',
   'bg-cream text-cream-ink',
@@ -27,11 +27,11 @@ export default function NewArrivalsRail({ products }: { products: Product[] }) {
   if (!products.length) return null
 
   return (
-    <section aria-labelledby="new-arrivals-title" className="overflow-hidden bg-primary text-primary-on">
-      <div className="mx-auto flex max-w-350 items-baseline justify-between gap-6 px-5 pt-8 lg:px-8 lg:pt-10">
+    <section aria-labelledby="new-arrivals-title" className="bg-primary py-7 text-primary-on lg:py-9">
+      <div className="mx-auto flex max-w-350 items-baseline justify-between gap-6 px-5 lg:px-8">
         <h2
           id="new-arrivals-title"
-          className={`${display.className} text-[clamp(1.6rem,6vw,2.75rem)] font-extrabold lowercase leading-none tracking-[-0.03em]`}
+          className={`${display.className} text-[clamp(1.3rem,4.5vw,2rem)] font-extrabold lowercase leading-none tracking-[-0.03em]`}
         >
           шинээр ирсэн
         </h2>
@@ -40,23 +40,22 @@ export default function NewArrivalsRail({ products }: { products: Product[] }) {
         </Link>
       </div>
 
-      <ul className="snap-track mx-auto max-w-350 scroll-px-5 gap-3 px-5 pb-9 pt-6 lg:scroll-px-8 lg:gap-4 lg:px-8 [&>*]:basis-[42%] sm:[&>*]:basis-[24%] lg:[&>*]:basis-[15%]">
+      <AutoScroller className="mt-5 px-5 py-1 lg:px-8">
         {products.map((p, i) => {
           const c = copy(p)
           const image = nodes(p.productImageCollection)[0]
           return (
-            <li key={p.id ?? p.slug}>
+            <li key={p.id ?? p.slug} className="w-[148px] shrink-0 sm:w-[172px] lg:w-[196px]">
               <Link
                 href={`/shop/${p.slug}`}
-                style={{ rotate: TILTS[i % TILTS.length] }}
-                className="block rounded-[18px] bg-paper p-1 text-ink shadow-[0_14px_28px_-16px_rgb(0_0_0/0.55)] transition-[rotate,translate] duration-(--dur) ease-(--ease) hover:-translate-y-1 hover:rotate-0! focus-visible:rotate-0!"
+                className="block rounded-2xl bg-paper p-1 text-ink transition-transform duration-(--dur) ease-(--ease) hover:-translate-y-1"
               >
-                <span className="relative block aspect-square overflow-hidden rounded-[14px] bg-shade">
+                <span className="relative block aspect-square overflow-hidden rounded-xl bg-shade">
                   <ProductImage
                     filePath={image?.filePath}
                     alt={image?.alt || c.title || p.slug}
                     seed={p.slug}
-                    sizes="(min-width: 1024px) 15vw, (min-width: 640px) 24vw, 42vw"
+                    sizes="196px"
                   />
                 </span>
                 <span className="flex flex-col gap-1 px-1.5 pb-1.5 pt-2">
@@ -71,7 +70,7 @@ export default function NewArrivalsRail({ products }: { products: Product[] }) {
             </li>
           )
         })}
-      </ul>
+      </AutoScroller>
     </section>
   )
 }
