@@ -204,7 +204,7 @@ export default function ProductCard({
             )}
 
             {preorderOnly && (
-              <PreorderTag sticker className="absolute -bottom-2 -left-2" />
+              <PreorderTag sticker className="absolute bottom-2 left-2" />
             )}
 
             {badge && (

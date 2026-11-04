@@ -1,4 +1,3 @@
-import { IconSparkle } from './Icons'
 import { cn } from '@/lib/utils'
 
 interface PreorderTagProps {
@@ -12,36 +11,30 @@ const APPLE_BODY =
 const APPLE_STEM = 'M34 23 C33.8 17.5 35 13 38.5 9.5'
 const APPLE_LEAF = 'M37.5 15 C41 8 48.5 6.5 53.5 9 C50 15.5 42.5 17 37.5 15 Z'
 
-function Apple({ className }: { className?: string }) {
+function MiniApple() {
   return (
-    <span
-      role="img"
-      aria-label="Урьдчилсан захиалга"
-      className={cn('relative grid h-[72px] w-[68px] -rotate-[6deg] place-items-center text-blush-ink', className)}
-    >
-      <svg
-        viewBox="0 0 68 72"
-        aria-hidden
-        className="absolute inset-0 h-full w-full drop-shadow-[0_6px_10px_rgb(23_35_46/0.18)]"
-      >
-        <path d={APPLE_STEM} fill="none" className="stroke-paper" strokeWidth="5" strokeLinecap="round" />
-        <path d={APPLE_LEAF} className="fill-paper stroke-paper" strokeWidth="5" strokeLinejoin="round" />
-        <path d={APPLE_BODY} className="fill-blush stroke-paper" strokeWidth="2.5" strokeLinejoin="round" />
-        <path d={APPLE_STEM} fill="none" className="stroke-cream-ink" strokeWidth="2" strokeLinecap="round" />
-        <path d={APPLE_LEAF} className="fill-mint stroke-mint-ink" strokeWidth="1" strokeLinejoin="round" />
-        <path d="M17 33 C17.5 28 20.5 25 24 24" fill="none" className="stroke-paper/70" strokeWidth="2" strokeLinecap="round" />
-      </svg>
-      <span aria-hidden className="relative mt-3.5 flex flex-col items-center text-center leading-[1.05]">
-        <IconSparkle width="10" height="10" />
-        <span className="mt-0.5 text-[8px] font-bold">Урьдчилсан</span>
-        <span className="text-[8px] font-bold">захиалга</span>
-      </span>
-    </span>
+    <svg viewBox="6 5 56 64" aria-hidden className="h-4 w-4 shrink-0">
+      <path d={APPLE_BODY} className="fill-blush-ink" />
+      <path d={APPLE_STEM} fill="none" className="stroke-cream-ink" strokeWidth="4" strokeLinecap="round" />
+      <path d={APPLE_LEAF} className="fill-mint-ink" />
+      <path d="M17 33 C17.5 28 20.5 25 24 24" fill="none" className="stroke-paper/60" strokeWidth="3.5" strokeLinecap="round" />
+    </svg>
   )
 }
 
 export default function PreorderTag({ eta, sticker = false, className }: PreorderTagProps) {
-  if (sticker) return <Apple className={className} />
+  if (sticker)
+    return (
+      <span
+        className={cn(
+          'inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-blush py-1 pl-1 pr-2 text-[11px] font-semibold leading-none text-blush-ink shadow-(--t-lift) ring-1 ring-inset ring-blush-ink/15',
+          className,
+        )}
+      >
+        <MiniApple />
+        Урьдчилсан захиалга
+      </span>
+    )
   return (
     <span
       className={cn(
@@ -49,9 +42,7 @@ export default function PreorderTag({ eta, sticker = false, className }: Preorde
         className,
       )}
     >
-      <span aria-hidden className="grid h-4 w-4 shrink-0 place-items-center rounded-full bg-paper/80">
-        <IconSparkle width="10" height="10" />
-      </span>
+      <MiniApple />
       <span className="truncate">Урьдчилсан захиалга{eta ? ` · ${eta}` : ''}</span>
     </span>
   )
