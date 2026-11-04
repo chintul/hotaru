@@ -131,7 +131,7 @@ export default function CategoriesPage() {
       {draft && (
         <div className="mb-4">
           <Card title={draft.id ? 'Ангилал засах' : 'Шинэ ангилал'}>
-            <form className="grid gap-3 sm:grid-cols-4" onSubmit={onSubmit}>
+            <form className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" onSubmit={onSubmit}>
               <Field label="Нэр" required>
                 <Input required autoFocus value={draft.name} placeholder="Үсний гоёл"
                   onChange={(e) => {
@@ -153,20 +153,20 @@ export default function CategoriesPage() {
                 <Input inputMode="numeric" value={draft.sortOrder}
                   onChange={(e) => setDraft({ ...draft, sortOrder: e.target.value.replace(/[^\d-]/g, '') })} />
               </Field>
-              <div className="sm:col-span-4">
+              <div className="col-span-full">
                 <Field label="Тайлбар">
                   <Textarea rows={2} value={draft.description}
                     onChange={(e) => setDraft({ ...draft, description: e.target.value })} />
                 </Field>
               </div>
-              <div className="flex items-center gap-2 sm:col-span-4">
+              <div className="flex min-h-10 items-center gap-2 col-span-full">
                 <Checkbox id="category-visible" checked={draft.isVisible}
                   onCheckedChange={(checked) => setDraft({ ...draft, isVisible: checked === true })}
                   className="bg-card dark:bg-card" />
                 <Label htmlFor="category-visible" className="text-[13px] font-normal">Дэлгүүрт харуулах</Label>
               </div>
-              {error && <p className="text-[13px] text-danger-ink sm:col-span-4">{error}</p>}
-              <div className="flex gap-2 sm:col-span-4">
+              {error && <p className="text-[13px] text-danger-ink col-span-full">{error}</p>}
+              <div className="flex gap-2 col-span-full max-sm:*:flex-1">
                 <Button type="submit" variant="primary" disabled={saving}>
                   {saving ? 'Хадгалж байна…' : draft.id ? 'Хадгалах' : 'Үүсгэх'}
                 </Button>

@@ -19,6 +19,8 @@ import ProductImage from '@/components/ProductImage'
 import { Plus } from '@/components/admin/icons'
 import { errorMessage } from '@/lib/errors'
 import { PreorderBadge } from '@/components/admin/product/PreorderToggle'
+import SaleBadge from '@/components/admin/product/SaleBadge'
+import { maxSalePct } from '@/components/admin/product/saleBatch'
 
 const LOW_STOCK = 5
 const DELETE_CONFIRMATION_WORD = 'УСТГАХ'
@@ -56,27 +58,34 @@ export default function ProductsPage() {
     { key: 'image', header: '', render: (p) => {
       const img = firstNode(p.productImageCollection)
       return (
-        <span className="block h-9 w-9 overflow-hidden rounded-md bg-a-hover">
+        <span className="block h-9 w-9 shrink-0 overflow-hidden rounded-md bg-a-hover">
           {img && <ProductImage filePath={img.filePath} alt="" seed={p.id} width={36} height={36} />}
         </span>
       )
     } },
     { key: 'title', header: 'Бүтээгдэхүүн', render: (p) => (
-      <span className="font-medium">{copy(p).title ?? p.slug}</span>) },
+      <span className="line-clamp-2 font-medium [overflow-wrap:anywhere]">{copy(p).title ?? p.slug}</span>) },
     { key: 'variants', header: 'Сонголт', render: (p) => `${nodes(p.variantCollection).length}` },
     { key: 'stock', header: 'Үлдэгдэл', align: 'right', render: (p) => {
       const variants = nodes(p.variantCollection)
       const total = variants.reduce((s, v) => s + (v.quantity ?? 0), 0)
       const preorder = variants.some((v) => v.allowBackorder)
       return (
-        <span className="inline-flex items-center justify-end gap-2">
+        <span className="inline-flex flex-wrap items-center justify-end gap-x-2 gap-y-1">
           {preorder && <PreorderBadge />}
           <span className={`tabular-nums ${preorder ? '' : stockClass(total)}`}>{total}</span>
         </span>
       )
     } },
-    { key: 'price', header: 'Үнэ', align: 'right', render: (p) => (
-      <span className="tabular-nums">{formatMnt(p.minPriceMnt)}</span>) },
+    { key: 'price', header: 'Үнэ', align: 'right', render: (p) => {
+      const pct = maxSalePct(nodes(p.variantCollection))
+      return (
+        <span className="inline-flex flex-wrap items-center justify-end gap-x-2 gap-y-1">
+          {pct > 0 && <SaleBadge pct={pct} labelled />}
+          <span className="tabular-nums">{formatMnt(p.minPriceMnt)}</span>
+        </span>
+      )
+    } },
     { key: 'status', header: 'Төлөв', render: (p) => (
       <Status tone={statusTone(p.status)}>{p.status}</Status>) },
   ]

@@ -3,7 +3,11 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { copy, formatMnt, nodes, toNumber } from "@/lib/format";
-import type { Product, ProductImage as ProductImageData, Variant } from "@/lib/types";
+import type {
+  Product,
+  ProductImage as ProductImageData,
+  Variant,
+} from "@/lib/types";
 import ProductImage, { swatchTone } from "./ProductImage";
 import { useCanHover } from "./useCanHover";
 import { useCart } from "./useCart";
@@ -16,6 +20,7 @@ import { hasSizes, uniqueColours } from "@/lib/sizes";
 import { saleOf, type Sale } from "@/lib/sale";
 
 const MAX_SWATCHES_PER_ROW = 4;
+const MAX_CARD_SLIDES = 5;
 const ADDED_CONFIRMATION_MS = 1600;
 const CARD_SIZES = "(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw";
 
@@ -41,17 +46,20 @@ function nextVariantWithDifferentImage(
 type CardAction = "size" | "preorder" | "add";
 
 const ACTION_LABEL: Record<CardAction, string> = {
-  size: "Хэмжээ сонгох",
-  preorder: "Урьдчилан захиалах",
-  add: "Сагсанд нэмэх",
+  size: "Сагслах",
+  preorder: "Сагслах",
+  add: "Сагслах",
 };
 
 function cheapestSale(variants: Variant[]): Sale | null {
   const cheapest = variants.reduce<Variant | undefined>(
-    (best, v) => (best && toNumber(best.priceMnt) <= toNumber(v.priceMnt) ? best : v),
+    (best, v) =>
+      best && toNumber(best.priceMnt) <= toNumber(v.priceMnt) ? best : v,
     undefined,
   );
-  return cheapest ? saleOf(cheapest.priceMnt, cheapest.compareAtPriceMnt) : null;
+  return cheapest
+    ? saleOf(cheapest.priceMnt, cheapest.compareAtPriceMnt)
+    : null;
 }
 
 function saleBadge(variants: Variant[]): string | null {
@@ -72,7 +80,10 @@ function colourFaces(variants: Variant[]): Variant[] {
   });
 }
 
-export default function ProductCard({ product, priority = false }: ProductCardProps) {
+export default function ProductCard({
+  product,
+  priority = false,
+}: ProductCardProps) {
   const c = copy(product);
   const images = nodes(product.productImageCollection);
   const allVariants = nodes(product.variantCollection);
@@ -83,15 +94,28 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
 
   const variant: Variant | undefined = variants[active] ?? variants[0];
   const movedOffDefault = active > 0 && variant?.id;
-  const href = movedOffDefault && !sized
-    ? `/shop/${product.slug}?v=${variant.id}`
-    : `/shop/${product.slug}`;
+  const href =
+    movedOffDefault && !sized
+      ? `/shop/${product.slug}?v=${variant.id}`
+      : `/shop/${product.slug}`;
 
-  const primaryImage: ProductImageData | undefined = variant?.image ?? images[0];
+  const primaryImage: ProductImageData | undefined =
+    variant?.image ?? images[0];
   const hoverImage =
-    nextVariantWithDifferentImage(variants, active, primaryImage?.filePath)?.image ??
+    nextVariantWithDifferentImage(variants, active, primaryImage?.filePath)
+      ?.image ??
     images.find((i) => i.filePath !== primaryImage?.filePath) ??
     null;
+  const slides = [
+    primaryImage,
+    ...images.filter((i) => i.filePath !== primaryImage?.filePath),
+  ].slice(0, MAX_CARD_SLIDES);
+  const [slidesArmed, setSlidesArmed] = useState(false);
+  const [slide, setSlide] = useState(0);
+  const pickVariant = (i: number) => {
+    setActive(i);
+    setSlide(0);
+  };
 
   const { add } = useCart();
   const track = useTrack();
@@ -114,7 +138,10 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
       track("add_to_cart", { productSlug: product.slug });
       setAdded(true);
       window.clearTimeout(addedTimer.current);
-      addedTimer.current = window.setTimeout(() => setAdded(false), ADDED_CONFIRMATION_MS);
+      addedTimer.current = window.setTimeout(
+        () => setAdded(false),
+        ADDED_CONFIRMATION_MS,
+      );
     } catch {
       closeOverlay();
     } finally {
@@ -129,35 +156,75 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
     !allVariants.some((v) => (v.quantity ?? 0) > 0) &&
     allVariants.some((v) => v.allowBackorder);
   const preorderVariants = allVariants.filter((v) => v.allowBackorder);
-  const preorderPrices = preorderOnly && preorderVariants.some((v) => v.preorderPriceMnt != null)
-    ? preorderVariants.map((v) => unitPriceOf(v, 1))
-    : [];
-  const min = preorderPrices.length ? Math.min(...preorderPrices) : toNumber(product.minPriceMnt);
-  const max = preorderPrices.length ? Math.max(...preorderPrices) : toNumber(product.maxPriceMnt);
+  const preorderPrices =
+    preorderOnly && preorderVariants.some((v) => v.preorderPriceMnt != null)
+      ? preorderVariants.map((v) => unitPriceOf(v, 1))
+      : [];
+  const min = preorderPrices.length
+    ? Math.min(...preorderPrices)
+    : toNumber(product.minPriceMnt);
+  const max = preorderPrices.length
+    ? Math.max(...preorderPrices)
+    : toNumber(product.maxPriceMnt);
   const ranged = max > min;
   const priceSale = preorderPrices.length ? null : cheapestSale(allVariants);
   const badge = preorderPrices.length ? null : saleBadge(allVariants);
   const action: CardAction | null = pickSizeFirst
     ? "size"
     : quickAddVariantId
-      ? quickIsPreorder ? "preorder" : "add"
+      ? quickIsPreorder
+        ? "preorder"
+        : "add"
       : null;
-  const actionLabel = action ? `${c.title ?? product.slug} — ${ACTION_LABEL[action].toLowerCase()}` : undefined;
+  const actionLabel = action
+    ? `${c.title ?? product.slug} — ${ACTION_LABEL[action].toLowerCase()}`
+    : undefined;
 
   return (
     <div className="group flex h-full flex-col">
       <div className="relative">
         <Link href={href} className="block">
-          <div className="card-media relative aspect-square overflow-hidden bg-shade">
+          <div className="card-media relative aspect-square bg-shade p-1">
             <div className="media-primary absolute inset-0">
-              <ProductImage
-                filePath={primaryImage?.filePath}
-                alt={primaryImage?.alt || c.title || product.slug}
-                seed={product.slug}
-                priority={priority}
-                sizes={CARD_SIZES}
-              />
+              <div
+                key={active}
+                className="snap-track card-track"
+                onTouchStart={() => setSlidesArmed(true)}
+                onScroll={(e) => {
+                  const el = e.currentTarget;
+                  setSlide(Math.round(el.scrollLeft / el.clientWidth));
+                }}
+              >
+                {slides.map((image, i) => (
+                  <div key={image?.filePath ?? i}>
+                    {(i === 0 || slidesArmed) && (
+                      <ProductImage
+                        filePath={image?.filePath}
+                        alt={image?.alt || c.title || product.slug}
+                        seed={i === 0 ? product.slug : `${product.slug}-${i}`}
+                        priority={priority && i === 0}
+                        sizes={CARD_SIZES}
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
+            {slides.length > 1 && (
+              <div
+                aria-hidden
+                className="card-dots pointer-events-none absolute inset-x-2 top-1.5 flex gap-1"
+              >
+                {slides.map((image, i) => (
+                  <span
+                    key={image?.filePath ?? i}
+                    className={`h-[3px] flex-1 rounded-full shadow-[0_0_2px_rgb(23_35_46/0.45)] transition-colors duration-(--dur-fast) ${
+                      i === slide ? "bg-paper" : "bg-paper/45"
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
             {canHover && hoverImage && (
               <div className="media-hover absolute inset-0">
                 <ProductImage
@@ -168,7 +235,6 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
                 />
               </div>
             )}
-
             {showVariantPill && (
               <span
                 className="badge-pill absolute left-3 top-3"
@@ -180,11 +246,11 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
             )}
 
             {preorderOnly && (
-              <PreorderTag className="absolute right-2 top-2 max-w-[calc(100%-1rem)]" />
+              <PreorderTag sticker className="absolute bottom-2 left-2" />
             )}
 
             {badge && (
-              <span className="absolute bottom-2 left-2 rounded-full bg-paper px-2 py-0.5 text-[11px] font-semibold tabular-nums text-sale shadow-[var(--t-lift)]">
+              <span className="absolute bottom-2 left-2 rounded-full bg-paper px-2 py-0.5 text-[11px] font-semibold tabular-nums text-sale shadow-(--t-lift)">
                 {badge}
               </span>
             )}
@@ -201,7 +267,7 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
           <Link
             href={href}
             aria-label={actionLabel}
-            className="absolute bottom-2 right-2 hidden h-9 items-center rounded-full border border-line bg-paper px-3.5 text-[12px] font-semibold text-ink-strong shadow-[var(--t-lift)] transition-transform active:scale-95 sm:inline-flex"
+            className="absolute bottom-2 right-2 hidden h-9 items-center rounded-full border border-line bg-paper px-3.5 text-[12px] font-semibold text-ink-strong shadow-(--t-lift) transition-transform active:scale-95 sm:inline-flex"
           >
             {ACTION_LABEL[action]}
           </Link>
@@ -212,7 +278,7 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
             onClick={onQuickAdd}
             disabled={adding}
             aria-label={actionLabel}
-            className="absolute bottom-2 right-2 hidden h-9 w-9 place-items-center rounded-full border border-line bg-paper text-ink-strong shadow-[var(--t-lift)] transition-[transform,opacity] active:scale-90 disabled:opacity-60 sm:grid"
+            className="absolute bottom-2 right-2 hidden h-9 w-9 place-items-center rounded-full border border-line bg-paper text-ink-strong shadow-(--t-lift) transition-[transform,opacity] active:scale-90 disabled:opacity-60 sm:grid"
           >
             {added ? (
               <IconCheck width="18" height="18" />
@@ -235,9 +301,15 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
               эхлэх үнэ
             </span>
           ) : null}
-          <span className={priceSale ? "tabular-nums text-sale" : "tabular-nums"}>{formatMnt(min)}</span>
+          <span
+            className={priceSale ? "tabular-nums text-sale" : "tabular-nums"}
+          >
+            {formatMnt(min)}
+          </span>
           {priceSale && (
-            <s className="ml-1.5 text-[12px] font-normal tabular-nums text-ink-faint">{formatMnt(priceSale.was)}</s>
+            <s className="ml-1.5 text-[12px] font-normal tabular-nums text-ink-faint">
+              {formatMnt(priceSale.was)}
+            </s>
           )}
         </p>
 
@@ -246,9 +318,9 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
             {variants.slice(0, MAX_SWATCHES_PER_ROW).map((v, i) => (
               <button
                 key={v.id}
-                onMouseEnter={() => setActive(i)}
-                onFocus={() => setActive(i)}
-                onClick={() => setActive(i)}
+                onMouseEnter={() => pickVariant(i)}
+                onFocus={() => pickVariant(i)}
+                onClick={() => pickVariant(i)}
                 data-active={i === active}
                 className="swatch"
                 title={v.optionValue ?? ""}
@@ -286,10 +358,14 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
               onClick={onQuickAdd}
               disabled={adding}
               aria-label={actionLabel}
-              className="flex h-11 w-full items-center justify-center gap-1.5 rounded-full border border-line-strong bg-paper px-3 text-[13px] font-semibold text-ink-strong transition-[transform,opacity] active:scale-[0.97] disabled:opacity-60"
+              className="flex h-11 w-full items-center justify-center gap-1.5 rounded-full border border-line-strong bg-paper px-3 text-xs font-semibold text-ink-strong transition-[transform,opacity] active:scale-[0.97] disabled:opacity-60"
             >
-              {added ? <IconCheck width="16" height="16" /> : <IconBag width="16" height="16" />}
-              {added ? "Нэмэгдлээ" : ACTION_LABEL.add}
+              {added ? (
+                <IconCheck width="16" height="16" />
+              ) : (
+                <IconBag width="16" height="16" />
+              )}
+              {added ? "Нэмэгсэн" : ACTION_LABEL.add}
             </button>
           ) : action ? (
             <Link

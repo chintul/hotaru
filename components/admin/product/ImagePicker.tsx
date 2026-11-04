@@ -77,7 +77,11 @@ export default function ImagePicker({ open, onOpenChange, children, product, var
   return (
     <Popover open={open} onOpenChange={onOpenChange}>
       <PopoverTrigger asChild>{children}</PopoverTrigger>
-      <PopoverContent align="start" className="w-[340px] rounded-xl p-3">
+      <PopoverContent
+        align="start"
+        collisionPadding={12}
+        className="w-[340px] max-w-[calc(100vw-1.5rem)] rounded-xl p-3"
+      >
         <p className="px-0.5 pb-2 text-[12px] font-medium uppercase tracking-[0.04em] text-a-muted">
           Бүтээгдэхүүний зураг
         </p>
@@ -135,7 +139,7 @@ export default function ImagePicker({ open, onOpenChange, children, product, var
             variant="ghost"
             disabled={busy}
             onClick={() => assign(null)}
-            className="mt-1.5 h-9 w-full rounded-xl font-normal"
+            className="mt-1.5 h-10 w-full rounded-xl font-normal md:h-9"
           >
             зураг салгах
           </Button>

@@ -14,9 +14,10 @@ import { useAuthUpgrade } from '@/components/useAuthUpgrade'
 import CommandPalette from './CommandPalette'
 import { ConfirmProvider } from './confirm'
 import { Button, IconButton } from './ui'
+import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import Logo from '@/components/Logo'
 import {
-  Bell, Chevron, Dots, Folder, Orders, Panel, Products,
+  Bell, Chart, Chevron, Dots, Folder, Orders, Panel, Products,
   Search as SearchIcon, Settings, Star, Tag,
 } from './icons'
 import type { IconProps } from './icons'
@@ -41,6 +42,7 @@ const NAV: readonly NavItem[] = [
   { href: '/admin/categories', label: 'Ангилал', icon: Folder },
   { href: '/admin/discounts', label: 'Хөнгөлөлт', icon: Tag },
   { href: '/admin/reviews', label: 'Сэтгэгдэл', icon: Star },
+  { href: '/admin/analytics', label: 'Тайлан', icon: Chart },
   { href: '/admin/settings', label: 'Тохиргоо', icon: Settings },
 ]
 
@@ -83,6 +85,93 @@ const pendingQuery: TypedDocumentNode<
 
 const PENDING_POLL_MS = 60000
 
+interface SidebarProps {
+  pathname: string
+  pending: number
+  oversold: number
+  email: string | null | undefined
+  touch?: boolean
+  onSearch: () => void
+  onNavigate: () => void
+  onSignOut: () => void
+}
+
+function Sidebar({ pathname, pending, oversold, email, touch = false, onSearch, onNavigate, onSignOut }: SidebarProps) {
+  return (
+    <div className="flex h-full flex-col overflow-y-auto">
+      <div className={`flex items-center gap-2 px-4 ${touch ? 'py-2' : 'py-3'}`}>
+        <Logo className="h-5 w-auto" />
+        <IconButton asChild className="ml-auto size-6">
+          <Link href="/" title="Дэлгүүр" onClick={onNavigate}>
+            <Dots />
+          </Link>
+        </IconButton>
+      </div>
+
+      <div className="mx-3 border-t border-dashed border-a-line" />
+
+      <Button
+        variant="ghost"
+        onClick={onSearch}
+        className={`mx-2 mt-2 flex h-auto w-[calc(100%-16px)] justify-start gap-2.5 px-2 text-[14px] font-normal has-[>svg]:px-2 ${touch ? 'min-h-11 py-2.5' : 'py-1.5'}`}
+      >
+        <SearchIcon />
+        <span className="flex-1 text-left">Хайх</span>
+        {!touch && <kbd className="text-[11px] text-muted-foreground">⌘K</kbd>}
+      </Button>
+
+      <nav className="mt-1 px-2">
+        {NAV.map((item) => {
+          const active = owns(item, pathname)
+          const Icon = item.icon
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              onClick={onNavigate}
+              aria-current={active ? 'page' : undefined}
+              className={`mb-0.5 flex items-center gap-2.5 rounded-md px-2 text-[14px] transition-colors ${
+                touch ? 'min-h-11 py-2.5 text-[15px]' : 'py-1.5'
+              } ${
+                active
+                  ? 'border border-a-line bg-a-surface font-medium text-a-ink shadow-[0_1px_2px_rgba(0,0,0,.04)]'
+                  : 'border border-transparent text-a-muted hover:bg-a-hover hover:text-a-ink'
+              }`}
+            >
+              <Icon />
+              <span className="flex-1">{item.label}</span>
+              {item.badge === 'pending' && pending > 0 && (
+                <span className="rounded bg-warn-soft px-1.5 text-[11px] font-semibold text-warn-ink">{pending}</span>
+              )}
+            </Link>
+          )
+        })}
+      </nav>
+
+      {oversold > 0 && (
+        <Link href="/admin" onClick={onNavigate} className="mx-3 mt-3 block rounded-md border border-danger-line bg-danger-soft px-3 py-2.5">
+          <p className="text-[12px] font-semibold text-danger-ink">{oversold} захиалга нөөцгүй</p>
+          <p className="mt-0.5 text-[12px] text-danger-ink">Буцаалт шаардлагатай</p>
+        </Link>
+      )}
+
+      <div className="mt-auto px-3 py-3">
+        <div className="mx-1 border-t border-dashed border-a-line pt-3">
+          <p className="truncate px-1 text-[12px] text-a-muted">{email ?? '—'}</p>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onSignOut}
+            className="mt-1 h-auto px-1 py-1 font-normal hover:bg-transparent dark:hover:bg-transparent"
+          >
+            Гарах
+          </Button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function AdminShell({ children }: { children: ReactNode }) {
   const pathname = usePathname()
   const { user } = useSession()
@@ -108,112 +197,64 @@ export default function AdminShell({ children }: { children: ReactNode }) {
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
+  const sidebar = {
+    pathname,
+    pending,
+    oversold,
+    email: me?.email,
+    onSignOut: signOut,
+  }
+
+  const openPaletteFromMenu = () => { setMenuOpen(false); setPaletteOpen(true) }
+
   return (
     <div data-ui="admin" className="min-h-screen bg-background text-foreground">
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} nav={NAV} />
 
-      <aside
-        className={`fixed inset-y-0 left-0 z-40 w-60 border-r border-a-line bg-a-bg transition-transform lg:translate-x-0 ${
-          menuOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
-      >
-        <div className="flex items-center gap-2 px-4 py-3">
-          <Logo className="h-5 w-auto" />
-          <IconButton asChild className="ml-auto size-6">
-            <Link href="/" title="Дэлгүүр">
-              <Dots />
-            </Link>
-          </IconButton>
-        </div>
-
-        <div className="mx-3 border-t border-dashed border-a-line" />
-
-        <Button
-          variant="ghost"
-          onClick={() => setPaletteOpen(true)}
-          className="mx-2 mt-2 flex h-auto w-[calc(100%-16px)] justify-start gap-2.5 px-2 py-1.5 text-[14px] font-normal has-[>svg]:px-2"
-        >
-          <SearchIcon />
-          <span className="flex-1 text-left">Хайх</span>
-          <kbd className="text-[11px] text-muted-foreground">⌘K</kbd>
-        </Button>
-
-        <nav className="mt-1 px-2">
-          {NAV.map((item) => {
-            const active = owns(item, pathname)
-            const Icon = item.icon
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setMenuOpen(false)}
-                className={`mb-0.5 flex items-center gap-2.5 rounded-md px-2 py-1.5 text-[14px] transition-colors ${
-                  active
-                    ? 'border border-a-line bg-a-surface font-medium text-a-ink shadow-[0_1px_2px_rgba(0,0,0,.04)]'
-                    : 'border border-transparent text-a-muted hover:bg-a-hover hover:text-a-ink'
-                }`}
-              >
-                <Icon />
-                <span className="flex-1">{item.label}</span>
-                {item.badge === 'pending' && pending > 0 && (
-                  <span className="rounded bg-warn-soft px-1.5 text-[11px] font-semibold text-warn-ink">{pending}</span>
-                )}
-              </Link>
-            )
-          })}
-        </nav>
-
-        {oversold > 0 && (
-          <Link href="/admin" className="mx-3 mt-3 block rounded-md border border-danger-line bg-danger-soft px-3 py-2.5">
-            <p className="text-[12px] font-semibold text-danger-ink">{oversold} захиалга нөөцгүй</p>
-            <p className="mt-0.5 text-[12px] text-danger-ink">Буцаалт шаардлагатай</p>
-          </Link>
-        )}
-
-        <div className="absolute inset-x-0 bottom-0 px-3 py-3">
-          <div className="mx-1 border-t border-dashed border-a-line pt-3">
-            <p className="truncate px-1 text-[12px] text-a-muted">{me?.email ?? '—'}</p>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={signOut}
-              className="mt-1 h-auto px-1 py-1 font-normal hover:bg-transparent dark:hover:bg-transparent"
-            >
-              Гарах
-            </Button>
-          </div>
-        </div>
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-60 border-r border-a-line bg-a-bg lg:block">
+        <Sidebar {...sidebar} onSearch={() => setPaletteOpen(true)} onNavigate={() => setMenuOpen(false)} />
       </aside>
 
-      {menuOpen && (
-        <button className="fixed inset-0 z-30 bg-black/20 lg:hidden" onClick={() => setMenuOpen(false)} aria-label="Хаах" />
-      )}
+      <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
+        <SheetContent
+          side="left"
+          showCloseButton={false}
+          aria-describedby={undefined}
+          className="w-[min(18rem,85vw)] gap-0 border-a-line bg-a-bg pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] sm:max-w-none lg:hidden"
+        >
+          <SheetTitle className="sr-only">Админ</SheetTitle>
+          <Sidebar {...sidebar} touch onSearch={openPaletteFromMenu} onNavigate={() => setMenuOpen(false)} />
+        </SheetContent>
+      </Sheet>
 
-      <div className="lg:pl-[240px]">
-        <header className="sticky top-0 z-20 flex h-[52px] items-center gap-2 border-b border-a-line bg-a-bg/95 px-4 backdrop-blur">
-          <IconButton onClick={() => setMenuOpen(!menuOpen)} className="lg:hidden">
+      <div className="overflow-x-clip lg:pl-[240px]">
+        <header className="sticky top-0 z-20 flex h-12 items-center gap-1 border-b border-a-line bg-a-bg/95 px-1 backdrop-blur lg:h-[52px] lg:gap-2 lg:px-4">
+          <IconButton onClick={() => setMenuOpen(true)} className="lg:hidden" aria-label="Цэс" aria-expanded={menuOpen}>
             <Panel />
           </IconButton>
           <span className="hidden text-a-muted lg:block"><Panel /></span>
-          <nav className="flex items-center gap-1.5 text-[13px]">
+          <nav className="flex min-w-0 items-center gap-1.5 text-[13px]">
             {crumbs.map((c, i) => (
-              <span key={i} className="flex items-center gap-1.5">
+              <span key={i} className={`flex items-center gap-1.5 ${i === crumbs.length - 1 ? 'min-w-0' : 'shrink-0'}`}>
                 {i > 0 && <span className="text-a-muted"><Chevron width="12" height="12" /></span>}
                 {c.href && i < crumbs.length - 1 ? (
                   <Link href={c.href} className="text-a-muted hover:text-a-ink">{c.label}</Link>
                 ) : (
-                  <span className={i === crumbs.length - 1 ? 'text-a-ink' : 'text-a-muted'}>{c.label}</span>
+                  <span className={`truncate ${i === crumbs.length - 1 ? 'text-a-ink' : 'text-a-muted'}`}>{c.label}</span>
                 )}
               </span>
             ))}
           </nav>
-          <span className="ml-auto grid h-7 w-7 place-items-center rounded-md text-a-muted" title={pending ? `${pending} захиалга хүлээгдэж байна` : 'Мэдэгдэл алга'}>
+          <IconButton onClick={() => setPaletteOpen(true)} className="ml-auto lg:hidden" aria-label="Хайх">
+            <SearchIcon />
+          </IconButton>
+          <span className="relative grid h-10 w-10 shrink-0 place-items-center rounded-md text-a-muted lg:ml-auto lg:h-7 lg:w-7" title={pending ? `${pending} захиалга хүлээгдэж байна` : 'Мэдэгдэл алга'}>
             <Bell />
             {pending > 0 && <span className="absolute mt-[-14px] ml-[14px] h-1.5 w-1.5 rounded-full bg-warn" />}
           </span>
         </header>
 
-        <main className="mx-auto max-w-[1200px] px-4 py-6 lg:px-8">
+        <main className="mx-auto max-w-[1200px] px-3 pt-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:px-4 sm:py-6 lg:px-8">
           <ConfirmProvider>{children}</ConfirmProvider>
         </main>
       </div>

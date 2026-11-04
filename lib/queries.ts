@@ -13,7 +13,7 @@ export const PRODUCT_CARD = gql`
     productTranslationCollection(first: 1, filter: { locale: { eq: "mn" } }) {
       edges { node { title subtitle } }
     }
-    productImageCollection(first: 2, orderBy: [{ position: AscNullsLast }]) {
+    productImageCollection(first: 5, orderBy: [{ position: AscNullsLast }]) {
       edges { node { filePath alt width height position } }
     }
     variantCollection(first: 8, filter: { isActive: { eq: true } }, orderBy: [{ position: AscNullsLast }]) {
@@ -746,6 +746,36 @@ export const HERO = gql`
   query Hero {
     storeSettingsCollection(first: 1) {
       edges { node { heroImagePath heroHeadline heroSubline heroCtaLabel heroCtaHref } }
+    }
+  }
+`
+
+export const HERO_CATEGORIES = gql`
+  query HeroCategories {
+    categoryCollection(first: 20, filter: { isVisible: { eq: true } }) {
+      edges {
+        node {
+          id
+          slug
+          imagePath
+          categoryTranslationCollection(first: 1) { edges { node { name } } }
+          productCollection(
+            first: 1
+            filter: { status: { eq: active } }
+            orderBy: [{ createdAt: DescNullsLast }]
+          ) {
+            totalCount
+            edges {
+              node {
+                createdAt
+                productImageCollection(first: 1, orderBy: [{ position: AscNullsLast }]) {
+                  edges { node { filePath } }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   }
 `

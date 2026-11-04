@@ -136,7 +136,7 @@ export default function DiscountsPage() {
       {open && (
         <div className="mb-4">
           <Card title="Шинэ код">
-            <form className="grid gap-3 sm:grid-cols-5" onSubmit={onCreate}>
+            <form className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5" onSubmit={onCreate}>
               <Field label="Код" required>
                 <Input required value={f.code} onChange={(e) => setF({ ...f, code: e.target.value })} placeholder="NAMAR10" />
               </Field>
@@ -157,8 +157,8 @@ export default function DiscountsPage() {
                 <Input value={f.usageLimit}
                   onChange={(e) => setF({ ...f, usageLimit: digitsOnly(e.target.value) })} />
               </Field>
-              {error && <p className="text-[13px] text-danger-ink sm:col-span-5">{error}</p>}
-              <div className="flex gap-2 sm:col-span-5">
+              {error && <p className="text-[13px] text-danger-ink col-span-full">{error}</p>}
+              <div className="flex gap-2 col-span-full max-sm:*:flex-1">
                 <Button type="submit" variant="primary" disabled={saving}>{saving ? 'Хадгалж байна…' : 'Үүсгэх'}</Button>
                 <Button type="button" onClick={() => setOpen(false)}>Болих</Button>
               </div>

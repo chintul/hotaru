@@ -124,7 +124,7 @@ export default function NewProductPage() {
 
   return (
     <>
-      <Link href="/admin/products" className="mb-3 inline-block text-[13px] text-a-muted hover:text-a-ink">
+      <Link href="/admin/products" className="mb-1 inline-flex min-h-10 items-center text-[13px] text-a-muted hover:text-a-ink sm:mb-3 sm:inline-block sm:min-h-0">
         ← Бараа
       </Link>
       <PageHeader
@@ -180,7 +180,7 @@ export default function NewProductPage() {
           />
 
           {error && <p className="text-[13px] text-danger-ink sm:col-span-2">{error}</p>}
-          <div className="flex gap-2 sm:col-span-2">
+          <div className="flex gap-2 sm:col-span-2 max-sm:*:flex-1">
             <Button type="submit" variant="primary" disabled={loading}>
               {loading ? 'Үүсгэж байна…' : 'Үүсгээд зураг нэмэх'}
             </Button>

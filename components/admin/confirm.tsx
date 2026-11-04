@@ -61,7 +61,11 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
       {children}
       <Dialog open={pending !== null} onOpenChange={(open) => { if (!open) settle(false) }}>
         {options && (
-          <DialogContent showCloseButton={false} className="gap-4 p-5 sm:max-w-md">
+          <DialogContent
+            showCloseButton={false}
+            placement="bottom-on-phone"
+            className="gap-4 overflow-y-auto px-4 pt-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:max-w-md sm:rounded-lg sm:p-5"
+          >
             <form onSubmit={onSubmit} className="grid gap-4">
               <DialogHeader className="gap-1.5">
                 <DialogTitle className="text-[15px] leading-normal">{options.title}</DialogTitle>
@@ -79,8 +83,8 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
                 />
               )}
               <DialogFooter>
-                <Button type="button" onClick={() => settle(false)}>Болих</Button>
-                <Button type="submit" variant={options.destructive ? 'danger' : 'primary'} disabled={blocked}>
+                <Button type="button" className="max-sm:min-h-11" onClick={() => settle(false)}>Болих</Button>
+                <Button type="submit" className="max-sm:min-h-11" variant={options.destructive ? 'danger' : 'primary'} disabled={blocked}>
                   {options.confirmLabel ?? 'Тийм'}
                 </Button>
               </DialogFooter>

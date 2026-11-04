@@ -63,7 +63,7 @@ export default function CommandPalette({ open, onClose, nav }: CommandPalettePro
       <DialogContent
         showCloseButton={false}
         aria-describedby={undefined}
-        className="top-[15vh] w-[min(560px,92vw)] max-w-none translate-y-0 gap-0 overflow-hidden rounded-xl p-0 sm:max-w-none"
+        className="top-0 right-0 left-0 w-full max-w-none translate-x-0 translate-y-0 gap-0 overflow-hidden rounded-none rounded-b-xl border-x-0 border-t-0 p-0 pt-[env(safe-area-inset-top)] sm:top-[15vh] sm:right-auto sm:left-[50%] sm:w-[min(560px,92vw)] sm:max-w-none sm:translate-x-[-50%] sm:rounded-xl sm:border sm:pt-0"
       >
         <DialogTitle className="sr-only">Хайх</DialogTitle>
         <Palette onClose={onClose} nav={nav} />
@@ -134,16 +134,16 @@ function Palette({ onClose, nav }: Omit<CommandPaletteProps, 'open'>) {
           value={q}
           onValueChange={setQ}
           placeholder="Захиалгын дугаар, бараа, хуудас…"
-          className="h-12 pr-12 text-[14px]"
+          className="h-12 text-[16px] sm:pr-12 sm:text-[14px]"
         />
-        <kbd className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 rounded border border-border px-1.5 text-[11px] text-muted-foreground">esc</kbd>
+        <kbd className="pointer-events-none absolute right-4 hidden sm:block top-1/2 -translate-y-1/2 rounded border border-border px-1.5 text-[11px] text-muted-foreground">esc</kbd>
       </div>
-      <CommandList className="max-h-[50vh] py-1.5">
+      <CommandList className="max-h-[60dvh] py-1.5 sm:max-h-[50vh]">
         <CommandEmpty className="px-4 py-8 text-center text-[13px] text-muted-foreground">Илэрц алга</CommandEmpty>
         {groups.map(([group, items]) => (
           <CommandGroup key={group} heading={group} className="px-1.5 py-0 [&_[cmdk-group-heading]]:px-2.5 [&_[cmdk-group-heading]]:text-[11px] [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wide">
             {items.map((r) => (
-              <CommandItem key={r.id} value={r.id} onSelect={() => go(r)} className="gap-3 px-2.5 py-2">
+              <CommandItem key={r.id} value={r.id} onSelect={() => go(r)} className="min-h-11 gap-3 px-2.5 py-2 sm:min-h-0">
                 <span className="min-w-0 flex-1 truncate text-[13px]">{r.label}</span>
                 {r.hint && <span className="shrink-0 text-[12px] tabular-nums text-muted-foreground">{r.hint}</span>}
               </CommandItem>

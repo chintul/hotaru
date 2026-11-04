@@ -9,6 +9,7 @@ import { errorMessage } from '@/lib/errors'
 import { Button, Card, Field, Input } from '@/components/admin/ui'
 import { SET_PRODUCT_PREORDER, type PreorderTerms as Terms } from './documents'
 import { PreorderBadge } from './PreorderToggle'
+import { TOUCH_INPUT } from './touch'
 import type { EditorProduct, Refetch } from './types'
 
 export interface PreorderTermsProps {
@@ -52,11 +53,11 @@ export default function PreorderTerms({ product, refetch }: PreorderTermsProps) 
   }
 
   return (
-    <details className="group rounded-xl border border-a-line bg-card px-6 py-3 shadow-xs">
+    <details className="group rounded-xl border border-a-line bg-card px-4 py-3 shadow-xs sm:px-6">
       <summary className="flex cursor-pointer list-none items-center [&::-webkit-details-marker]:hidden justify-between gap-3 text-[13px]">
-        <span>
-          <span className="font-medium text-a-ink">{TITLE}</span>
-          <span className="ml-2 text-a-muted">
+        <span className="min-w-0">
+          <span className="font-medium text-a-ink max-sm:block">{TITLE}</span>
+          <span className="text-a-muted sm:ml-2">
             Аль нэг сонголтод “Урьдчилсан захиалга” асаахад хэрэгжинэ.
           </span>
         </span>
@@ -106,6 +107,7 @@ function TermsForm({ terms, price, refetch }: TermsFormProps) {
           inputMode="numeric"
           value={pct}
           aria-invalid={validPct == null}
+          className={TOUCH_INPUT}
           onChange={(e) => { setSaved(false); setPct(e.target.value.replace(/\D/g, '').slice(0, 3)) }}
         />
       </Field>
@@ -113,12 +115,13 @@ function TermsForm({ terms, price, refetch }: TermsFormProps) {
         <Input
           value={eta}
           placeholder="2–3 долоо хоног"
+          className={TOUCH_INPUT}
           onChange={(e) => { setSaved(false); setEta(e.target.value) }}
         />
       </Field>
-      <div className="flex items-center gap-2 sm:pt-[26px]">
-        {saved && !dirty && <span className="text-[12px] text-success-ink">Хадгалсан</span>}
-        <Button type="submit" variant="primary" disabled={!dirty || validPct == null || loading}>
+      <div className="flex items-center gap-2 max-sm:order-last max-sm:flex-col-reverse max-sm:items-stretch sm:pt-[26px]">
+        {saved && !dirty && <span className="text-[12px] text-success-ink max-sm:text-center">Хадгалсан</span>}
+        <Button type="submit" variant="primary" className="max-sm:h-10 max-sm:w-full" disabled={!dirty || validPct == null || loading}>
           {loading ? 'Хадгалж байна…' : 'Хадгалах'}
         </Button>
       </div>

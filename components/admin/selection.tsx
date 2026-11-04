@@ -43,7 +43,7 @@ const INDETERMINATE = [
   'data-[state=indeterminate]:grid data-[state=indeterminate]:place-items-center',
   'data-[state=indeterminate]:border-primary data-[state=indeterminate]:bg-primary data-[state=indeterminate]:text-primary-foreground',
   '[&[data-state=indeterminate]>span]:hidden',
-  'data-[state=indeterminate]:after:h-0.5 data-[state=indeterminate]:after:w-2 data-[state=indeterminate]:after:rounded-full data-[state=indeterminate]:after:bg-current',
+  'data-[state=indeterminate]:before:h-0.5 data-[state=indeterminate]:before:w-2 data-[state=indeterminate]:before:rounded-full data-[state=indeterminate]:before:bg-current',
 ].join(' ')
 
 interface BoxProps {

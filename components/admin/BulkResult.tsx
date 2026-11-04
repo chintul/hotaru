@@ -32,7 +32,7 @@ export default function BulkResult<Id extends RowId>({ result, labelFor = ownId,
           : 'border-warn-line bg-warn-soft text-warn-ink'
       }`}
     >
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         <span className="font-medium">
           {ok.length} амжилттай{failed.length > 0 ? ` · ${failed.length} алдаа` : ''}
         </span>

@@ -141,7 +141,7 @@ function SettingsForm({ settings, refetch }: SettingsFormProps) {
       />
 
       {placeholders.length > 0 && (
-        <div className="mb-6 rounded-lg border border-danger-line bg-danger-soft px-4 py-3">
+        <div className="mb-4 rounded-lg border border-danger-line bg-danger-soft px-4 py-3 sm:mb-6">
           <p className="text-[13px] font-medium text-danger-ink">
             {placeholders.length} талбар загварын утгатай байна
           </p>
@@ -152,14 +152,14 @@ function SettingsForm({ settings, refetch }: SettingsFormProps) {
         </div>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
         {GROUPS.map((group) => (
           <Card key={group.title} title={group.title}>
             {group.hint && <p className="mb-4 text-[13px] text-a-muted">{group.hint}</p>}
             <div className="space-y-4">
               {group.fields.map((field) => (
                 field.kind === 'toggle' ? (
-                  <div key={field.key} className="flex items-center gap-3">
+                  <div key={field.key} className="flex min-h-10 items-center gap-3">
                     <Checkbox
                       id={`setting-${field.key}`}
                       checked={Boolean(form[field.key])}
@@ -182,8 +182,8 @@ function SettingsForm({ settings, refetch }: SettingsFormProps) {
         ))}
       </div>
 
-      <div className="mt-6 flex items-center gap-3">
-        <Button type="submit" disabled={saving}>{saving ? 'Хадгалж байна…' : 'Хадгалах'}</Button>
+      <div className="mt-4 flex flex-wrap items-center gap-3 sm:mt-6">
+        <Button type="submit" className="max-sm:w-full" disabled={saving}>{saving ? 'Хадгалж байна…' : 'Хадгалах'}</Button>
         {saved && <span className="text-[13px] text-success-ink">Хадгалагдлаа.</span>}
         {error && <span className="text-[13px] text-danger-ink">{error}</span>}
       </div>
