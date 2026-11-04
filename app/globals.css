@@ -389,6 +389,25 @@ body {
     .card-media:hover img, .card-media:hover .ph { transform: scale(1.03); }
   }
 
+  /* Swipeable card photos. One markup for every device, because useCanHover
+     is false during SSR: a pointer device keeps the hover cross-fade above and
+     only ever shows the first slide; a touch screen gets the swipe and the
+     story-bar segments. */
+  .snap-track {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+  }
+  .snap-track::-webkit-scrollbar { display: none; }
+  .snap-track > * { flex: 0 0 100%; scroll-snap-align: start; scroll-snap-stop: always; position: relative; }
+  .card-track { height: 100%; }
+  @media (hover: hover) {
+    .card-track { overflow-x: hidden; }
+    .card-dots { display: none; }
+  }
+
   /* Variant name pill sitting over the image, with its little circular knob. */
   .badge-pill {
     display: inline-flex;

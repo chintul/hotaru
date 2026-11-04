@@ -1,16 +1,23 @@
-import Link from "next/link";
 import { safeQuery } from "@/lib/apollo/safeQuery";
 import {
+  CATALOG_PAGE,
   FEATURED_PRODUCTS,
   HERO,
+  HERO_CATEGORIES,
   NEW_ARRIVALS,
 } from "@/lib/queries";
 import { firstNode, nodes } from "@/lib/format";
 import { paymentCopy } from "@/lib/payment-copy";
-import ProductImage from "@/components/ProductImage";
+import HeroCarousel, { type HeroSlide } from "@/components/HeroCarousel";
+import NewArrivalsRail from "@/components/NewArrivalsRail";
 import ProductGrid from "@/components/ProductGrid";
 import SectionHeading from "@/components/SectionHeading";
-import type { Connection, Product, StoreSettings } from "@/lib/types";
+import type {
+  Category,
+  Connection,
+  Product,
+  StoreSettings,
+} from "@/lib/types";
 
 interface ProductListData {
   productCollection: Connection<Product> | null;
@@ -20,6 +27,43 @@ interface HeroData {
   storeSettingsCollection: Connection<StoreSettings> | null;
 }
 
+interface HeroCategoriesData {
+  categoryCollection: Connection<Category> | null;
+}
+
+const CATEGORY_SLIDES = 4;
+
+function categorySlides(data: HeroCategoriesData | null): HeroSlide[] {
+  return nodes(data?.categoryCollection)
+    .map((category) => {
+      const newest = firstNode(category.productCollection);
+      return {
+        category,
+        newest: newest?.createdAt ?? "",
+        count: category.productCollection?.totalCount ?? 0,
+        imagePath:
+          category.imagePath ??
+          firstNode(newest?.productImageCollection)?.filePath,
+      };
+    })
+    .filter((c) => c.count > 0 && c.imagePath)
+    .sort((a, b) => b.newest.localeCompare(a.newest))
+    .slice(0, CATEGORY_SLIDES)
+    .map(({ category, count, imagePath }) => {
+      const name =
+        firstNode(category.categoryTranslationCollection)?.name ??
+        category.slug;
+      return {
+        id: `category-${category.slug}`,
+        imagePath,
+        kicker: `${count} бараа`,
+        headline: name,
+        ctaLabel: "Бүгдийг үзэх",
+        href: `/shop?c=${category.slug}`,
+      };
+    });
+}
+
 export const revalidate = 60;
 
 export default async function HomePage() {
@@ -27,55 +71,47 @@ export default async function HomePage() {
     { data: featuredData, error },
     { data: newData },
     { data: heroData },
+    { data: heroCategoriesData },
+    { data: catalogData },
   ] = await Promise.all([
     safeQuery<ProductListData>(FEATURED_PRODUCTS),
-    safeQuery<ProductListData>(NEW_ARRIVALS, { first: 8 }),
+    safeQuery<ProductListData>(NEW_ARRIVALS, { first: 12 }),
     safeQuery<HeroData>(HERO),
+    safeQuery<HeroCategoriesData>(HERO_CATEGORIES),
+    safeQuery<ProductListData>(CATALOG_PAGE, { first: 8 }),
   ]);
   const pay = await paymentCopy();
 
   const hero: StoreSettings = firstNode(heroData?.storeSettingsCollection) ?? {};
 
-  const featured = nodes(featuredData?.productCollection);
+  const featuredOnly = nodes(featuredData?.productCollection);
+  const featured = featuredOnly.length
+    ? featuredOnly
+    : nodes(catalogData?.productCollection);
   const latest = nodes(newData?.productCollection);
+  const slides: HeroSlide[] = [
+    {
+      id: "store",
+      imagePath: hero.heroImagePath,
+      kicker: hero.heroSubline,
+      headline: hero.heroHeadline ?? "Өдөр бүрийг тань гэрэлтүүлэх зүйлс",
+      ctaLabel: hero.heroCtaLabel ?? "Дэлгүүр үзэх",
+      href: hero.heroCtaHref ?? "/shop",
+    },
+    ...categorySlides(heroCategoriesData),
+  ];
 
   return (
     <>
-      <section className="relative overflow-hidden bg-[#c98a5b]">
-        {hero.heroImagePath && (
-          <div className="absolute inset-0">
-            <ProductImage
-              filePath={hero.heroImagePath}
-              alt={hero.heroHeadline ?? ""}
-              seed="hero"
-              priority
-              sizes="100vw"
-            />
-          </div>
-        )}
+      <HeroCarousel slides={slides} />
 
-        <div className="relative mx-auto flex min-h-95 max-w-350 items-center px-5 py-16 lg:min-h-130 lg:px-8">
-          <div className="fade-up max-w-130 bg-paper/92 px-8 py-9 backdrop-blur-[2px] lg:px-10 lg:py-11">
-            {hero.heroSubline && (
-              <p className="text-xs font-semibold uppercase tracking-[1.2px] text-ink-soft">
-                {hero.heroSubline}
-              </p>
-            )}
-            <h1 className="mt-3 text-[clamp(1.8rem,4vw,3rem)] font-bold leading-[1.1] tracking-[-.01em] text-ink">
-              {hero.heroHeadline ?? "Өдөр бүрийг тань гэрэлтүүлэх зүйлс"}
-            </h1>
-            <Link
-              href={hero.heroCtaHref ?? "/shop"}
-              className="mt-7 inline-block bg-primary-strong px-8 py-3.5 text-[13px] font-bold uppercase tracking-[0.7px] text-on-primary transition-opacity hover:opacity-85"
-            >
-              {hero.heroCtaLabel ?? "Дэлгүүр үзэх"}
-            </Link>
-          </div>
-        </div>
-      </section>
+      <NewArrivalsRail products={latest} />
 
-      <section className="mx-auto max-w-350 px-5 py-8 lg:px-8">
-        <SectionHeading title="Онцлох бүтээгдэхүүн" href="/shop" />
+      <section className="mx-auto max-w-350 px-5 py-14 lg:px-8">
+        <SectionHeading
+          title={featuredOnly.length ? "Онцлох бүтээгдэхүүн" : "Бүх бараа"}
+          href="/shop"
+        />
         {error ? (
           <div className="border border-line bg-shade px-5 py-14 text-center">
             <p className="text-ink-soft">Бүтээгдэхүүн ачаалж чадсангүй.</p>
@@ -87,13 +123,6 @@ export default async function HomePage() {
           <ProductGrid products={featured} />
         )}
       </section>
-
-      {latest.length > 0 && (
-        <section className="mx-auto max-w-350 px-5 py-14 lg:px-8">
-          <SectionHeading title="Шинээр нэмэгдсэн" href="/shop" />
-          <ProductGrid products={latest} />
-        </section>
-      )}
 
       <section className="border-y border-line bg-shade">
         <div className="mx-auto grid max-w-350 gap-8 px-5 py-12 text-center sm:grid-cols-3 lg:px-8">

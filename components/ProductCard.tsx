@@ -20,6 +20,7 @@ import { hasSizes, uniqueColours } from "@/lib/sizes";
 import { saleOf, type Sale } from "@/lib/sale";
 
 const MAX_SWATCHES_PER_ROW = 4;
+const MAX_CARD_SLIDES = 5;
 const ADDED_CONFIRMATION_MS = 1600;
 const CARD_SIZES = "(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw";
 
@@ -105,6 +106,16 @@ export default function ProductCard({
       ?.image ??
     images.find((i) => i.filePath !== primaryImage?.filePath) ??
     null;
+  const slides = [
+    primaryImage,
+    ...images.filter((i) => i.filePath !== primaryImage?.filePath),
+  ].slice(0, MAX_CARD_SLIDES);
+  const [slidesArmed, setSlidesArmed] = useState(false);
+  const [slide, setSlide] = useState(0);
+  const pickVariant = (i: number) => {
+    setActive(i);
+    setSlide(0);
+  };
 
   const { add } = useCart();
   const track = useTrack();
@@ -175,14 +186,45 @@ export default function ProductCard({
         <Link href={href} className="block">
           <div className="card-media relative aspect-square bg-shade p-1">
             <div className="media-primary absolute inset-0">
-              <ProductImage
-                filePath={primaryImage?.filePath}
-                alt={primaryImage?.alt || c.title || product.slug}
-                seed={product.slug}
-                priority={priority}
-                sizes={CARD_SIZES}
-              />
+              <div
+                key={active}
+                className="snap-track card-track"
+                onTouchStart={() => setSlidesArmed(true)}
+                onScroll={(e) => {
+                  const el = e.currentTarget;
+                  setSlide(Math.round(el.scrollLeft / el.clientWidth));
+                }}
+              >
+                {slides.map((image, i) => (
+                  <div key={image?.filePath ?? i}>
+                    {(i === 0 || slidesArmed) && (
+                      <ProductImage
+                        filePath={image?.filePath}
+                        alt={image?.alt || c.title || product.slug}
+                        seed={i === 0 ? product.slug : `${product.slug}-${i}`}
+                        priority={priority && i === 0}
+                        sizes={CARD_SIZES}
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
+            {slides.length > 1 && (
+              <div
+                aria-hidden
+                className="card-dots pointer-events-none absolute inset-x-2 top-1.5 flex gap-1"
+              >
+                {slides.map((image, i) => (
+                  <span
+                    key={image?.filePath ?? i}
+                    className={`h-[3px] flex-1 rounded-full shadow-[0_0_2px_rgb(23_35_46/0.45)] transition-colors duration-(--dur-fast) ${
+                      i === slide ? "bg-paper" : "bg-paper/45"
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
             {canHover && hoverImage && (
               <div className="media-hover absolute inset-0">
                 <ProductImage
@@ -276,9 +318,9 @@ export default function ProductCard({
             {variants.slice(0, MAX_SWATCHES_PER_ROW).map((v, i) => (
               <button
                 key={v.id}
-                onMouseEnter={() => setActive(i)}
-                onFocus={() => setActive(i)}
-                onClick={() => setActive(i)}
+                onMouseEnter={() => pickVariant(i)}
+                onFocus={() => pickVariant(i)}
+                onClick={() => pickVariant(i)}
                 data-active={i === active}
                 className="swatch"
                 title={v.optionValue ?? ""}

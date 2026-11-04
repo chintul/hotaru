@@ -88,6 +88,7 @@ export interface Product {
   ratingAvg?: number | string | null
   ratingCount?: number | null
   publishedAt?: string | null
+  createdAt?: string | null
   preorderDepositPct?: number | null
   preorderEta?: string | null
   category?: { slug: string } | null
