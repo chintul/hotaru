@@ -757,7 +757,6 @@ export const HERO_CATEGORIES = gql`
         node {
           id
           slug
-          imagePath
           heroImagePath
           categoryTranslationCollection(first: 1) { edges { node { name } } }
           productCollection(
@@ -766,14 +765,7 @@ export const HERO_CATEGORIES = gql`
             orderBy: [{ createdAt: DescNullsLast }]
           ) {
             totalCount
-            edges {
-              node {
-                createdAt
-                productImageCollection(first: 1, orderBy: [{ position: AscNullsLast }]) {
-                  edges { node { filePath } }
-                }
-              }
-            }
+            edges { node { createdAt } }
           }
         }
       }

@@ -408,6 +408,23 @@ body {
     .card-dots { display: none; }
   }
 
+  /* Frosted header. The page scrolls under it, so the cover and the navy rail
+     show through blurred; the inset hairline is the lit edge, the navy bloom
+     below is what reads as glow. Opaque where backdrop-filter is missing,
+     because 72% paper over unblurred photos is unreadable. */
+  .glass-header {
+    background: color-mix(in oklab, var(--color-paper) 72%, transparent);
+    -webkit-backdrop-filter: blur(18px) saturate(1.8);
+    backdrop-filter: blur(18px) saturate(1.8);
+    box-shadow:
+      inset 0 -1px 0 color-mix(in oklab, var(--color-line) 70%, transparent),
+      inset 0 1px 0 color-mix(in oklab, #fff 60%, transparent),
+      0 12px 32px -20px color-mix(in oklab, var(--color-primary) 55%, transparent);
+  }
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .glass-header { background: var(--color-paper); }
+  }
+
   /* Variant name pill sitting over the image, with its little circular knob. */
   .badge-pill {
     display: inline-flex;

@@ -7,10 +7,7 @@ import ProductImage from './ProductImage'
 export interface HeroSlide {
   id: string
   imagePath?: string | null
-  wide?: boolean
-  kicker?: string | null
-  headline: string
-  ctaLabel: string
+  label: string
   href: string
 }
 
@@ -40,11 +37,13 @@ export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
     return () => window.clearInterval(timer)
   }, [slides.length, held, hovered])
 
+  if (!slides.length) return null
+
   return (
     <section
       aria-roledescription="carousel"
       aria-label="Онцлох"
-      className="relative overflow-hidden bg-[#c98a5b]"
+      className="relative bg-shade"
       onPointerDown={() => setHeld(true)}
       onFocusCapture={() => setHeld(true)}
       onMouseEnter={() => setHovered(true)}
@@ -58,58 +57,36 @@ export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
           setCurrent(Math.round(el.scrollLeft / el.clientWidth))
         }}
       >
-        {slides.map((s, i) => {
-          const Heading = i === 0 ? 'h1' : 'h2'
-          return (
-            <div
-              key={s.id}
-              role="group"
-              aria-roledescription="slide"
-              aria-label={`${i + 1} / ${slides.length}`}
-              aria-hidden={i !== current}
-              inert={i !== current}
-            >
-              {s.imagePath && (
-                <div className="absolute inset-0">
-                  <ProductImage
-                    filePath={s.imagePath}
-                    alt=""
-                    seed={s.id}
-                    priority={i === 0}
-                    sizes="100vw"
-                    className={s.wide ? 'object-[74%_50%] lg:object-center' : ''}
-                  />
-                </div>
-              )}
-              <div className="relative mx-auto flex min-h-110 max-w-350 items-end px-5 pb-16 pt-16 lg:min-h-130 lg:items-center lg:px-8 lg:pb-20">
-                <div className={`max-w-130 bg-paper/92 px-6 py-6 backdrop-blur-[2px] sm:px-8 sm:py-9 lg:px-10 lg:py-11 ${i === 0 ? 'fade-up' : ''}`}>
-                  {s.kicker && (
-                    <p className="text-xs font-semibold uppercase tracking-[1.2px] text-ink-soft">{s.kicker}</p>
-                  )}
-                  <Heading className="mt-2 text-[clamp(1.8rem,4vw,3rem)] empty:hidden sm:mt-3 font-bold leading-[1.1] tracking-[-.01em] text-ink">
-                    {s.headline}
-                  </Heading>
-                  <Link
-                    href={s.href}
-                    className="mt-5 inline-block bg-primary-strong sm:mt-7 px-8 py-3.5 text-[13px] font-bold uppercase tracking-[0.7px] text-on-primary transition-opacity hover:opacity-85"
-                  >
-                    {s.ctaLabel}
-                  </Link>
-                </div>
-              </div>
-            </div>
-          )
-        })}
+        {slides.map((s, i) => (
+          <Link
+            key={s.id}
+            href={s.href}
+            aria-roledescription="slide"
+            aria-label={`${s.label} — ${i + 1} / ${slides.length}`}
+            aria-hidden={i !== current}
+            tabIndex={i === current ? 0 : -1}
+            className="block aspect-[2/1] sm:aspect-[3/1]"
+          >
+            <ProductImage
+              filePath={s.imagePath}
+              alt=""
+              seed={s.id}
+              priority={i === 0}
+              sizes="100vw"
+              className="object-[74%_50%] sm:object-center"
+            />
+          </Link>
+        ))}
       </div>
 
       {slides.length > 1 && (
-        <div className="absolute inset-x-0 bottom-3 flex justify-center gap-1">
+        <div className="absolute inset-x-0 bottom-1 flex justify-center gap-1 sm:bottom-3">
           {slides.map((s, i) => (
             <button
               key={s.id}
               type="button"
               onClick={() => goTo(i)}
-              aria-label={`${i + 1}-р слайд`}
+              aria-label={`${s.label} — ${i + 1}-р слайд`}
               aria-current={i === current}
               className="grid h-11 w-8 place-items-center"
             >

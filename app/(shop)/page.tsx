@@ -31,43 +31,24 @@ interface HeroCategoriesData {
   categoryCollection: Connection<Category> | null;
 }
 
-const CATEGORY_SLIDES = 4;
-
-function categorySlides(data: HeroCategoriesData | null): HeroSlide[] {
+function coverSlides(data: HeroCategoriesData | null): HeroSlide[] {
   return nodes(data?.categoryCollection)
-    .map((category) => {
-      const newest = firstNode(category.productCollection);
-      return {
-        category,
-        newest: newest?.createdAt ?? "",
-        count: category.productCollection?.totalCount ?? 0,
-        wide: Boolean(category.heroImagePath),
-        imagePath:
-          category.heroImagePath ??
-          category.imagePath ??
-          firstNode(newest?.productImageCollection)?.filePath,
-      };
-    })
-    .filter((c) => c.count > 0 && c.imagePath)
-    .sort(
-      (a, b) =>
-        Number(b.wide) - Number(a.wide) || b.newest.localeCompare(a.newest),
+    .filter(
+      (c) => c.heroImagePath && (c.productCollection?.totalCount ?? 0) > 0,
     )
-    .slice(0, CATEGORY_SLIDES)
-    .map(({ category, count, imagePath, wide }) => {
-      const name =
+    .sort((a, b) =>
+      (firstNode(b.productCollection)?.createdAt ?? "").localeCompare(
+        firstNode(a.productCollection)?.createdAt ?? "",
+      ),
+    )
+    .map((category) => ({
+      id: `category-${category.slug}`,
+      imagePath: category.heroImagePath,
+      label:
         firstNode(category.categoryTranslationCollection)?.name ??
-        category.slug;
-      return {
-        id: `category-${category.slug}`,
-        imagePath,
-        wide,
-        kicker: `${count} бараа`,
-        headline: name,
-        ctaLabel: "Бүгдийг үзэх",
-        href: `/shop?c=${category.slug}`,
-      };
-    });
+        category.slug,
+      href: `/shop?c=${category.slug}`,
+    }));
 }
 
 export const revalidate = 60;
@@ -95,20 +76,25 @@ export default async function HomePage() {
     ? featuredOnly
     : nodes(catalogData?.productCollection);
   const latest = nodes(newData?.productCollection);
-  const slides: HeroSlide[] = [
-    {
-      id: "store",
-      imagePath: hero.heroImagePath,
-      kicker: hero.heroSubline,
-      headline: hero.heroHeadline ?? "Өдөр бүрийг тань гэрэлтүүлэх зүйлс",
-      ctaLabel: hero.heroCtaLabel ?? "Дэлгүүр үзэх",
-      href: hero.heroCtaHref ?? "/shop",
-    },
-    ...categorySlides(heroCategoriesData),
-  ];
+  const covers = coverSlides(heroCategoriesData);
+  const slides: HeroSlide[] = covers.length
+    ? covers
+    : hero.heroImagePath
+      ? [
+          {
+            id: "store",
+            imagePath: hero.heroImagePath,
+            label: hero.heroHeadline || "hotaru.mn",
+            href: hero.heroCtaHref ?? "/shop",
+          },
+        ]
+      : [];
 
   return (
     <>
+      <h1 className="sr-only">
+        {hero.heroHeadline || "hotaru.mn — өдөр бүрийг гэрэлтүүлэх зүйлс"}
+      </h1>
       <HeroCarousel slides={slides} />
 
       <NewArrivalsRail products={latest} />
