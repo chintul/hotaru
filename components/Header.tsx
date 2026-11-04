@@ -52,7 +52,7 @@ export default function Header({ categories = [] }: HeaderProps) {
   }
 
   return (
-    <header className="sticky top-0 z-40 border-b border-line bg-paper">
+    <header className="glass-header sticky top-0 z-40">
       <div className="mx-auto flex h-14 max-w-[1400px] items-center justify-center gap-4 px-4 sm:px-5 lg:h-[72px] lg:justify-start lg:px-8">
         <Link href="/" className="flex min-h-11 min-w-0 shrink items-center">
           <Logo className="h-6 w-auto max-w-full object-contain sm:h-7 lg:h-8 lg:object-left" />
