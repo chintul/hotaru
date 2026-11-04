@@ -7,6 +7,7 @@ import ProductImage from './ProductImage'
 export interface HeroSlide {
   id: string
   imagePath?: string | null
+  wide?: boolean
   kicker?: string | null
   headline: string
   ctaLabel: string
@@ -76,20 +77,21 @@ export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
                     seed={s.id}
                     priority={i === 0}
                     sizes="100vw"
+                    className={s.wide ? 'object-[74%_50%] lg:object-center' : ''}
                   />
                 </div>
               )}
-              <div className="relative mx-auto flex min-h-95 max-w-350 items-center px-5 pb-20 pt-16 lg:min-h-130 lg:px-8">
-                <div className={`max-w-130 bg-paper/92 px-8 py-9 backdrop-blur-[2px] lg:px-10 lg:py-11 ${i === 0 ? 'fade-up' : ''}`}>
+              <div className="relative mx-auto flex min-h-110 max-w-350 items-end px-5 pb-16 pt-16 lg:min-h-130 lg:items-center lg:px-8 lg:pb-20">
+                <div className={`max-w-130 bg-paper/92 px-6 py-6 backdrop-blur-[2px] sm:px-8 sm:py-9 lg:px-10 lg:py-11 ${i === 0 ? 'fade-up' : ''}`}>
                   {s.kicker && (
                     <p className="text-xs font-semibold uppercase tracking-[1.2px] text-ink-soft">{s.kicker}</p>
                   )}
-                  <Heading className="mt-3 text-[clamp(1.8rem,4vw,3rem)] font-bold leading-[1.1] tracking-[-.01em] text-ink">
+                  <Heading className="mt-2 text-[clamp(1.8rem,4vw,3rem)] empty:hidden sm:mt-3 font-bold leading-[1.1] tracking-[-.01em] text-ink">
                     {s.headline}
                   </Heading>
                   <Link
                     href={s.href}
-                    className="mt-7 inline-block bg-primary-strong px-8 py-3.5 text-[13px] font-bold uppercase tracking-[0.7px] text-on-primary transition-opacity hover:opacity-85"
+                    className="mt-5 inline-block bg-primary-strong sm:mt-7 px-8 py-3.5 text-[13px] font-bold uppercase tracking-[0.7px] text-on-primary transition-opacity hover:opacity-85"
                   >
                     {s.ctaLabel}
                   </Link>

@@ -110,6 +110,7 @@ export interface Category {
   isVisible?: boolean | null
   parent?: { id?: string; slug: string } | null
   imagePath?: string | null
+  heroImagePath?: string | null
   categoryTranslationCollection?: Connection<CategoryTranslation> | null
   productCollection?: Connection<Product> | null
 }

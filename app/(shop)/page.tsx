@@ -41,21 +41,27 @@ function categorySlides(data: HeroCategoriesData | null): HeroSlide[] {
         category,
         newest: newest?.createdAt ?? "",
         count: category.productCollection?.totalCount ?? 0,
+        wide: Boolean(category.heroImagePath),
         imagePath:
+          category.heroImagePath ??
           category.imagePath ??
           firstNode(newest?.productImageCollection)?.filePath,
       };
     })
     .filter((c) => c.count > 0 && c.imagePath)
-    .sort((a, b) => b.newest.localeCompare(a.newest))
+    .sort(
+      (a, b) =>
+        Number(b.wide) - Number(a.wide) || b.newest.localeCompare(a.newest),
+    )
     .slice(0, CATEGORY_SLIDES)
-    .map(({ category, count, imagePath }) => {
+    .map(({ category, count, imagePath, wide }) => {
       const name =
         firstNode(category.categoryTranslationCollection)?.name ??
         category.slug;
       return {
         id: `category-${category.slug}`,
         imagePath,
+        wide,
         kicker: `${count} бараа`,
         headline: name,
         ctaLabel: "Бүгдийг үзэх",

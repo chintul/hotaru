@@ -758,6 +758,7 @@ export const HERO_CATEGORIES = gql`
           id
           slug
           imagePath
+          heroImagePath
           categoryTranslationCollection(first: 1) { edges { node { name } } }
           productCollection(
             first: 1
@@ -901,7 +902,7 @@ export const ADMIN_CATEGORIES = gql`
     categoryCollection(first: 100, orderBy: [{ position: AscNullsLast }]) {
       edges {
         node {
-          id slug position isVisible
+          id slug position isVisible heroImagePath
           parent { id slug }
           categoryTranslationCollection(first: 1, filter: { locale: { eq: "mn" } }) {
             edges { node { name description } }
@@ -909,6 +910,14 @@ export const ADMIN_CATEGORIES = gql`
           productCollection { totalCount }
         }
       }
+    }
+  }
+`
+
+export const ADMIN_SET_CATEGORY_HERO_IMAGE = gql`
+  mutation AdminSetCategoryHeroImage($categoryId: UUID!, $heroImagePath: String) {
+    adminSetCategoryHeroImage(categoryId: $categoryId, heroImagePath: $heroImagePath) {
+      id heroImagePath
     }
   }
 `
