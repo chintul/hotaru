@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, type FormEvent } from 'react'
+import { useRef, useState, type FormEvent } from 'react'
 import { useMutation, useQuery } from '@apollo/client/react'
-import { ADMIN_CATEGORIES, ADMIN_UPSERT_CATEGORY } from '@/lib/queries'
+import { ADMIN_CATEGORIES, ADMIN_SET_CATEGORY_HERO_IMAGE, ADMIN_UPSERT_CATEGORY } from '@/lib/queries'
 import { firstNode, nodes } from '@/lib/format'
 import { slugify } from '@/lib/slug'
 import { errorMessage } from '@/lib/errors'
@@ -14,6 +14,8 @@ import {
 import { Plus } from '@/components/admin/icons'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
+import ProductImage from '@/components/ProductImage'
+import { uploadProductImage } from '@/components/admin/product/uploadImage'
 
 type CategoryRow = Category & { id: string }
 
@@ -29,6 +31,11 @@ interface UpsertCategoryVars {
   isVisible: boolean
   sortOrder: number
   categoryId: string | null
+}
+
+interface SetHeroVars {
+  categoryId: string
+  heroImagePath: string | null
 }
 
 interface CategoryDraft {
@@ -60,6 +67,66 @@ function draftFrom(c: CategoryRow): CategoryDraft {
     sortOrder: String(c.position ?? 0),
     isVisible: c.isVisible ?? true,
   }
+}
+
+function HeroImageField({ category, onSaved }: { category: CategoryRow; onSaved: () => Promise<unknown> }) {
+  const [setHero] = useMutation<unknown, SetHeroVars>(ADMIN_SET_CATEGORY_HERO_IMAGE)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  const save = async (heroImagePath: string | null) => {
+    await setHero({ variables: { categoryId: category.id, heroImagePath } })
+    await onSaved()
+  }
+
+  const upload = async (file: File) => {
+    setError(null)
+    setBusy(true)
+    try {
+      const result = await uploadProductImage(file, `category-${category.slug}`)
+      if (!result.filePath) throw new Error('Зураг бүртгэгдсэнгүй.')
+      await save(result.filePath)
+    } catch (e) {
+      setError(errorMessage(e, 'Байршуулахад алдаа гарлаа.'))
+    } finally {
+      setBusy(false)
+      if (inputRef.current) inputRef.current.value = ''
+    }
+  }
+
+  const clear = async () => {
+    setError(null)
+    setBusy(true)
+    try { await save(null) } catch (e) { setError(errorMessage(e, 'Алдаа гарлаа.')) } finally { setBusy(false) }
+  }
+
+  return (
+    <div className="col-span-full">
+      <span className="mb-1.5 block text-[13px] font-medium text-foreground">Нүүр хуудасны cover</span>
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="relative block aspect-[3/1] w-full max-w-90 overflow-hidden rounded-md border border-a-line bg-a-hover">
+          {category.heroImagePath ? (
+            <ProductImage filePath={category.heroImagePath} alt="" sizes="360px" />
+          ) : (
+            <span className="grid h-full place-items-center text-[12px] text-a-muted">Cover байхгүй</span>
+          )}
+        </span>
+        <div className="flex gap-2">
+          <input ref={inputRef} type="file" accept="image/*" className="hidden"
+            onChange={(e) => { const file = e.target.files?.[0]; if (file) void upload(file) }} />
+          <Button type="button" disabled={busy} onClick={() => inputRef.current?.click()}>
+            {busy ? 'Байршуулж байна…' : category.heroImagePath ? 'Солих' : 'Зураг оруулах'}
+          </Button>
+          {category.heroImagePath && (
+            <Button type="button" disabled={busy} onClick={() => void clear()}>Арилгах</Button>
+          )}
+        </div>
+      </div>
+      <p className="mt-1.5 text-[12px] text-a-muted">3:1 харьцаатай өргөн зураг. Нүүр хуудасны гүйдэг cover-т энэ ангиллын слайд болж харагдана.</p>
+      {error && <p className="mt-1 text-[13px] text-danger-ink">{error}</p>}
+    </div>
+  )
 }
 
 function friendlyError(e: unknown): string {
@@ -119,6 +186,7 @@ export default function CategoriesPage() {
   if (loading && !data) return <p className="text-[13px] text-a-muted">Ачааллаж байна…</p>
 
   const parentOptions = categories.filter((c) => c.id !== draft?.id)
+  const editing = draft?.id ? categories.find((c) => c.id === draft.id) : undefined
 
   return (
     <>
@@ -159,6 +227,7 @@ export default function CategoriesPage() {
                     onChange={(e) => setDraft({ ...draft, description: e.target.value })} />
                 </Field>
               </div>
+              {editing && <HeroImageField category={editing} onSaved={refetch} />}
               <div className="flex min-h-10 items-center gap-2 col-span-full">
                 <Checkbox id="category-visible" checked={draft.isVisible}
                   onCheckedChange={(checked) => setDraft({ ...draft, isVisible: checked === true })}

@@ -114,6 +114,7 @@ type Category implements Node {
   position: Int!
   isVisible: Boolean!
   imagePath: String
+  heroImagePath: String
   categoryTranslationCollection(first: Int): CategoryTranslationConnection
   productCollection(first: Int, filter: ProductFilter, orderBy: [ProductOrderBy!]): ProductConnection
 }
