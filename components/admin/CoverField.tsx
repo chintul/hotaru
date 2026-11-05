@@ -22,8 +22,8 @@ interface SetMobileHeroVars {
 export const COVER_KIND = {
   wide: {
     label: 'Компьютерийн cover',
-    hint: '3:1 харьцаатай өргөн зураг. Заавал биш: байхгүй бол компьютер дээр утасны cover-ыг бүтнээр нь, хажуу талыг нь бүдгэрүүлж харуулна.',
-    aspect: 'aspect-[3/1] w-full max-w-90',
+    hint: '16:9 харьцаатай өргөн зураг (жишээ нь 1920×1080). Заавал биш: байхгүй бол компьютер дээр утасны cover-ыг бүтнээр нь, хажуу талыг нь бүдгэрүүлж харуулна.',
+    aspect: 'aspect-video w-full max-w-90',
   },
   mobile: {
     label: 'Утасны cover',
