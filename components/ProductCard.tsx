@@ -188,7 +188,7 @@ export default function ProductCard({
     <div className="product-card group flex h-full flex-col">
       <div className="relative">
         <Link href={href} className="block">
-          <div className="card-media relative aspect-[4/5] overflow-hidden rounded-xl bg-shade">
+          <div className="card-media relative aspect-[4/5] overflow-hidden rounded-xl bg-shade" data-swap={Boolean(canHover && hoverImage)}>
             <div className="media-primary absolute inset-0">
               <div
                 key={active}

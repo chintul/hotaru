@@ -4,12 +4,12 @@ import Link from 'next/link'
 import { useId, useState } from 'react'
 import { useMutation, useQuery } from '@apollo/client/react'
 import { ACCOUNT_OVERVIEW, UPDATE_PROFILE } from '@/lib/queries'
-import { orderStatusLabel, formatDate, formatMnt, firstNode, nodes } from '@/lib/format'
+import { formatDate, firstNode, nodes } from '@/lib/format'
 import { useSession } from '@/components/useSession'
 import { useAuthUpgrade } from '@/components/useAuthUpgrade'
 import PhoneVerify from '@/components/PhoneVerify'
-import ProductImage from '@/components/ProductImage'
-import type { Address, Connection, Order, OrderStatus, Profile, WishlistItem } from '@/lib/types'
+import OrderCard from '@/components/OrderCard'
+import type { Address, Connection, Order, Profile, WishlistItem } from '@/lib/types'
 import { errorMessage } from '@/lib/errors'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -25,18 +25,6 @@ interface AccountOverviewData {
   addressCollection: Connection<Address> | null
 }
 
-const STATUS_TONE: Record<OrderStatus, string> = {
-  awaiting_payment: 'border-warn-line text-warn-ink bg-warn-soft',
-  deposit_paid: 'border-info-line text-info-ink bg-info-soft',
-  awaiting_balance: 'border-warn-line text-warn-ink bg-warn-soft',
-  paid: 'border-success-line text-success-ink bg-success-soft',
-  packed: 'border-info-line text-info-ink bg-info-soft',
-  shipped: 'border-info-line text-info-ink bg-info-soft',
-  delivered: 'border-success-line text-success-ink bg-success-soft',
-  cancelled: 'border-line text-ink-soft bg-shade',
-  refunded: 'border-note-line text-note-ink bg-note-soft',
-  oversold: 'border-danger-line text-danger-ink bg-danger-soft',
-}
 
 export default function AccountPage() {
   const { isAuthenticated, ready, user } = useSession()
@@ -136,40 +124,11 @@ export default function AccountPage() {
             </div>
           ) : (
             <ul className="mt-4 space-y-3">
-              {orders.map((o) => {
-                const items = nodes(o.orderItemCollection)
-                return (
-                  <li key={o.id}>
-                    <Link href={`/orders/${o.orderNumber}`}
-                      className="flex items-center gap-4 border border-line p-4 transition-colors hover:border-ink">
-                      <span className="flex -space-x-3">
-                        {items.slice(0, 3).map((i) => (
-                          <span key={i.id}
-                            className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full border-2 border-paper bg-shade">
-                            <ProductImage filePath={i.imagePath} alt={i.productTitle} seed={i.id} sizes="48px" />
-                          </span>
-                        ))}
-                      </span>
-                      <span className="min-w-0 flex-1">
-                        <span className="block text-[14px] font-semibold tabular-nums">{o.orderNumber}</span>
-                        <span className="block text-[12px] text-ink-faint">{formatDate(o.placedAt)}</span>
-                      </span>
-                      {o.status === 'awaiting_balance' ? (
-                        <span className="shrink-0 rounded-full bg-ink-strong px-3 py-1.5 text-[11px] font-bold text-paper">
-                          {t('Үлдэгдэл төлөх', 'Pay balance')}
-                        </span>
-                      ) : (
-                        <span className={`shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-semibold ${(o.status && STATUS_TONE[o.status]) || 'border-line text-ink-soft'}`}>
-                          {orderStatusLabel(o.status, lang)}
-                        </span>
-                      )}
-                      <span className="shrink-0 text-[14px] font-semibold tabular-nums">
-                        {formatMnt(o.totalMnt)}
-                      </span>
-                    </Link>
-                  </li>
-                )
-              })}
+              {orders.map((o) => (
+                <li key={o.id}>
+                  <OrderCard order={o} />
+                </li>
+              ))}
             </ul>
           )}
         </section>

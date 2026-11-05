@@ -30,10 +30,6 @@ const COPY = {
     goalTitle: 'Бидний зорилго',
     goalBody: 'Өдөр тутамдаа хэрэглэх зүйл тань гоё харагдахаас гадна хэрэглэхэд таатай байх ёстой гэж бид боддог. Тиймээс загварлаг, чанартай бүтээгдэхүүнийг зах зээлийн бодит үнэлгээгээр таны гарт хялбар хүргэхийг зорьж ажиллаж байна.',
     values: ['Чанартай', 'Тав тухтай', 'Боломжийн үнэтэй'],
-    contactTitle: 'Асуух зүйл байна уу?',
-    contactBody: 'Бүтээгдэхүүн, захиалга эсвэл хамтын ажиллагааны талаар бидэнд бичээрэй.',
-    address: 'СБД, 6-р хороо, Нэгдсэн Үндэсний гудамж',
-    contact: 'Холбоо барих',
   },
   en: {
     heroTitle: 'Small things that brighten every day',
@@ -58,10 +54,6 @@ const COPY = {
     goalTitle: 'Our goal',
     goalBody: 'We believe the things you use every day should feel as good as they look. So we work to bring stylish, quality products to you easily, at honest market prices.',
     values: ['Quality', 'Comfort', 'Fair price'],
-    contactTitle: 'Got a question?',
-    contactBody: 'Write to us about products, orders or working together.',
-    address: 'Sükhbaatar district, 6th khoroo, United Nations Street',
-    contact: 'Contact us',
   },
 } as const
 
@@ -160,7 +152,7 @@ export default function AboutContent() {
           </div>
         </section>
 
-        <section className="flex flex-wrap gap-x-[72px] gap-y-8 border-t border-line py-16">
+        <section className="flex flex-wrap gap-x-[72px] gap-y-8 border-t border-line pb-20 pt-16">
           <h2 className={`${H2} flex-[1_1_280px]`}>{t.goalTitle}</h2>
           <div className="min-w-0 flex-[2_1_480px]">
             <p className="max-w-[62ch] text-[16px] leading-[1.75] text-ink-soft">{t.goalBody}</p>
@@ -175,27 +167,6 @@ export default function AboutContent() {
         </section>
       </div>
 
-      <section className="mt-6 bg-primary-strong text-on-primary">
-        <div className="mx-auto flex max-w-[1200px] flex-wrap items-end justify-between gap-x-16 gap-y-9 px-5 pb-20 pt-[72px] sm:px-7">
-          <div className="min-w-0 flex-[1_1_420px]">
-            <h2 className="text-[clamp(30px,3.4vw,44px)] font-semibold leading-[1.1] tracking-[-0.03em]">{t.contactTitle}</h2>
-            <p className="mt-4 max-w-[46ch] text-[17px] leading-relaxed opacity-85">{t.contactBody}</p>
-            <ul className="mt-7 flex flex-col gap-2 text-[15px]">
-              <li><a href="tel:60686859" className="underline-offset-4 hover:underline">60686859</a></li>
-              <li><a href="mailto:info@hotaru.mn" className="underline-offset-4 hover:underline">info@hotaru.mn</a></li>
-              <li className="opacity-85">{t.address}</li>
-            </ul>
-          </div>
-          <div className="flex flex-wrap gap-3">
-            <Link href="/contact" className="inline-flex min-h-12 items-center rounded-full bg-paper px-6 text-[15px] font-semibold text-primary-strong transition-opacity hover:opacity-90">
-              {t.contact}
-            </Link>
-            <Link href="/shop" className="inline-flex min-h-12 items-center rounded-full border-[1.5px] border-current px-6 text-[15px] font-semibold transition-opacity hover:opacity-85">
-              {t.shop}
-            </Link>
-          </div>
-        </div>
-      </section>
     </div>
   )
 }

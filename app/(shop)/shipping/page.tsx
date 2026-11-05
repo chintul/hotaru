@@ -49,6 +49,14 @@ export default async function ShippingPage() {
           )}
         </p>
       </Block>
+      <Block heading={<T mn="Урьдчилсан захиалга" en="Pre-orders" />}>
+        <p>
+          <T
+            mn="Урьдчилсан захиалгын бараа захиалга баталгаажсанаас хойш 10–14 хоногт ирнэ. Ирмэгц бид мэдэгдэж, үлдэгдлээ төлсний дараа хүргэнэ."
+            en="Pre-order items arrive 10–14 days after your order is confirmed. We let you know when they're in and deliver once the balance is paid."
+          />
+        </p>
+      </Block>
       <Block heading={<T mn="Хаяг" en="Address" />}>
         <p>
           <T

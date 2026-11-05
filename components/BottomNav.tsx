@@ -22,10 +22,22 @@ import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { cn } from '@/lib/utils'
 import { categoryName, useLang, useT } from '@/lib/i18n'
 
-const INFO_LINKS = [
-  { href: '/about', label: ['Бидний тухай', 'About us'] },
-  { href: '/contact', label: ['Холбоо барих', 'Contact'] },
-  { href: '/faq', label: ['Түгээмэл асуулт', 'FAQ'] },
+const INFO_GROUPS = [
+  {
+    title: ['Үйлчилгээний нөхцөл', 'Service terms'],
+    links: [
+      { href: '/shipping', label: ['Хүргэлтийн нөхцөл', 'Delivery'] },
+      { href: '/returns', label: ['Буцаалтын нөхцөл', 'Returns policy'] },
+      { href: '/faq', label: ['Түгээмэл асуулт', 'FAQ'] },
+    ],
+  },
+  {
+    title: ['Мэдээлэл', 'Information'],
+    links: [
+      { href: '/about', label: ['Бидний тухай', 'About us'] },
+      { href: '/contact', label: ['Холбоо барих', 'Contact'] },
+    ],
+  },
 ] as const
 
 interface BottomNavProps {
@@ -186,14 +198,18 @@ function AccountSheet({ open, onClose, onNavigate }: { open: boolean; onClose: (
           <ThemeSwitch />
         </div>
 
-        <p className="label mt-5 text-ink-faint">{t('Мэдээлэл', 'Information')}</p>
-        <ul className="mt-1">
-          {INFO_LINKS.map((link) => (
-            <li key={link.href} className="border-b border-line last:border-0">
-              <SheetRow href={link.href} onNavigate={onNavigate}>{t(link.label[0], link.label[1])}</SheetRow>
-            </li>
-          ))}
-        </ul>
+        {INFO_GROUPS.map((group) => (
+          <div key={group.title[0]}>
+            <p className="label mt-5 text-ink-faint">{t(group.title[0], group.title[1])}</p>
+            <ul className="mt-1">
+              {group.links.map((link) => (
+                <li key={link.href} className="border-b border-line last:border-0">
+                  <SheetRow href={link.href} onNavigate={onNavigate}>{t(link.label[0], link.label[1])}</SheetRow>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
 
         {isAuthenticated && (
           <button

@@ -24,6 +24,7 @@ import { guideQuestions, GuideTipSetter, type GuideTip } from "@/components/guid
 import { useT, type Translate } from "@/lib/i18n";
 import ProductImage from "@/components/ProductImage";
 import PreorderTag from "@/components/PreorderTag";
+import { PREORDER_ARRIVAL_DAYS } from "@/lib/preorder";
 import {
   IconBank,
   IconChevronLeft,
@@ -804,8 +805,8 @@ function PaymentBreakdown({ order }: { order: Order }) {
       </ul>
       <p className="mt-3 border-t border-line pt-3 text-[12px] leading-relaxed text-ink-faint">
         {t(
-          "Урьдчилгаа төлбөр буцаагдахгүй. Бүх бараа тань хамт, бүрэн төлөгдсөний дараа хүргэгдэнэ.",
-          "The deposit is non-refundable. All your items are delivered together once fully paid.",
+          `Бараа захиалга баталгаажсанаас хойш ${PREORDER_ARRIVAL_DAYS} хоногт ирнэ. Урьдчилгаа буцаагдахгүй. Бүх бараа тань хамт, бүрэн төлөгдсөний дараа хүргэгдэнэ.`,
+          `Items arrive ${PREORDER_ARRIVAL_DAYS} days after your order is confirmed. The deposit is non-refundable. All your items are delivered together once fully paid.`,
         )}
       </p>
     </section>

@@ -29,7 +29,7 @@ const COLUMNS = [
     title: ["Үйлчилгээ", "Help"],
     links: [
       { href: "/shipping", label: ["Хүргэлтийн нөхцөл", "Delivery"] },
-      { href: "/returns", label: ["Буцаалт, солилт", "Returns & exchanges"] },
+      { href: "/returns", label: ["Буцаалтын нөхцөл", "Returns policy"] },
       { href: "/faq", label: ["Түгээмэл асуулт", "FAQ"] },
       { href: "/orders", label: ["Захиалга хянах", "Track an order"] },
     ],
@@ -40,7 +40,7 @@ export default async function Footer() {
   const [pay, contact] = await Promise.all([paymentCopy(), storeContact()]);
 
   return (
-    <footer className="bg-footer text-white">
+    <footer className="hidden bg-footer text-white lg:block">
       <div className="mx-auto grid max-w-350 gap-6 px-5 py-10 sm:gap-10 sm:py-16 sm:grid-cols-2 lg:grid-cols-6 lg:px-8">
         {COLUMNS.map((col) => (
           <div key={col.title[0]}>

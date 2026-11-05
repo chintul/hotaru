@@ -181,3 +181,8 @@ export const IconLogOut = (p: IconProps) => (
     <path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4" /><path d="M10 16 6 12l4-4M6 12h10" />
   </svg>
 )
+export const IconTrash = (p: IconProps) => (
+  <svg viewBox="0 0 24 24" width="18" height="18" {...base} {...p}>
+    <path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3" />
+  </svg>
+)

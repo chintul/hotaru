@@ -72,7 +72,7 @@ export function LangSwitch({ className = '', compact = false }: { className?: st
     <div
       role="group"
       aria-label={lang === 'en' ? 'Language' : 'Хэл'}
-      className={`inline-flex gap-0.5 rounded-full border border-line bg-paper p-[3px] ${className}`}
+      className={`inline-flex gap-0.5 rounded-full border p-[3px] ${compact ? 'border-line-strong bg-transparent' : 'border-line bg-paper'} ${className}`}
     >
       {(['mn', 'en'] as const).map((code) => (
         <button

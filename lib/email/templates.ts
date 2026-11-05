@@ -99,8 +99,9 @@ const totals = (p: NotificationPayload): string => `<table style="width:100%;fon
         <td style="text-align:right">${formatMnt(p.balance_mnt)}</td></tr>` : ''}
   </table>`
 
-const DEPOSIT_TERMS = `<p style="font-size:12px;color:#6b6b6b;margin:12px 0 0">Урьдчилсан захиалгын урьдчилгаа
-  төлбөр буцаагдахгүй. Үлдэгдлийг бараа ирмэгц нэхэмжилнэ.</p>`
+const DEPOSIT_TERMS = `<p style="font-size:12px;color:#6b6b6b;margin:12px 0 0">Урьдчилсан захиалгын бараа
+  захиалга баталгаажсанаас хойш 10–14 хоногт ирнэ. Урьдчилгаа төлбөр буцаагдахгүй, буцаалт, солилт хийгдэхгүй.
+  Үлдэгдлийг бараа ирмэгц нэхэмжилнэ.</p>`
 
 export function renderNotification(kind: string, payload: NotificationPayload | null | undefined): RenderedEmail {
   const p: NotificationPayload = payload ?? {}
