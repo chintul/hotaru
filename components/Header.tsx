@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useState, useSyncExternalStore } from 'react'
+import { useState } from 'react'
 import { useUI } from './UIProvider'
 import { useCart } from './useCart'
 import { IconBag, IconChevronDown, IconSearch } from './Icons'
@@ -30,13 +30,6 @@ const INFO_LINKS: NavLink[] = [
   { href: '/contact', label: 'Холбоо барих' },
 ]
 
-const subscribeScroll = (onChange: () => void) => {
-  window.addEventListener('scroll', onChange, { passive: true })
-  return () => window.removeEventListener('scroll', onChange)
-}
-const getScrolled = () => window.scrollY > 8
-const getServerScrolled = () => false
-
 const activeUnderline = (active: boolean) =>
   active
     ? 'after:absolute after:-bottom-1.5 after:left-0 after:right-0 after:h-px after:bg-ink-strong'
@@ -46,7 +39,6 @@ export default function Header({ categories = [] }: HeaderProps) {
   const { open } = useUI()
   const { count } = useCart()
   const pathname = usePathname()
-  const scrolled = useSyncExternalStore(subscribeScroll, getScrolled, getServerScrolled)
 
   const shopLinks: NavLink[] = [{ href: '/shop', label: 'Бүх бүтээгдэхүүн' }, ...categories]
 
@@ -60,8 +52,8 @@ export default function Header({ categories = [] }: HeaderProps) {
   }
 
   return (
-    <header data-clear={pathname === '/' && !scrolled} className="glass-header sticky top-0 z-40">
-      <div className="mx-auto flex h-14 max-w-[1400px] items-center justify-center gap-4 px-4 sm:px-5 lg:h-[72px] lg:justify-start lg:px-8">
+    <header className="glass-header storefront-header sticky top-0 z-40">
+      <div className="mx-auto flex h-14 max-w-[1400px] items-center justify-between gap-4 px-4 sm:px-5 lg:h-[72px] lg:justify-start lg:px-8">
         <Link href="/" className="flex min-h-11 min-w-0 shrink items-center">
           <Logo className="h-6 w-auto max-w-full object-contain sm:h-7 lg:h-8 lg:object-left" />
         </Link>
@@ -104,9 +96,9 @@ export default function Header({ categories = [] }: HeaderProps) {
           ))}
         </nav>
 
-        <div className="hidden items-center gap-1 lg:flex">
-          <Button variant="ghost" size="icon-touch" onClick={() => open('search')} aria-label="Хайх" title="Хайх (⌘K)">
-            <IconSearch />
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" size="touch" onClick={() => open('search')} aria-label="Хайх" title="Хайх (⌘K)" className="min-w-11 gap-2.5 rounded-full px-3">
+            <IconSearch /><span className="hidden text-xs xl:inline">Бараа хайх</span>
           </Button>
           <Button variant="ghost" size="icon-touch" onClick={() => open('cart')} className="relative" aria-label="Сагс">
             <IconBag />

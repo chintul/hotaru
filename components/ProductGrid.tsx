@@ -25,7 +25,7 @@ export default function ProductGrid({ products, cols = 4, emptyMessage = 'Бүт
       ? 'grid-cols-2 md:grid-cols-3'
       : 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4'
   return (
-    <div className={`grid gap-x-5 gap-y-12 ${grid}`}>
+    <div className={`grid gap-x-3 gap-y-9 sm:gap-x-5 sm:gap-y-12 ${grid}`}>
       {products.map((p, i) => (
         <div key={p.id} className="fade-up" style={{ animationDelay: `${Math.min(i, 8) * 35}ms` }}>
           <ProductCard product={p} priority={i < 4} />

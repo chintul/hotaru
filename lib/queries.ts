@@ -765,7 +765,14 @@ export const HERO_CATEGORIES = gql`
             orderBy: [{ createdAt: DescNullsLast }]
           ) {
             totalCount
-            edges { node { createdAt } }
+            edges {
+              node {
+                createdAt
+                productImageCollection(first: 1, orderBy: [{ position: AscNullsLast }]) {
+                  edges { node { filePath } }
+                }
+              }
+            }
           }
         }
       }

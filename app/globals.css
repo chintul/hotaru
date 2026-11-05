@@ -408,32 +408,17 @@ body {
     .card-dots { display: none; }
   }
 
-  /* Frosted header. The page scrolls under it, so the cover and the navy rail
-     show through blurred; the inset hairline is the lit edge, the navy bloom
-     below is what reads as glow. Opaque where backdrop-filter is missing,
-     because 72% paper over unblurred photos is unreadable. */
+  /* Frosted header: the page scrolls under it blurred, with a hairline below.
+     Opaque where backdrop-filter is missing, because 80% paper over unblurred
+     photos is unreadable. */
   .glass-header {
-    background-color: color-mix(in oklab, var(--color-paper) 72%, transparent);
-    transition: background-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+    background-color: color-mix(in oklab, var(--color-paper) 80%, transparent);
     -webkit-backdrop-filter: blur(18px) saturate(1.8);
     backdrop-filter: blur(18px) saturate(1.8);
-    box-shadow:
-      inset 0 -1px 0 color-mix(in oklab, var(--color-line) 70%, transparent),
-      inset 0 1px 0 color-mix(in oklab, #fff 60%, transparent),
-      0 12px 32px -20px color-mix(in oklab, var(--color-primary) 55%, transparent);
+    box-shadow: inset 0 -1px 0 var(--color-line);
   }
   @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
     .glass-header { background-color: var(--color-paper); }
-  }
-  /* At the top of the home page the cover runs under the header. A soft paper
-     fade instead of a fill keeps the nav legible on the light campaign
-     photos, and keeps light dark-mode text off a bare photo. */
-  .glass-header[data-clear="true"] {
-    background-color: transparent;
-    background-image: linear-gradient(to bottom, color-mix(in oklab, var(--color-paper) 55%, transparent), transparent);
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-    box-shadow: none;
   }
 
   /* Variant name pill sitting over the image, with its little circular knob. */
@@ -653,3 +638,108 @@ input[type="number"] { -moz-appearance: textfield; }
 
 :where(input, textarea, select):focus,
 :where(input, textarea, select):focus-visible { outline: none; }
+
+/* ---------------------------------------------------------------------------
+   Editorial storefront.
+
+   Image first, quiet chrome. One heading voice across the home page (Onest,
+   sentence case, a lilac full stop as the only accent), photos on soft 16px
+   corners, controls outside the photographs. The campaign cross-fade is the
+   one moving thing; everything around it holds still.
+--------------------------------------------------------------------------- */
+@layer components {
+  .store-announcement {
+    min-height: 34px;
+    display: flex; align-items: center; justify-content: space-between; gap: 20px;
+    padding: 7px max(20px, calc((100vw - 1336px) / 2));
+    background: var(--color-primary); color: var(--color-primary-on);
+    font-size: 11px; letter-spacing: .2px;
+  }
+  .store-announcement > a { min-height: 24px; display: inline-flex; align-items: center; }
+
+  .storefront-header .nav-link { font-size: 13px; text-transform: none; letter-spacing: 0; font-weight: 600; }
+
+  .fashion-section-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 20px; }
+  .fashion-section-heading h2 {
+    font-family: var(--font-display, inherit);
+    font-size: clamp(24px, 2.4vw, 32px); line-height: 1.15; letter-spacing: -.03em; font-weight: 500;
+    color: var(--color-ink-strong);
+  }
+  .fashion-heading-dot { color: var(--color-note-ink); }
+  .fashion-section-heading > a {
+    min-height: 44px; display: inline-flex; align-items: center; white-space: nowrap;
+    font-size: 13px; font-weight: 500; color: var(--color-ink-soft);
+    text-decoration: underline; text-underline-offset: 5px; text-decoration-color: var(--color-line-strong);
+    transition: color var(--dur-fast) var(--ease);
+  }
+  .fashion-section-heading > a:hover { color: var(--color-ink-strong); }
+
+  .campaign-stage {
+    position: relative; overflow: hidden; touch-action: pan-y;
+    aspect-ratio: 4 / 3; background: var(--color-shade);
+  }
+  @media (min-width: 640px) { .campaign-stage { aspect-ratio: 3 / 1; max-height: 720px; } }
+  .campaign-frame { position: absolute; inset: 0; opacity: 0; pointer-events: none; transition: opacity .9s var(--ease); }
+  .campaign-frame[data-active="true"] { opacity: 1; pointer-events: auto; }
+  .campaign-frame img { transform: scale(1.03); transition: transform 6s linear; }
+  .campaign-frame[data-active="true"] img { transform: scale(1); }
+  .campaign-controls {
+    max-width: 1400px; margin: auto; min-height: 64px;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    padding: 8px 32px; border-bottom: 1px solid var(--color-line);
+  }
+  .campaign-caption { min-height: 44px; display: inline-flex; align-items: baseline; gap: 10px; }
+  .campaign-caption-name {
+    font-family: var(--font-display, inherit);
+    font-size: 17px; font-weight: 500; letter-spacing: -.02em; color: var(--color-ink-strong);
+  }
+  .campaign-caption-meta { font-size: 12px; color: var(--color-ink-soft); }
+  .campaign-caption:hover .campaign-caption-name { text-decoration: underline; text-underline-offset: 5px; }
+  .campaign-dot { display: grid; place-items: center; width: 26px; height: 44px; cursor: pointer; }
+  .campaign-dot span { width: 6px; height: 6px; border-radius: 99px; background: var(--color-line-strong); transition: width var(--dur) var(--ease), background-color var(--dur) var(--ease); }
+  .campaign-dot[aria-pressed="true"] span { width: 22px; background: var(--color-ink-strong); }
+  .round-arrow {
+    width: 44px; height: 44px; display: grid; place-items: center; cursor: pointer;
+    border: 1px solid var(--color-line); border-radius: 50%; background: var(--color-paper); color: var(--color-ink-strong);
+    transition: background-color var(--dur-fast) var(--ease), opacity var(--dur-fast) var(--ease);
+  }
+  .round-arrow:hover { background: var(--color-shade); }
+  .round-arrow:disabled { opacity: .35; cursor: default; }
+
+  .product-rail-track { display: flex; gap: 20px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; padding-bottom: 4px; }
+  .product-rail-track::-webkit-scrollbar { display: none; }
+  .arrival-item { scroll-snap-align: start; }
+  .arrival-media { border: 1px solid var(--color-line); }
+  .arrival-price { color: var(--color-ink-strong); }
+  .arrival-card img { transition: transform .5s var(--ease); }
+  @media (hover: hover) { .arrival-card:hover img { transform: scale(1.035); } }
+
+  .category-tile-media { position: relative; display: block; aspect-ratio: 1; overflow: hidden; border-radius: 16px; background: var(--color-shade); border: 1px solid var(--color-line); }
+  .category-tile-media img { transition: transform .5s var(--ease); }
+  @media (hover: hover) { .category-tile:hover .category-tile-media img { transform: scale(1.04); } }
+  .category-tile-name { font-family: var(--font-display, inherit); font-size: 16px; font-weight: 500; letter-spacing: -.02em; color: var(--color-ink-strong); }
+
+  .preorder-tag {
+    display: inline-flex; align-items: center; gap: 6px; max-width: 100%;
+    border: 1px solid var(--color-note-line); border-radius: 8px; padding: 6px 9px;
+    background: var(--color-note-soft); color: var(--color-note-ink);
+    font-size: 11px; font-weight: 500; line-height: 1.4;
+  }
+  .preorder-tag > span { min-width: 0; overflow-wrap: anywhere; }
+  .preorder-eta { font-weight: 400; }
+  .preorder-tag-card { font-size: 10px; padding: 4px 7px; }
+  .product-card .card-media { border: 1px solid var(--color-line); }
+  .product-card-info { padding-inline: 2px; }
+  .product-card .swatch { width: 28px; height: 28px; }
+  .product-card .swatch::after { inset: -6px; }
+  .product-card .swatch[data-active="true"] { box-shadow: 0 0 0 2px var(--color-paper), 0 0 0 3px var(--color-primary-strong); }
+
+  @media (max-width: 639px) {
+    .store-announcement { justify-content: center; font-size: 10px; }
+    .campaign-controls { padding: 4px 16px; }
+    .campaign-caption-name { font-size: 15px; }
+    .product-rail-track { gap: 14px; }
+  }
+  @media (max-width: 380px) { .preorder-tag-card { gap: 4px; font-size: 9px; padding-inline: 5px; } }
+  @media (prefers-reduced-motion: reduce) { .campaign-frame img { transform: none; } }
+}

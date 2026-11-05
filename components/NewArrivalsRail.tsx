@@ -1,22 +1,9 @@
 import Link from 'next/link'
-import { Unbounded } from 'next/font/google'
 import { copy, formatMnt, nodes, toNumber } from '@/lib/format'
 import { unitPriceOf } from '@/lib/preorder'
 import type { Product } from '@/lib/types'
-import AutoScroller from './AutoScroller'
+import ProductRail from './ProductRail'
 import ProductImage from './ProductImage'
-
-const display = Unbounded({
-  subsets: ['cyrillic', 'cyrillic-ext', 'latin'],
-  display: 'swap',
-})
-
-const TAGS = [
-  'bg-blush text-blush-ink',
-  'bg-cream text-cream-ink',
-  'bg-mint text-mint-ink',
-  'bg-sky text-sky-ink',
-]
 
 function fromPrice(product: Product): number {
   const prices = nodes(product.variantCollection).map((v) => unitPriceOf(v, 1))
@@ -27,41 +14,34 @@ export default function NewArrivalsRail({ products }: { products: Product[] }) {
   if (!products.length) return null
 
   return (
-    <section aria-labelledby="new-arrivals-title" className="bg-primary py-7 text-primary-on lg:py-9">
-      <div className="mx-auto flex max-w-350 items-baseline justify-between gap-6 px-5 lg:px-8">
-        <h2
-          id="new-arrivals-title"
-          className={`${display.className} text-[clamp(1.3rem,4.5vw,2rem)] font-extrabold lowercase leading-none tracking-[-0.03em]`}
-        >
-          шинээр ирсэн
-        </h2>
-        <Link href="/shop?sort=newest" className="link-underline tap shrink-0 text-[13px] font-semibold">
-          Бүгдийг үзэх
-        </Link>
+    <section aria-labelledby="new-arrivals-title" className="pb-4 pt-10 lg:pb-6 lg:pt-14">
+      <div className="fashion-section-heading mx-auto max-w-350 px-5 lg:px-8">
+        <h2 id="new-arrivals-title">Шинэ ирэлт<span className="fashion-heading-dot" aria-hidden="true">.</span></h2>
+        <Link href="/shop?sort=newest">Бүгдийг үзэх</Link>
       </div>
 
-      <AutoScroller className="mt-5 px-5 py-1 lg:px-8">
-        {products.map((p, i) => {
+      <ProductRail>
+        {products.map((p) => {
           const c = copy(p)
           const image = nodes(p.productImageCollection)[0]
           return (
-            <li key={p.id ?? p.slug} className="w-[148px] shrink-0 sm:w-[172px] lg:w-[196px]">
+            <li key={p.id ?? p.slug} className="arrival-item w-[165px] shrink-0 sm:w-[220px] lg:w-[250px]">
               <Link
                 href={`/shop/${p.slug}`}
-                className="block rounded-2xl bg-paper p-1 text-ink transition-transform duration-(--dur) ease-(--ease) hover:-translate-y-1"
+                className="arrival-card block text-ink"
               >
-                <span className="relative block aspect-square overflow-hidden rounded-xl bg-shade">
+                <span className="arrival-media relative block aspect-square overflow-hidden rounded-2xl bg-shade">
                   <ProductImage
                     filePath={image?.filePath}
                     alt={image?.alt || c.title || p.slug}
                     seed={p.slug}
-                    sizes="196px"
+                    sizes="(min-width: 1024px) 250px, (min-width: 640px) 220px, 165px"
                   />
                 </span>
-                <span className="flex flex-col gap-1 px-1.5 pb-1.5 pt-2">
-                  <span className="line-clamp-1 text-[12px] font-semibold">{c.title ?? p.slug}</span>
+                <span className="flex flex-col gap-1.5 px-1 pb-2 pt-2.5">
+                  <span className="line-clamp-2 text-[13px] font-medium leading-snug sm:text-[14px]">{c.title ?? p.slug}</span>
                   <span
-                    className={`self-start rounded-full px-2 py-0.5 text-[11px] font-bold tabular-nums ${TAGS[i % TAGS.length]}`}
+                    className="arrival-price text-[14px] font-semibold tabular-nums"
                   >
                     {formatMnt(fromPrice(p))}
                   </span>
@@ -70,7 +50,7 @@ export default function NewArrivalsRail({ products }: { products: Product[] }) {
             </li>
           )
         })}
-      </AutoScroller>
+      </ProductRail>
     </section>
   )
 }

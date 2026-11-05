@@ -181,10 +181,10 @@ export default function ProductCard({
     : undefined;
 
   return (
-    <div className="group flex h-full flex-col">
+    <div className="product-card group flex h-full flex-col">
       <div className="relative">
         <Link href={href} className="block">
-          <div className="card-media relative aspect-square bg-shade p-1">
+          <div className="card-media relative aspect-square overflow-hidden rounded-2xl bg-shade">
             <div className="media-primary absolute inset-0">
               <div
                 key={active}
@@ -245,18 +245,14 @@ export default function ProductCard({
               </span>
             )}
 
-            {preorderOnly && (
-              <PreorderTag sticker className="absolute bottom-2 left-2" />
-            )}
-
             {badge && (
-              <span className="absolute bottom-2 left-2 rounded-full bg-paper px-2 py-0.5 text-[11px] font-semibold tabular-nums text-sale shadow-(--t-lift)">
+              <span className="absolute left-3 top-4 rounded-full bg-paper px-2.5 py-1 text-[11px] font-semibold tabular-nums text-sale shadow-(--t-lift)">
                 {badge}
               </span>
             )}
 
             {!product.inStock && (
-              <span className="absolute right-3 top-3 bg-paper/95 px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.6px]">
+              <span className="absolute right-3 top-4 rounded-full bg-paper/95 px-2.5 py-1 text-[11px] font-medium text-ink-soft">
                 Дууссан
               </span>
             )}
@@ -267,7 +263,7 @@ export default function ProductCard({
           <Link
             href={href}
             aria-label={actionLabel}
-            className="absolute bottom-2 right-2 hidden h-9 items-center rounded-full border border-line bg-paper px-3.5 text-[12px] font-semibold text-ink-strong shadow-(--t-lift) transition-transform active:scale-95 sm:inline-flex"
+            className="absolute bottom-3 right-3 hidden h-11 items-center rounded-full border border-line bg-paper px-3.5 text-[12px] font-semibold text-ink-strong shadow-(--t-lift) transition-transform active:scale-95 sm:inline-flex"
           >
             {ACTION_LABEL[action]}
           </Link>
@@ -278,7 +274,7 @@ export default function ProductCard({
             onClick={onQuickAdd}
             disabled={adding}
             aria-label={actionLabel}
-            className="absolute bottom-2 right-2 hidden h-9 w-9 place-items-center rounded-full border border-line bg-paper text-ink-strong shadow-(--t-lift) transition-[transform,opacity] active:scale-90 disabled:opacity-60 sm:grid"
+            className="absolute bottom-3 right-3 hidden h-11 w-11 place-items-center rounded-full border border-line bg-paper text-ink-strong shadow-(--t-lift) transition-[transform,opacity] active:scale-90 disabled:opacity-60 sm:grid"
           >
             {added ? (
               <IconCheck width="18" height="18" />
@@ -289,13 +285,14 @@ export default function ProductCard({
         )}
       </div>
 
-      <div className="mt-3 flex flex-1 flex-col text-center">
+      <div className="product-card-info mt-2.5 flex flex-1 flex-col text-left">
+        {preorderOnly && <PreorderTag sticker className="mb-1.5 self-start" />}
         <Link href={href} className="block">
-          <p className="line-clamp-2 min-h-[2.75em] text-[14px] leading-snug hover:underline underline-offset-4">
+          <p className="line-clamp-2 min-h-[2.75em] text-[13px] font-medium leading-snug sm:text-[14px] hover:underline underline-offset-4">
             {c.title}
           </p>
         </Link>
-        <p className="mt-1.5 text-[15px] font-bold">
+        <p className="mt-1.5 text-[15px] font-semibold tracking-[-0.3px]">
           {ranged ? (
             <span className="mr-1 text-[12px] font-normal text-ink-soft">
               эхлэх үнэ
@@ -314,7 +311,7 @@ export default function ProductCard({
         </p>
 
         {variants.length > 1 && (
-          <div className="mt-2.5 flex justify-center gap-1.5">
+          <div className="mt-2 flex flex-wrap justify-start gap-3">
             {variants.slice(0, MAX_SWATCHES_PER_ROW).map((v, i) => (
               <button
                 key={v.id}
@@ -352,26 +349,26 @@ export default function ProductCard({
           </div>
         )}
 
-        <div className="mt-auto pt-3 sm:hidden">
+        <div className="mt-auto pt-2.5 sm:hidden">
           {action === "add" ? (
             <button
               onClick={onQuickAdd}
               disabled={adding}
               aria-label={actionLabel}
-              className="flex h-11 w-full items-center justify-center gap-1.5 rounded-full border border-line-strong bg-paper px-3 text-xs font-semibold text-ink-strong transition-[transform,opacity] active:scale-[0.97] disabled:opacity-60"
+              className="flex h-11 w-full items-center justify-center gap-1.5 rounded-xl border border-line bg-paper px-3 text-xs font-semibold text-ink-strong transition-[transform,opacity] active:scale-[0.97] disabled:opacity-60"
             >
               {added ? (
                 <IconCheck width="16" height="16" />
               ) : (
                 <IconBag width="16" height="16" />
               )}
-              {added ? "Нэмэгсэн" : ACTION_LABEL.add}
+              {added ? "Нэмэгдсэн" : ACTION_LABEL.add}
             </button>
           ) : action ? (
             <Link
               href={href}
               aria-label={actionLabel}
-              className="flex h-11 w-full items-center justify-center gap-1.5 rounded-full border border-line-strong bg-paper px-3 text-[13px] font-semibold text-ink-strong transition-transform active:scale-[0.97]"
+              className="flex h-11 w-full items-center justify-center gap-1.5 rounded-xl border border-line bg-paper px-3 text-[13px] font-semibold text-ink-strong transition-transform active:scale-[0.97]"
             >
               <IconBag width="16" height="16" />
               {ACTION_LABEL[action]}
