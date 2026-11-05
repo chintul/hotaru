@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogClose, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { useT } from '@/lib/i18n'
 import CopyRow from './CopyRow'
 import { hasBalance, payStage } from './payStage'
 import type { PayStage } from './payStage'
@@ -70,8 +71,9 @@ export default function PaymentModal({
   submitting,
   submitted,
 }: PaymentModalProps) {
+  const t = useT()
   const paid = payStage(order) !== stage
-  const label = stage === 'balance' ? 'Үлдэгдэл' : stage === 'deposit' && hasBalance(order) ? 'Урьдчилгаа' : null
+  const label = stage === 'balance' ? t('Үлдэгдэл', 'Balance') : stage === 'deposit' && hasBalance(order) ? t('Урьдчилгаа', 'Deposit') : null
   const confirmedKey: PayStage = stage === 'deposit' && !hasBalance(order) ? 'full' : stage
   const [reference, setReference] = useState('')
   const panelRef = useRef<HTMLDivElement>(null)
@@ -95,12 +97,12 @@ export default function PaymentModal({
         }}
         className="flex flex-col gap-0 overflow-hidden border-0 p-0 shadow-none sm:max-w-[460px] sm:p-0"
       >
-        <DialogTitle className="sr-only">Төлбөр төлөх</DialogTitle>
+        <DialogTitle className="sr-only">{t('Төлбөр төлөх', 'Make a payment')}</DialogTitle>
         <div aria-hidden className="mx-auto mt-2.5 h-1 w-10 shrink-0 rounded-full bg-line sm:hidden" />
 
         <header className="flex items-start gap-3 px-5 pb-4 pt-4 sm:px-6 sm:pt-6">
           <div className="min-w-0 flex-1">
-            <p className="text-[11px] font-semibold uppercase tracking-[.6px] text-ink-faint">
+            <p className="text-[11px] font-semibold text-ink-faint">
               {order.orderNumber}
               {label && ` · ${label}`}
             </p>
@@ -113,12 +115,12 @@ export default function PaymentModal({
                 onClick={onChangeAmount}
                 className="link-underline -mb-2 min-h-11 text-[13px] font-semibold text-ink-soft"
               >
-                Дүн өөрчлөх
+                {t('Дүн өөрчлөх', 'Change amount')}
               </button>
             )}
           </div>
           <DialogClose asChild>
-            <Button variant="ghost" size="icon-touch" className="-mr-1.5 -mt-1" aria-label="Хаах">
+            <Button variant="ghost" size="icon-touch" className="-mr-1.5 -mt-1" aria-label={t('Хаах', 'Close')}>
               <IconClose />
             </Button>
           </DialogClose>
@@ -134,7 +136,7 @@ export default function PaymentModal({
                   QPay
                 </Tab>
                 <Tab active={method === 'bank'} onClick={() => onMethod('bank')} icon={<IconBank width="16" height="16" />}>
-                  Данс
+                  {t('Данс', 'Bank')}
                 </Tab>
               </div>
             )}
@@ -156,31 +158,34 @@ export default function PaymentModal({
               <div className="mt-5 border-t border-line pt-4">
                 {method === 'qpay' ? null : submitted ? (
                   <p className="rounded-2xl bg-mint px-4 py-3 text-[13px] text-mint-ink">
-                    Мэдэгдэл хүлээн авлаа. Төлбөр баталгаажмагц танд имэйл илгээнэ.
+                    {t(
+                      'Мэдэгдэл хүлээн авлаа. Төлбөр баталгаажмагц танд имэйл илгээнэ.',
+                      'Got it. We’ll email you once the payment is confirmed.',
+                    )}
                   </p>
                 ) : (
                   <form
                     onSubmit={(e) => { e.preventDefault(); onSubmitProof(reference.trim() || null) }}
                   >
                     <Label
-                      className="text-[11px] font-semibold uppercase leading-normal tracking-[.6px] text-ink-faint"
+                      className="text-[11px] font-semibold leading-normal text-ink-faint"
                       htmlFor={referenceId}
                     >
-                      Гүйлгээний дугаар (заавал биш)
+                      {t('Гүйлгээний дугаар (заавал биш)', 'Transaction number (optional)')}
                     </Label>
                     <Input
                       id={referenceId}
                       value={reference}
                       onChange={(e) => setReference(e.target.value)}
-                      placeholder="Жишээ: 2401159876"
+                      placeholder={t('Жишээ: 2401159876', 'e.g. 2401159876')}
                       className="mt-2 h-12 rounded-2xl bg-paper-warm px-4 text-[14px] md:text-[14px]"
                     />
                     <button
                       type="submit"
                       disabled={submitting}
-                      className="mt-3 w-full rounded-full bg-ink-strong px-5 py-3.5 text-[13px] font-bold uppercase tracking-[.7px] text-paper transition-opacity hover:opacity-85 disabled:opacity-40"
+                      className="mt-3 w-full rounded-full bg-ink-strong px-5 py-3.5 text-[13px] font-bold text-paper transition-opacity hover:opacity-85 disabled:opacity-40"
                     >
-                      {submitting ? 'Илгээж байна…' : 'Төлбөр шилжүүлсэн'}
+                      {submitting ? t('Илгээж байна…', 'Sending…') : t('Төлбөр шилжүүлсэн', 'I’ve paid')}
                     </button>
                   </form>
                 )}
@@ -190,7 +195,7 @@ export default function PaymentModal({
                     <span className="o-ping absolute h-2 w-2 rounded-full bg-mint-ink" />
                     <span className="h-2 w-2 rounded-full bg-mint-ink" />
                   </span>
-                  Төлбөрийг автоматаар шалгаж байна
+                  {t('Төлбөрийг автоматаар шалгаж байна', 'Checking for your payment automatically')}
                 </p>
               </div>
             </div>
@@ -214,7 +219,7 @@ function Tab({ active, onClick, icon, children }: TabProps) {
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`flex items-center justify-center gap-2 rounded-full py-2.5 text-[12px] font-semibold uppercase tracking-[.5px] transition-colors ${
+      className={`flex items-center justify-center gap-2 rounded-full py-2.5 text-[12px] font-semibold transition-colors ${
         active ? 'bg-paper text-ink shadow-[0_1px_3px_rgba(0,0,0,.12)]' : 'text-ink-faint hover:text-ink-soft'
       }`}
     >
@@ -232,23 +237,28 @@ interface QpayPanelProps {
   onCheck: () => void
 }
 
-const CHECK_MESSAGE: Partial<Record<PaymentCheckState, string>> = {
-  pending: 'Төлбөр хараахан орж ирээгүй байна. Төлсөн бол хэдэн секунд хүлээгээд дахин шалгана уу.',
-  failed: 'Шалгаж чадсангүй. Дахин оролдоно уу.',
+const CHECK_MESSAGE: Partial<Record<PaymentCheckState, readonly [mn: string, en: string]>> = {
+  pending: [
+    'Төлбөр хараахан орж ирээгүй байна. Төлсөн бол хэдэн секунд хүлээгээд дахин шалгана уу.',
+    'Payment hasn’t come through yet. If you’ve paid, wait a few seconds and check again.',
+  ],
+  failed: ['Шалгаж чадсангүй. Дахин оролдоно уу.', 'Couldn’t check. Please try again.'],
 }
 
 function QpayPanel({ qpay, state, onRetry, onBank, check, onCheck }: QpayPanelProps) {
+  const t = useT()
+  const checkMessage = CHECK_MESSAGE[check]
   if (state === 'error') {
     return (
       <div className="rounded-2xl bg-blush px-4 py-5 text-center">
-        <p className="text-[13px] font-semibold text-blush-ink">QPay түр ажиллахгүй байна</p>
-        <p className="mt-1 text-[13px] text-ink-soft">Дахин оролдох эсвэл дансаар шилжүүлж болно.</p>
+        <p className="text-[13px] font-semibold text-blush-ink">{t('QPay түр ажиллахгүй байна', 'QPay is temporarily unavailable')}</p>
+        <p className="mt-1 text-[13px] text-ink-soft">{t('Дахин оролдох эсвэл дансаар шилжүүлж болно.', 'Try again, or pay by bank transfer instead.')}</p>
         <div className="mt-4 flex flex-wrap justify-center gap-2">
-          <button onClick={onRetry} className="rounded-full border border-ink px-4 py-2 text-[12px] font-semibold uppercase tracking-[.5px]">
-            Дахин оролдох
+          <button onClick={onRetry} className="rounded-full border border-ink px-4 py-2 text-[12px] font-semibold">
+            {t('Дахин оролдох', 'Try again')}
           </button>
-          <button onClick={onBank} className="rounded-full bg-ink-strong px-4 py-2 text-[12px] font-semibold uppercase tracking-[.5px] text-paper">
-            Дансаар төлөх
+          <button onClick={onBank} className="rounded-full bg-ink-strong px-4 py-2 text-[12px] font-semibold text-paper">
+            {t('Дансаар төлөх', 'Pay by bank transfer')}
           </button>
         </div>
       </div>
@@ -259,7 +269,7 @@ function QpayPanel({ qpay, state, onRetry, onBank, check, onCheck }: QpayPanelPr
     return (
       <div className="flex flex-col items-center">
         <div className="o-skeleton h-[220px] w-[220px] rounded-[22px]" />
-        <p className="mt-4 text-[13px] text-ink-faint">QR код бэлтгэж байна…</p>
+        <p className="mt-4 text-[13px] text-ink-faint">{t('QR код бэлтгэж байна…', 'Preparing your QR code…')}</p>
       </div>
     )
   }
@@ -269,10 +279,13 @@ function QpayPanel({ qpay, state, onRetry, onBank, check, onCheck }: QpayPanelPr
   return (
     <div className="flex flex-col items-center">
       <div className="rounded-[22px] border border-line bg-paper p-3">
-        <img src={src} alt="QPay QR код" className="h-[200px] w-[200px] rounded-lg" />
+        <img src={src} alt={t('QPay QR код', 'QPay QR code')} className="h-[200px] w-[200px] rounded-lg" />
       </div>
       <p className="mt-4 text-center text-[13px] text-ink-soft">
-        Банкны аппаараа уншуулна уу. Төлбөр орсон даруйд захиалга автоматаар баталгаажна.
+        {t(
+          'Банкны аппаараа уншуулна уу. Төлбөр орсон даруйд захиалга автоматаар баталгаажна.',
+          'Scan it with your bank app. Your order is confirmed automatically as soon as the payment lands.',
+        )}
       </p>
 
       <Button
@@ -283,16 +296,16 @@ function QpayPanel({ qpay, state, onRetry, onBank, check, onCheck }: QpayPanelPr
         disabled={check === 'checking'}
         className="mt-5 w-full rounded-full"
       >
-        {check === 'checking' ? 'Шалгаж байна…' : 'Төлбөр шалгах'}
+        {check === 'checking' ? t('Шалгаж байна…', 'Checking…') : t('Төлбөр шалгах', 'Check payment')}
       </Button>
-      {CHECK_MESSAGE[check] && (
-        <p role="status" className="mt-3 text-center text-[13px] text-ink-soft">{CHECK_MESSAGE[check]}</p>
+      {checkMessage && (
+        <p role="status" className="mt-3 text-center text-[13px] text-ink-soft">{t(checkMessage[0], checkMessage[1])}</p>
       )}
 
       {qpay.urls && qpay.urls.length > 0 && (
         <div className="mt-5 w-full lg:hidden">
-          <p className="text-center text-[11px] font-semibold uppercase tracking-[.6px] text-ink-faint">
-            Эсвэл аппаа сонгоно уу
+          <p className="text-center text-[11px] font-semibold text-ink-faint">
+            {t('Эсвэл аппаа сонгоно уу', 'Or pick your app')}
           </p>
           <div className="mt-3 grid grid-cols-4 gap-2">
             {qpay.urls.map((u) => (
@@ -326,13 +339,14 @@ interface BankPanelProps {
 }
 
 function BankPanel({ bank, order, amount }: BankPanelProps) {
+  const t = useT()
   return (
     <div className="space-y-2">
-      <CopyRow label="Банк" value={bank?.bankName} />
-      <CopyRow label="Дансны дугаар" value={bank?.bankAccountNumber} mono />
-      <CopyRow label="Хүлээн авагч" value={bank?.bankAccountName} />
-      <CopyRow label="Шилжүүлэх дүн" value={formatMnt(amount)} mono />
-      <CopyRow label="Гүйлгээний утга" value={order.orderNumber} mono accent />
+      <CopyRow label={t('Банк', 'Bank')} value={bank?.bankName} />
+      <CopyRow label={t('Дансны дугаар', 'Account number')} value={bank?.bankAccountNumber} mono />
+      <CopyRow label={t('Хүлээн авагч', 'Account holder')} value={bank?.bankAccountName} />
+      <CopyRow label={t('Шилжүүлэх дүн', 'Amount to transfer')} value={formatMnt(amount)} mono />
+      <CopyRow label={t('Гүйлгээний утга', 'Payment reference')} value={order.orderNumber} mono accent />
       {bank?.paymentInstructions && (
         <p className="pt-2 text-[13px] leading-relaxed text-ink-soft">{bank.paymentInstructions}</p>
       )}
@@ -346,20 +360,28 @@ const CONFIRMED_COPY: Record<PayStage, readonly [title: string, body: string]> =
   balance: ['Үлдэгдэл баталгаажлаа', 'Баярлалаа! Захиалгыг тань бэлтгэж эхэллээ.'],
 }
 
+const CONFIRMED_COPY_EN: Record<PayStage, readonly [title: string, body: string]> = {
+  full: ['Payment confirmed', 'Thank you! We’ve started preparing your order.'],
+  deposit: ['Deposit confirmed', 'Thank you! We’ll send the balance invoice as soon as your items arrive.'],
+  balance: ['Balance confirmed', 'Thank you! We’ve started preparing your order.'],
+}
+
 function Confirmed({ stage, onClose }: { stage: PayStage; onClose: () => void }) {
+  const t = useT()
   const [title, body] = CONFIRMED_COPY[stage]
+  const [titleEn, bodyEn] = CONFIRMED_COPY_EN[stage]
   return (
     <div className="px-6 pb-8 pt-2 text-center">
       <span className="o-pop mx-auto grid h-16 w-16 place-items-center rounded-full bg-mint text-mint-ink">
         <IconCheck width="30" height="30" strokeWidth={2.2} />
       </span>
-      <p className="mt-4 text-[17px] font-semibold">{title}</p>
-      <p className="mt-1.5 text-[13px] text-ink-soft">{body}</p>
+      <p className="mt-4 text-[17px] font-semibold">{t(title, titleEn)}</p>
+      <p className="mt-1.5 text-[13px] text-ink-soft">{t(body, bodyEn)}</p>
       <button
         onClick={onClose}
-        className="mt-6 w-full rounded-full bg-ink-strong px-5 py-3.5 text-[13px] font-bold uppercase tracking-[.7px] text-paper transition-opacity hover:opacity-85"
+        className="mt-6 w-full rounded-full bg-ink-strong px-5 py-3.5 text-[13px] font-bold text-paper transition-opacity hover:opacity-85"
       >
-        Захиалга харах
+        {t('Захиалга харах', 'View order')}
       </button>
     </div>
   )

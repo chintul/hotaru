@@ -1,5 +1,5 @@
-import { Clock3 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { T } from '@/lib/i18n'
 
 interface PreorderTagProps {
   eta?: string | null
@@ -10,8 +10,11 @@ interface PreorderTagProps {
 export default function PreorderTag({ eta, sticker = false, className }: PreorderTagProps) {
   return (
     <span className={cn('preorder-tag', sticker && 'preorder-tag-card', className)}>
-      <Clock3 size={13} strokeWidth={1.7} aria-hidden="true" className="shrink-0" />
-      <span>Урьдчилсан захиалга{eta ? <span className="preorder-eta"> · {eta}</span> : null}</span>
+      <span aria-hidden className="preorder-dot" />
+      <span>
+        <T mn="Урьдчилсан захиалга" en="Pre-order" />
+        {eta ? <span className="preorder-eta">: {eta}</span> : null}
+      </span>
     </span>
   )
 }

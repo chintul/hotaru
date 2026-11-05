@@ -2,24 +2,25 @@
 
 import { formatDate } from '@/lib/format'
 import { IconCheck } from '@/components/Icons'
+import { useT } from '@/lib/i18n'
 import type { Order, OrderStatus } from '@/lib/types'
 import { hasBalance } from './payStage'
 
 const STOPS = [
-  { key: 'placed', label: 'Захиалсан' },
-  { key: 'paid', label: 'Төлсөн' },
-  { key: 'packed', label: 'Бэлтгэсэн' },
-  { key: 'shipped', label: 'Замдаа' },
-  { key: 'delivered', label: 'Хүрсэн' },
+  { key: 'placed', label: 'Захиалсан', en: 'Ordered' },
+  { key: 'paid', label: 'Төлсөн', en: 'Paid' },
+  { key: 'packed', label: 'Бэлтгэсэн', en: 'Packed' },
+  { key: 'shipped', label: 'Замдаа', en: 'On the way' },
+  { key: 'delivered', label: 'Хүрсэн', en: 'Delivered' },
 ] as const
 
 const PREORDER_STOPS = [
-  { key: 'placed', label: 'Захиалсан' },
-  { key: 'paid', label: 'Урьдчилгаа' },
-  { key: 'balance', label: 'Үлдэгдэл' },
-  { key: 'packed', label: 'Бэлтгэсэн' },
-  { key: 'shipped', label: 'Замдаа' },
-  { key: 'delivered', label: 'Хүрсэн' },
+  { key: 'placed', label: 'Захиалсан', en: 'Ordered' },
+  { key: 'paid', label: 'Урьдчилгаа', en: 'Deposit' },
+  { key: 'balance', label: 'Үлдэгдэл', en: 'Balance' },
+  { key: 'packed', label: 'Бэлтгэсэн', en: 'Packed' },
+  { key: 'shipped', label: 'Замдаа', en: 'On the way' },
+  { key: 'delivered', label: 'Хүрсэн', en: 'Delivered' },
 ] as const
 
 type StopKey = (typeof PREORDER_STOPS)[number]['key']
@@ -49,6 +50,7 @@ export function trailApplies(status: string | null | undefined): boolean {
 }
 
 export default function OrderTrail({ order }: { order: Order }) {
+  const t = useT()
   const preorder = hasBalance(order)
   const stops = preorder ? PREORDER_STOPS : STOPS
   const index = preorder ? PREORDER_STOP_INDEX : STOP_INDEX
@@ -100,7 +102,7 @@ export default function OrderTrail({ order }: { order: Order }) {
               </span>
             </span>
             <span className={`text-[11px] leading-tight sm:text-[12px] ${done || here ? 'font-semibold' : 'text-ink-faint'}`}>
-              {stop.label}
+              {t(stop.label, stop.en)}
             </span>
             {at && <span className="text-[10px] leading-tight text-ink-faint sm:text-[11px]">{formatDate(at)}</span>}
           </li>

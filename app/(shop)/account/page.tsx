@@ -16,6 +16,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useLang, useT } from '@/lib/i18n'
 
 interface AccountOverviewData {
   profileCollection: Connection<Profile> | null
@@ -40,6 +41,8 @@ const STATUS_TONE: Record<OrderStatus, string> = {
 export default function AccountPage() {
   const { isAuthenticated, ready, user } = useSession()
   const { signOut } = useAuthUpgrade()
+  const t = useT()
+  const lang = useLang()
 
   const { data, refetch } = useQuery<AccountOverviewData>(ACCOUNT_OVERVIEW, {
     variables: { id: user?.id },
@@ -58,53 +61,55 @@ export default function AccountPage() {
   if (!isAuthenticated) {
     return (
       <div className="mx-auto max-w-[560px] px-5 py-24 text-center">
-        <h1 className="text-[22px] font-bold">Профайл</h1>
-        <p className="mt-2 text-[14px] text-ink-soft">Үргэлжлүүлэхийн тулд нэвтэрнэ үү.</p>
+        <h1 className="text-[22px] font-bold">{t('Профайл', 'Profile')}</h1>
+        <p className="mt-2 text-[14px] text-ink-soft">{t('Үргэлжлүүлэхийн тулд нэвтэрнэ үү.', 'Please sign in to continue.')}</p>
         <Button asChild variant="solid" size="cta" className="mt-6">
-          <Link href="/login?next=/account">Нэвтрэх</Link>
+          <Link href="/login?next=/account">{t('Нэвтрэх', 'Sign in')}</Link>
         </Button>
       </div>
     )
   }
 
-  const displayName = profile?.fullName?.trim() || profile?.email?.split('@')[0] || 'Сайн байна уу'
+  const displayName = profile?.fullName?.trim() || profile?.email?.split('@')[0] || t('Сайн байна уу', 'Hello')
 
   return (
     <div className="mx-auto max-w-[1000px] px-5 py-10 lg:px-8">
       <header className="flex flex-wrap items-end justify-between gap-4 border-b border-line pb-6">
         <div>
-          <p className="text-[12px] font-semibold uppercase tracking-[1px] text-ink-faint">Профайл</p>
+          <p className="text-[12px] font-semibold text-ink-faint">{t('Профайл', 'Profile')}</p>
           <h1 className="mt-1.5 text-[clamp(1.6rem,3.5vw,2.2rem)] font-bold tracking-[-.02em]">
             {displayName}
           </h1>
           <p className="mt-1 text-[13px] text-ink-soft">
             {profile?.email ?? user?.email}
             {profile?.phone && ` · ${profile.phone}`}
-            {profile?.createdAt && ` · ${formatDate(profile.createdAt)}-с хойш`}
+            {profile?.createdAt && (lang === 'en' ? ` · since ${formatDate(profile.createdAt)}` : ` · ${formatDate(profile.createdAt)}-с хойш`)}
           </p>
         </div>
         <div className="flex items-center gap-3">
           {profile?.role === 'admin' && (
             <Button asChild variant="line" size="touch" className="px-5">
-              <Link href="/admin">Админ самбар</Link>
+              <Link href="/admin">{t('Админ самбар', 'Admin dashboard')}</Link>
             </Button>
           )}
-          <button onClick={signOut} className="min-h-11 text-[13px] text-ink-soft hover:text-ink">Гарах</button>
+          <button onClick={signOut} className="min-h-11 text-[13px] text-ink-soft hover:text-ink">{t('Гарах', 'Sign out')}</button>
         </div>
       </header>
 
       <div className="mt-6 grid gap-3 sm:grid-cols-3">
-        <Tile href="/orders" label="Захиалга" value={orderCount} hint="Захиалгын түүх" />
-        <Tile href="/wishlist" label="Хадгалсан" value={wishlistCount} hint="Дараа авах бараа" />
-        <Tile href="/checkout" label="Хаяг" value={addressCount} hint="Хүргэлтийн хаяг" />
+        <Tile href="/orders" label={t('Захиалга', 'Orders')} value={orderCount} hint={t('Захиалгын түүх', 'Order history')} />
+        <Tile href="/wishlist" label={t('Хадгалсан', 'Saved')} value={wishlistCount} hint={t('Дараа авах бараа', 'Items for later')} />
+        <Tile href="/checkout" label={t('Хаяг', 'Addresses')} value={addressCount} hint={t('Хүргэлтийн хаяг', 'Delivery addresses')} />
       </div>
 
       {!profile?.phoneVerifiedAt && (
         <section className="mt-6 border border-ink p-6">
-          <h2 className="text-[15px] font-bold">Утасны дугаараа баталгаажуулах</h2>
+          <h2 className="text-[15px] font-bold">{t('Утасны дугаараа баталгаажуулах', 'Verify your phone number')}</h2>
           <p className="mt-1.5 max-w-xl text-[13px] text-ink-soft">
-            Баталгаажуулсны дараа зөвхөн утсаараа нэвтэрч, хүргэлтийн үед холбогдоход
-            ашиглагдана.
+            {t(
+              'Баталгаажуулсны дараа зөвхөн утсаараа нэвтэрч, хүргэлтийн үед холбогдоход ашиглагдана.',
+              'Once verified, you can sign in with just your phone, and we’ll use it to reach you on delivery.',
+            )}
           </p>
           <div className="mt-5 max-w-sm">
             <PhoneVerify onVerified={() => refetch()} initialPhone={profile?.phone ?? ''} />
@@ -115,18 +120,18 @@ export default function AccountPage() {
       <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_340px]">
         <section>
           <div className="flex items-baseline justify-between">
-            <h2 className="text-[15px] font-bold">Сүүлийн захиалга</h2>
+            <h2 className="text-[15px] font-bold">{t('Сүүлийн захиалга', 'Recent orders')}</h2>
             {orderCount > 0 && (
-              <Link href="/orders" className="link-underline text-[13px] text-ink-soft">Бүгдийг үзэх</Link>
+              <Link href="/orders" className="link-underline text-[13px] text-ink-soft">{t('Бүгдийг үзэх', 'View all')}</Link>
             )}
           </div>
 
           {orders.length === 0 ? (
             <div className="mt-4 border border-line bg-shade px-6 py-12 text-center">
-              <p className="text-[14px] font-medium">Захиалга алга</p>
-              <p className="mt-1 text-[13px] text-ink-soft">Эхний захиалгаа өгөөрэй.</p>
+              <p className="text-[14px] font-medium">{t('Захиалга алга', 'No orders yet')}</p>
+              <p className="mt-1 text-[13px] text-ink-soft">{t('Эхний захиалгаа өгөөрэй.', 'Place your first order.')}</p>
               <Button asChild variant="solid" size="touch" className="mt-5 px-7">
-                <Link href="/shop">Дэлгүүр рүү</Link>
+                <Link href="/shop">{t('Дэлгүүр рүү', 'Go to shop')}</Link>
               </Button>
             </div>
           ) : (
@@ -151,11 +156,11 @@ export default function AccountPage() {
                       </span>
                       {o.status === 'awaiting_balance' ? (
                         <span className="shrink-0 rounded-full bg-ink-strong px-3 py-1.5 text-[11px] font-bold text-paper">
-                          Үлдэгдэл төлөх
+                          {t('Үлдэгдэл төлөх', 'Pay balance')}
                         </span>
                       ) : (
                         <span className={`shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-semibold ${(o.status && STATUS_TONE[o.status]) || 'border-line text-ink-soft'}`}>
-                          {orderStatusLabel(o.status)}
+                          {orderStatusLabel(o.status, lang)}
                         </span>
                       )}
                       <span className="shrink-0 text-[14px] font-semibold tabular-nums">
@@ -188,13 +193,14 @@ function ProfileDetails({ profile, onSaved }: ProfileDetailsProps) {
   const [error, setError] = useState<string | null>(null)
   const nameId = useId()
   const marketingId = useId()
+  const t = useT()
 
   const dirty =
     fullName !== (profile?.fullName ?? '') || marketing !== Boolean(profile?.marketingOptIn)
 
   return (
     <section className="border border-line p-6">
-      <h2 className="text-[15px] font-bold">Хувийн мэдээлэл</h2>
+      <h2 className="text-[15px] font-bold">{t('Хувийн мэдээлэл', 'Personal details')}</h2>
 
       <form
         className="mt-5"
@@ -206,20 +212,20 @@ function ProfileDetails({ profile, onSaved }: ProfileDetailsProps) {
             setSaved(true)
             onSaved?.()
           } catch (e) {
-            setError(errorMessage(e, 'Хадгалахад алдаа гарлаа.'))
+            setError(errorMessage(e, t('Хадгалахад алдаа гарлаа.', 'Couldn’t save your changes.')))
           }
         }}
       >
         <div>
           <Label htmlFor={nameId} className="block text-[12px] font-medium leading-normal text-ink-soft">
-            Нэр
+            {t('Нэр', 'Name')}
           </Label>
           <Input
             id={nameId}
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
-            placeholder="Таны нэр"
-            className="mt-1.5 h-11 rounded-none bg-paper px-3 text-[13px] md:text-[13px]"
+            placeholder={t('Таны нэр', 'Your name')}
+            className="mt-1.5 h-11 rounded-xl bg-paper px-3 text-[13px] md:text-[13px]"
           />
         </div>
 
@@ -234,31 +240,31 @@ function ProfileDetails({ profile, onSaved }: ProfileDetailsProps) {
             htmlFor={marketingId}
             className="cursor-pointer text-[13px] font-normal leading-normal text-ink-soft"
           >
-            Шинэ бүтээгдэхүүн, хөнгөлөлтийн мэдээлэл имэйлээр авах
+            {t('Шинэ бүтээгдэхүүн, хөнгөлөлтийн мэдээлэл имэйлээр авах', 'Email me about new products and offers')}
           </Label>
         </div>
 
         <dl className="mt-5 space-y-2 border-t border-line pt-4 text-[13px]">
           <div className="flex justify-between gap-3">
-            <dt className="text-ink-faint">Имэйл</dt>
+            <dt className="text-ink-faint">{t('Имэйл', 'Email')}</dt>
             <dd className="truncate">{profile?.email ?? '—'}</dd>
           </div>
           <div className="flex justify-between gap-3">
-            <dt className="text-ink-faint">Утас</dt>
+            <dt className="text-ink-faint">{t('Утас', 'Phone')}</dt>
             <dd>
               {profile?.phone ?? '—'}
               {profile?.phoneVerifiedAt && (
-                <span className="ml-1.5 text-[11px] font-semibold text-success-ink">баталгаажсан</span>
+                <span className="ml-1.5 text-[11px] font-semibold text-success-ink">{t('баталгаажсан', 'verified')}</span>
               )}
             </dd>
           </div>
         </dl>
 
         {error && <p className="mt-3 text-[13px] text-sale">{error}</p>}
-        {saved && !dirty && <p className="mt-3 text-[13px] text-success-ink">Хадгалагдлаа.</p>}
+        {saved && !dirty && <p className="mt-3 text-[13px] text-success-ink">{t('Хадгалагдлаа.', 'Saved.')}</p>}
 
         <Button type="submit" variant="solid" size="touch" disabled={loading || !dirty} className="mt-5 w-full">
-          {loading ? 'Хадгалж байна…' : 'Хадгалах'}
+          {loading ? t('Хадгалж байна…', 'Saving…') : t('Хадгалах', 'Save')}
         </Button>
       </form>
     </section>
@@ -275,7 +281,7 @@ interface TileProps {
 function Tile({ href, label, value, hint }: TileProps) {
   return (
     <Link href={href} className="group border border-line p-5 transition-colors hover:border-ink">
-      <p className="text-[12px] font-semibold uppercase tracking-[0.6px] text-ink-faint">{label}</p>
+      <p className="text-[12px] font-semibold text-ink-faint">{label}</p>
       <p className="mt-1.5 text-[26px] font-bold tabular-nums leading-none">{value}</p>
       <p className="mt-1.5 text-[12px] text-ink-soft group-hover:text-ink">{hint} →</p>
     </Link>
@@ -284,9 +290,9 @@ function Tile({ href, label, value, hint }: TileProps) {
 
 const Loading = () => (
   <div className="mx-auto max-w-[1000px] px-5 py-10 lg:px-8">
-    <Skeleton className="h-24 rounded-none border border-line bg-shade" />
+    <Skeleton className="h-24 rounded-2xl border border-line bg-shade" />
     <div className="mt-6 grid gap-3 sm:grid-cols-3">
-      {[0, 1, 2].map((i) => <Skeleton key={i} className="h-28 rounded-none border border-line bg-shade" />)}
+      {[0, 1, 2].map((i) => <Skeleton key={i} className="h-28 rounded-2xl border border-line bg-shade" />)}
     </div>
   </div>
 )

@@ -4,6 +4,7 @@ import Link from 'next/link'
 import Prose, { Block } from '../_components/Prose'
 import { storeContact } from '@/lib/store-contact'
 import { IconFacebook, IconInstagram, IconMail, IconPhone, IconPin } from '@/components/Icons'
+import { T } from '@/lib/i18n'
 
 export const metadata: Metadata = { title: 'Холбоо барих' }
 
@@ -11,21 +12,24 @@ export default async function ContactPage() {
   const contact = await storeContact()
 
   return (
-    <Prose title="Холбоо барих" lead="Ажлын өдрүүдэд 1 ажлын өдрийн дотор хариу өгнө.">
+    <Prose
+      title={<T mn="Холбоо барих" en="Contact us" />}
+      lead={<T mn="Ажлын өдрүүдэд 1 ажлын өдрийн дотор хариу өгнө." en="On working days we reply within one working day." />}
+    >
       {!contact.isEmpty && (
         <div className="grid gap-3 sm:grid-cols-2">
           {contact.phone && (
-            <Tile icon={<IconPhone />} label="Утас" value={contact.phone} href={contact.phoneHref} mono />
+            <Tile icon={<IconPhone />} label={<T mn="Утас" en="Phone" />} value={contact.phone} href={contact.phoneHref} mono />
           )}
           {contact.email && (
-            <Tile icon={<IconMail />} label="Имэйл" value={contact.email} href={`mailto:${contact.email}`} />
+            <Tile icon={<IconMail />} label={<T mn="Имэйл" en="Email" />} value={contact.email} href={`mailto:${contact.email}`} />
           )}
           {contact.address && (
-            <Tile icon={<IconPin />} label="Хаяг" value={contact.address} />
+            <Tile icon={<IconPin />} label={<T mn="Хаяг" en="Address" />} value={contact.address} />
           )}
           {contact.socials.length > 0 && (
             <div className="border border-line p-4">
-              <p className="label text-ink-faint">Сошиал</p>
+              <p className="label text-ink-faint"><T mn="Сошиал" en="Social" /></p>
               <div className="mt-2.5 flex gap-2">
                 {contact.socials.map((s) => (
                   <a
@@ -45,20 +49,24 @@ export default async function ContactPage() {
         </div>
       )}
 
-      <Block heading="Захиалгын талаар">
+      <Block heading={<T mn="Захиалгын талаар" en="About an order" />}>
         <p>
-          Захиалгын дугаараа бэлдээд бичнэ үү — <Link href="/orders" className="link-underline text-ink">миний захиалга</Link>{' '}
-          хуудсанд байгаа. Төлбөр баталгаажаагүй байвал захиалгын хуудсан дээрх дансны мэдээллийг
-          дахин шалгана уу.
+          <T
+            mn={<>Захиалгын дугаараа бэлдээд бичнэ үү — <Link href="/orders" className="link-underline text-ink">миний захиалга</Link>{' '}хуудсанд байгаа. Төлбөр баталгаажаагүй байвал захиалгын хуудсан дээрх дансны мэдээллийг дахин шалгана уу.</>}
+            en={<>Have your order number ready; you can find it on the <Link href="/orders" className="link-underline text-ink">my orders</Link> page. If your payment is not confirmed yet, check the account details on the order page again.</>}
+          />
         </p>
       </Block>
-      <Block heading="Бөөний захиалга">
+      <Block heading={<T mn="Бөөний захиалга" en="Wholesale" />}>
         <p>
-          Хамтран ажиллах, бөөний захиалгын саналыг
           {contact.email ? (
-            <> <a href={`mailto:${contact.email}`} className="link-underline text-ink">{contact.email}</a> хаягаар</>
-          ) : ' имэйлээр'}{' '}
-          хүлээн авна.
+            <T
+              mn={<>Хамтран ажиллах, бөөний захиалгын саналыг <a href={`mailto:${contact.email}`} className="link-underline text-ink">{contact.email}</a> хаягаар хүлээн авна.</>}
+              en={<>For partnerships and wholesale orders, write to <a href={`mailto:${contact.email}`} className="link-underline text-ink">{contact.email}</a>.</>}
+            />
+          ) : (
+            <T mn="Хамтран ажиллах, бөөний захиалгын саналыг имэйлээр хүлээн авна." en="For partnerships and wholesale orders, write to us by email." />
+          )}
         </p>
       </Block>
     </Prose>
@@ -67,7 +75,7 @@ export default async function ContactPage() {
 
 interface TileProps {
   icon: ReactNode
-  label: string
+  label: ReactNode
   value: string
   href?: string | null
   mono?: boolean

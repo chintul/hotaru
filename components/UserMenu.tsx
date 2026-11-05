@@ -27,6 +27,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
+import { useT } from '@/lib/i18n'
 
 export const LINK_ICON: Record<AccountLink['icon'], ComponentType<IconProps>> = {
   user: IconUser,
@@ -35,10 +36,10 @@ export const LINK_ICON: Record<AccountLink['icon'], ComponentType<IconProps>> = 
   admin: IconShield,
 }
 
-export const THEME_CHOICES: readonly { value: ThemePreference; label: string; icon: ComponentType<IconProps> }[] = [
-  { value: 'system', label: 'Систем', icon: IconMonitor },
-  { value: 'light', label: 'Цайвар', icon: IconSun },
-  { value: 'dark', label: 'Бараан', icon: IconMoon },
+export const THEME_CHOICES: readonly { value: ThemePreference; label: string; labelEn: string; icon: ComponentType<IconProps> }[] = [
+  { value: 'system', label: 'Систем', labelEn: 'System', icon: IconMonitor },
+  { value: 'light', label: 'Цайвар', labelEn: 'Light', icon: IconSun },
+  { value: 'dark', label: 'Бараан', labelEn: 'Dark', icon: IconMoon },
 ]
 
 const isThemeChoice = (value: string): value is ThemePreference =>
@@ -49,11 +50,12 @@ const ITEM = 'min-h-10 gap-3 rounded-lg px-3 text-[14px]'
 export default function UserMenu() {
   const { isAuthenticated, displayName, links, signOut } = useAccount()
   const { preference, setPreference } = useTheme()
+  const t = useT()
 
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon-touch" aria-label="Хэрэглэгчийн цэс">
+        <Button variant="ghost" size="icon-touch" aria-label={t('Хэрэглэгчийн цэс', 'Account menu')}>
           <IconUser />
         </Button>
       </DropdownMenuTrigger>
@@ -61,7 +63,7 @@ export default function UserMenu() {
         {isAuthenticated && displayName && (
           <>
             <DropdownMenuLabel className="px-3 py-2">
-              <span className="block text-[11px] font-normal text-muted-foreground">Нэвтэрсэн</span>
+              <span className="block text-[11px] font-normal text-muted-foreground">{t('Нэвтэрсэн', 'Signed in as')}</span>
               <span className="block truncate text-[14px] font-semibold">{displayName}</span>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
@@ -79,15 +81,15 @@ export default function UserMenu() {
           )
         })}
         <DropdownMenuSeparator />
-        <DropdownMenuLabel className="px-3 pb-1 pt-2 text-[11px] font-normal text-muted-foreground">Өнгөний горим</DropdownMenuLabel>
+        <DropdownMenuLabel className="px-3 pb-1 pt-2 text-[11px] font-normal text-muted-foreground">{t('Өнгөний горим', 'Appearance')}</DropdownMenuLabel>
         <DropdownMenuRadioGroup
           value={preference}
           onValueChange={(value) => { if (isThemeChoice(value)) setPreference(value) }}
         >
-          {THEME_CHOICES.map(({ value, label, icon: Icon }) => (
+          {THEME_CHOICES.map(({ value, label, labelEn, icon: Icon }) => (
             <DropdownMenuRadioItem key={value} value={value} className={cn(ITEM, 'pl-8')}>
               <Icon width="18" height="18" aria-hidden="true" />
-              {label}
+              {t(label, labelEn)}
             </DropdownMenuRadioItem>
           ))}
         </DropdownMenuRadioGroup>
@@ -96,7 +98,7 @@ export default function UserMenu() {
             <DropdownMenuSeparator />
             <DropdownMenuItem className={ITEM} onSelect={() => { void signOut() }}>
               <IconLogOut width="18" height="18" aria-hidden="true" />
-              Гарах
+              {t('Гарах', 'Sign out')}
             </DropdownMenuItem>
           </>
         )}

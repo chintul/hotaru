@@ -12,6 +12,7 @@ import { errorMessage } from '@/lib/errors'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { useT } from '@/lib/i18n'
 
 interface MyProductReviewData {
   reviewCollection: Connection<Review> | null
@@ -49,6 +50,7 @@ const MAX_STARS = 5
 
 export default function ReviewForm({ productId, slug }: ReviewFormProps) {
   const { isAuthenticated, ready, user } = useSession()
+  const t = useT()
 
   const { data, refetch } = useQuery<MyProductReviewData, MyProductReviewVars>(MY_PRODUCT_REVIEW, {
     variables: { productId, profileId: user?.id },
@@ -78,10 +80,10 @@ export default function ReviewForm({ productId, slug }: ReviewFormProps) {
     return (
       <Shell>
         <p className="text-[14px] text-ink-soft">
-          Сэтгэгдэл бичихийн тулд нэвтэрнэ үү.
+          {t('Сэтгэгдэл бичихийн тулд нэвтэрнэ үү.', 'Log in to write a review.')}
         </p>
         <Link href={`/login?next=/shop/${slug}`} className="label link-underline mt-3 inline-block">
-          Нэвтрэх
+          {t('Нэвтрэх', 'Log in')}
         </Link>
       </Shell>
     )
@@ -93,7 +95,9 @@ export default function ReviewForm({ productId, slug }: ReviewFormProps) {
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
           <Stars value={mine.rating} />
           <span className="text-[13px] text-ink-soft">
-            {mine.isApproved ? 'Таны сэтгэгдэл нийтлэгдсэн.' : 'Таны сэтгэгдлийг дэлгүүр нуусан байна.'}
+            {mine.isApproved
+              ? t('Таны сэтгэгдэл нийтлэгдсэн.', 'Your review is published.')
+              : t('Таны сэтгэгдлийг дэлгүүр нуусан байна.', 'The store has hidden your review.')}
           </span>
         </div>
         {mine.title && <p className="mt-2 font-medium">{mine.title}</p>}
@@ -102,7 +106,7 @@ export default function ReviewForm({ productId, slug }: ReviewFormProps) {
           onClick={() => { setEditing(true); setDraft(null) }}
           className="label link-underline mt-4 inline-block"
         >
-          Засах
+          {t('Засах', 'Edit')}
         </button>
       </Shell>
     )
@@ -111,15 +115,15 @@ export default function ReviewForm({ productId, slug }: ReviewFormProps) {
   if (justSent) {
     return (
       <Shell>
-        <p className="text-[14px]">Баярлалаа! 🎀</p>
+        <p className="text-[14px]">{t('Баярлалаа! 🎀', 'Thank you! 🎀')}</p>
         <p className="mt-1 text-[14px] text-ink-soft">
-          Сэтгэгдэл тань нийтлэгдлээ.
+          {t('Сэтгэгдэл тань нийтлэгдлээ.', 'Your review has been published.')}
         </p>
         <button
           onClick={() => { setJustSent(false); setEditing(true); setDraft(null) }}
           className="label link-underline mt-4 inline-block"
         >
-          Засах
+          {t('Засах', 'Edit')}
         </button>
       </Shell>
     )
@@ -145,20 +149,20 @@ export default function ReviewForm({ productId, slug }: ReviewFormProps) {
             setDraft(null)
             refetch()
           } catch (err) {
-            setError(errorMessage(err, 'Илгээж чадсангүй. Дахин оролдоно уу.'))
+            setError(errorMessage(err, t('Илгээж чадсангүй. Дахин оролдоно уу.', 'Could not send. Please try again.')))
           }
         }}
       >
         <fieldset>
-          <legend className="label text-ink-faint">Үнэлгээ</legend>
-          <div role="radiogroup" aria-label="Үнэлгээ" className="mt-2 flex gap-1">
+          <legend className="label text-ink-faint">{t('Үнэлгээ', 'Rating')}</legend>
+          <div role="radiogroup" aria-label={t('Үнэлгээ', 'Rating')} className="mt-2 flex gap-1">
             {STAR_VALUES.map((n) => (
               <button
                 key={n}
                 type="button"
                 role="radio"
                 aria-checked={value.rating === n}
-                aria-label={`${n} од`}
+                aria-label={t(`${n} од`, n === 1 ? '1 star' : `${n} stars`)}
                 onClick={() => set({ rating: n })}
                 className={`text-[26px] leading-none transition-colors ${
                   n <= value.rating ? 'text-ink' : 'text-line hover:text-ink-faint'
@@ -171,7 +175,7 @@ export default function ReviewForm({ productId, slug }: ReviewFormProps) {
         </fieldset>
 
         <label className="mt-5 block">
-          <span className="label text-ink-faint">Гарчиг (заавал биш)</span>
+          <span className="label text-ink-faint">{t('Гарчиг (заавал биш)', 'Title (optional)')}</span>
           <Input
             value={value.title}
             onChange={(e) => set({ title: e.target.value })}
@@ -181,13 +185,13 @@ export default function ReviewForm({ productId, slug }: ReviewFormProps) {
         </label>
 
         <label className="mt-4 block">
-          <span className="label text-ink-faint">Сэтгэгдэл (заавал биш)</span>
+          <span className="label text-ink-faint">{t('Сэтгэгдэл (заавал биш)', 'Review (optional)')}</span>
           <Textarea
             value={value.body}
             onChange={(e) => set({ body: e.target.value })}
             rows={4}
             maxLength={2000}
-            className="mt-2 min-h-28 resize-y rounded-none p-3 text-[14px] md:text-[14px]"
+            className="mt-2 min-h-28 resize-y rounded-xl p-3 text-[14px] md:text-[14px]"
           />
         </label>
 
@@ -195,7 +199,7 @@ export default function ReviewForm({ productId, slug }: ReviewFormProps) {
 
         <div className="mt-5 flex flex-wrap items-center gap-3">
           <Button type="submit" variant="line" size="touch" disabled={loading || unrated}>
-            {loading ? 'Илгээж байна…' : mine ? 'Хадгалах' : 'Илгээх'}
+            {loading ? t('Илгээж байна…', 'Sending…') : mine ? t('Хадгалах', 'Save') : t('Илгээх', 'Submit')}
           </Button>
           {mine && (
             <button
@@ -203,17 +207,17 @@ export default function ReviewForm({ productId, slug }: ReviewFormProps) {
               onClick={() => { setEditing(false); setDraft(null); setError(null) }}
               className="label link-underline text-ink-faint"
             >
-              Болих
+              {t('Болих', 'Cancel')}
             </button>
           )}
           {unrated && (
-            <span className="text-[13px] text-ink-faint">Од сонгоно уу</span>
+            <span className="text-[13px] text-ink-faint">{t('Од сонгоно уу', 'Choose a rating')}</span>
           )}
         </div>
 
         <p className="mt-4 text-[12px] text-ink-faint">
-          Илгээмэгц шууд нийтлэгдэнэ.
-          {mine?.isVerifiedPurchase && ' Таны худалдан авалт баталгаажсан.'}
+          {t('Илгээмэгц шууд нийтлэгдэнэ.', 'Reviews are published as soon as you submit.')}
+          {mine?.isVerifiedPurchase && t(' Таны худалдан авалт баталгаажсан.', ' Your purchase is verified.')}
         </p>
       </form>
     </Shell>
@@ -221,17 +225,19 @@ export default function ReviewForm({ productId, slug }: ReviewFormProps) {
 }
 
 function Shell({ children }: { children: ReactNode }) {
+  const t = useT()
   return (
     <div className="border border-line p-6 sm:p-7">
-      <p className="label">Сэтгэгдэл бичих</p>
+      <p className="label">{t('Сэтгэгдэл бичих', 'Write a review')}</p>
       <div className="mt-4">{children}</div>
     </div>
   )
 }
 
 export function Stars({ value }: { value: number }) {
+  const t = useT()
   return (
-    <span className="tabular-nums" aria-label={`5-аас ${value}`} role="img">
+    <span className="tabular-nums" aria-label={t(`5-аас ${value}`, `${value} out of 5`)} role="img">
       <span aria-hidden>{'★'.repeat(value)}{'☆'.repeat(MAX_STARS - value)}</span>
     </span>
   )

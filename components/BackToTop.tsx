@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from 'react'
 import { IconArrowUp } from './Icons'
+import { useT } from '@/lib/i18n'
 
 const SHOW_AFTER_PX = 600
 
 export default function BackToTop() {
   const [show, setShow] = useState(false)
+  const t = useT()
 
   useEffect(() => {
     const onScroll = () => setShow(window.scrollY > SHOW_AFTER_PX)
@@ -21,7 +23,7 @@ export default function BackToTop() {
     <button
       onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
       className="fixed right-3 top-1/2 z-30 hidden h-11 w-11 -translate-y-1/2 place-items-center border border-line bg-paper shadow-sm transition-colors hover:bg-shade md:grid"
-      aria-label="Дээш"
+      aria-label={t('Дээш', 'Back to top')}
     >
       <IconArrowUp />
     </button>

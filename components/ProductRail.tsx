@@ -2,9 +2,11 @@
 
 import { useRef, useState, type ReactNode } from 'react'
 import { ArrowLeft, ArrowRight } from 'lucide-react'
+import { useT } from '@/lib/i18n'
 
 export default function ProductRail({ children }: { children: ReactNode }) {
   const track = useRef<HTMLUListElement>(null)
+  const t = useT()
   const [atStart, setAtStart] = useState(true)
   const [atEnd, setAtEnd] = useState(false)
   const move = (direction: number) => {
@@ -27,10 +29,10 @@ export default function ProductRail({ children }: { children: ReactNode }) {
         {children}
       </ul>
       <div className="mt-4 hidden justify-end gap-2 sm:flex">
-        <button type="button" className="round-arrow" onClick={() => move(-1)} disabled={atStart} aria-label="Өмнөх бараанууд">
+        <button type="button" className="round-arrow" onClick={() => move(-1)} disabled={atStart} aria-label={t('Өмнөх бараанууд', 'Previous products')}>
           <ArrowLeft size={18} />
         </button>
-        <button type="button" className="round-arrow" onClick={() => move(1)} disabled={atEnd} aria-label="Дараагийн бараанууд">
+        <button type="button" className="round-arrow" onClick={() => move(1)} disabled={atEnd} aria-label={t('Дараагийн бараанууд', 'Next products')}>
           <ArrowRight size={18} />
         </button>
       </div>

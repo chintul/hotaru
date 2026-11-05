@@ -7,6 +7,7 @@ import { copy as productCopy, firstNode, nodes } from '@/lib/format'
 import ProductDetailClient from '@/components/ProductDetailClient'
 import ReviewForm, { Stars } from '@/components/ReviewForm'
 import { paymentCopy } from '@/lib/payment-copy'
+import { T } from '@/lib/i18n'
 import type { Connection, Product } from '@/lib/types'
 
 interface ProductData {
@@ -43,7 +44,9 @@ export default async function ProductPage({ params }: PageProps<'/shop/[slug]'>)
   if (error) {
     return (
       <div className="mx-auto max-w-[1400px] px-5 py-20 text-center sm:px-8">
-        <p className="text-ink-soft">Бүтээгдэхүүн ачаалж чадсангүй.</p>
+        <p className="text-ink-soft">
+          <T mn="Бүтээгдэхүүн ачаалж чадсангүй." en="Could not load this product." />
+        </p>
       </div>
     )
   }
@@ -54,17 +57,17 @@ export default async function ProductPage({ params }: PageProps<'/shop/[slug]'>)
   return (
     <div className="mx-auto max-w-[1400px] px-5 py-8 lg:px-8">
       <nav className="mb-6 text-[12px] text-ink-faint">
-        <Link href="/" className="tap hover:text-ink">Нүүр</Link>
+        <Link href="/" className="tap hover:text-ink"><T mn="Нүүр" en="Home" /></Link>
         <span className="px-2">/</span>
-        <Link href="/shop" className="tap hover:text-ink">Дэлгүүр</Link>
+        <Link href="/shop" className="tap hover:text-ink"><T mn="Дэлгүүр" en="Shop" /></Link>
         <span className="px-2">/</span>
         <span className="text-ink">{productCopy(product).title}</span>
       </nav>
-      <ProductDetailClient product={product} copy={productCopy(product)} payNote={pay.long} />
+      <ProductDetailClient product={product} copy={productCopy(product)} payNote={pay.long} payNoteEn={pay.longEn} />
 
       <section className="mt-20 border-t border-line pt-12">
-        <h2 className="section-title uppercase">
-          Сэтгэгдэл{reviews.length > 0 ? ` (${product.reviewCollection?.totalCount})` : ''}
+        <h2 className="section-title">
+          <T mn="Сэтгэгдэл" en="Reviews" />{reviews.length > 0 ? ` (${product.reviewCollection?.totalCount})` : ''}
         </h2>
 
         <div className="mx-auto mt-8 grid max-w-[900px] gap-10 lg:max-w-none lg:grid-cols-[1fr_380px]">
@@ -76,13 +79,13 @@ export default async function ProductPage({ params }: PageProps<'/shop/[slug]'>)
                     <Stars value={r.rating} />
                     {r.title && <p className="mt-1 font-medium">{r.title}</p>}
                     {r.body && <p className="mt-1 text-ink-soft">{r.body}</p>}
-                    {r.isVerifiedPurchase && <p className="label mt-1 text-ink-faint">Баталгаажсан худалдан авалт</p>}
+                    {r.isVerifiedPurchase && <p className="label mt-1 text-ink-faint"><T mn="Баталгаажсан худалдан авалт" en="Verified purchase" /></p>}
                   </li>
                 ))}
               </ul>
             ) : (
               <p className="text-ink-soft">
-                Одоогоор сэтгэгдэл алга. Хамгийн түрүүнд бичээрэй.
+                <T mn="Одоогоор сэтгэгдэл алга. Хамгийн түрүүнд бичээрэй." en="No reviews yet. Be the first to write one." />
               </p>
             )}
           </div>

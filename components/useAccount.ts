@@ -6,6 +6,7 @@ import { firstNode } from '@/lib/format'
 import type { Connection, Profile } from '@/lib/types'
 import { useSession } from './useSession'
 import { useAuthUpgrade } from './useAuthUpgrade'
+import { useT } from '@/lib/i18n'
 
 interface MeData {
   profileCollection: Connection<Profile> | null
@@ -20,6 +21,7 @@ export interface AccountLink {
 export function useAccount() {
   const { ready, isAuthenticated, user } = useSession()
   const { signOut } = useAuthUpgrade()
+  const t = useT()
   const { data } = useQuery<MeData>(ME, {
     variables: { id: user?.id ?? '' },
     skip: !isAuthenticated || !user?.id,
@@ -33,15 +35,15 @@ export function useAccount() {
 
   const links: AccountLink[] = isAuthenticated
     ? [
-        { href: '/account', label: 'Профайл', icon: 'user' },
-        { href: '/orders', label: 'Миний захиалга', icon: 'orders' },
-        { href: '/wishlist', label: 'Хадгалсан', icon: 'heart' },
-        ...(isAdmin ? [{ href: '/admin', label: 'Админ самбар', icon: 'admin' } satisfies AccountLink] : []),
+        { href: '/account', label: t('Профайл', 'Profile'), icon: 'user' },
+        { href: '/orders', label: t('Миний захиалга', 'My orders'), icon: 'orders' },
+        { href: '/wishlist', label: t('Хадгалсан', 'Saved'), icon: 'heart' },
+        ...(isAdmin ? [{ href: '/admin', label: t('Админ самбар', 'Admin dashboard'), icon: 'admin' } satisfies AccountLink] : []),
       ]
     : [
-        { href: '/login', label: 'Нэвтрэх', icon: 'user' },
-        { href: '/orders', label: 'Захиалга хянах', icon: 'orders' },
-        { href: '/wishlist', label: 'Хадгалсан', icon: 'heart' },
+        { href: '/login', label: t('Нэвтрэх', 'Sign in'), icon: 'user' },
+        { href: '/orders', label: t('Захиалга хянах', 'Track an order'), icon: 'orders' },
+        { href: '/wishlist', label: t('Хадгалсан', 'Saved'), icon: 'heart' },
       ]
 
   return { ready, isAuthenticated, isAdmin, displayName, links, signOut }

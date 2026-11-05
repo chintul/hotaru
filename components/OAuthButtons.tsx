@@ -6,6 +6,7 @@ import { ISSUE_CART_TRANSFER } from '@/lib/queries'
 import { ensureSession, supabaseBrowser } from '@/lib/supabase/browser'
 import { CART_HANDOFF_KEY } from './CartHandoff'
 import { Button } from '@/components/ui/button'
+import { useT } from '@/lib/i18n'
 
 type OAuthProvider = 'google' | 'apple'
 
@@ -50,6 +51,7 @@ export default function OAuthButtons({ next = '/account' }: OAuthButtonsProps) {
   const apollo = useApolloClient()
   const [busy, setBusy] = useState<OAuthProvider | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const t = useT()
 
   const parkCartForRedirect = async () => {
     try {
@@ -80,8 +82,8 @@ export default function OAuthButtons({ next = '/account' }: OAuthButtonsProps) {
       const message = messageOf(e)
       setError(
         message.toLowerCase().includes('not enabled')
-          ? `${PROVIDER_NAME[provider]}-ээр нэвтрэх түр боломжгүй байна.`
-          : message || 'Нэвтэрч чадсангүй.',
+          ? t(`${PROVIDER_NAME[provider]}-ээр нэвтрэх түр боломжгүй байна.`, `Signing in with ${PROVIDER_NAME[provider]} is unavailable right now.`)
+          : message || t('Нэвтэрч чадсангүй.', 'Couldn’t sign you in.'),
       )
     }
   }
@@ -99,7 +101,7 @@ export default function OAuthButtons({ next = '/account' }: OAuthButtonsProps) {
             className="h-12.5 w-full gap-2.5 rounded-full border-line text-[14px] hover:border-ink hover:bg-background disabled:opacity-45"
           >
             <GoogleMark />
-            {busy === 'google' ? 'Түр хүлээнэ үү…' : 'Google-ээр үргэлжлүүлэх'}
+            {busy === 'google' ? t('Түр хүлээнэ үү…', 'Please wait…') : t('Google-ээр үргэлжлүүлэх', 'Continue with Google')}
           </Button>
         )}
 
@@ -110,7 +112,7 @@ export default function OAuthButtons({ next = '/account' }: OAuthButtonsProps) {
             className="h-12.5 w-full gap-2.5 rounded-full bg-ink-strong text-[14px] text-on-ink hover:bg-ink-strong hover:opacity-90 disabled:opacity-45"
           >
             <AppleMark />
-            {busy === 'apple' ? 'Түр хүлээнэ үү…' : 'Apple-ээр үргэлжлүүлэх'}
+            {busy === 'apple' ? t('Түр хүлээнэ үү…', 'Please wait…') : t('Apple-ээр үргэлжлүүлэх', 'Continue with Apple')}
           </Button>
         )}
       </div>

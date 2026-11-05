@@ -51,7 +51,21 @@ export const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
   oversold: 'Нөөц хүрэлцээгүй',
 }
 
-export const orderStatusLabel = (s: OrderStatus | null | undefined): string => (s ? ORDER_STATUS_LABEL[s] : '')
+export const ORDER_STATUS_LABEL_EN: Record<OrderStatus, string> = {
+  awaiting_payment: 'Awaiting payment',
+  deposit_paid: 'Deposit paid · waiting for stock',
+  awaiting_balance: 'Arrived · balance due',
+  paid: 'Payment confirmed',
+  packed: 'Packed',
+  shipped: 'Out for delivery',
+  delivered: 'Delivered',
+  cancelled: 'Cancelled',
+  refunded: 'Refunded',
+  oversold: 'Out of stock',
+}
+
+export const orderStatusLabel = (s: OrderStatus | null | undefined, lang: 'mn' | 'en' = 'mn'): string =>
+  s ? (lang === 'en' ? ORDER_STATUS_LABEL_EN : ORDER_STATUS_LABEL)[s] : ''
 
 export function parseJson<T extends object = Record<string, unknown>>(
   value: unknown,

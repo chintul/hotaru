@@ -29,8 +29,8 @@ export interface DescribedVariant {
   size?: string | null
 }
 
-export const describeVariant = (v: DescribedVariant | null | undefined): string =>
-  [v?.optionValue, v?.size ? `Хэмжээ ${v.size}` : null].filter(Boolean).join(' · ')
+export const describeVariant = (v: DescribedVariant | null | undefined, sizeWord = 'Хэмжээ'): string =>
+  [v?.optionValue, v?.size ? `${sizeWord} ${v.size}` : null].filter(Boolean).join(' · ')
 
 export const uniqueColours = <T extends DescribedVariant>(variants: readonly T[]): string[] => {
   const seen = new Set<string>()

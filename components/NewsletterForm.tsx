@@ -3,6 +3,7 @@
 import { useState, type SubmitEvent } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { useT } from '@/lib/i18n'
 
 type SubmitState = 'idle' | 'sending' | 'done' | 'error'
 
@@ -14,6 +15,7 @@ export default function NewsletterForm() {
   const [email, setEmail] = useState('')
   const [state, setState] = useState<SubmitState>('idle')
   const [message, setMessage] = useState('')
+  const t = useT()
 
   async function onSubmit(e: SubmitEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -30,15 +32,15 @@ export default function NewsletterForm() {
       const body: NewsletterResponse = await res.json().catch(() => ({}))
       if (!res.ok) {
         setState('error')
-        setMessage(body.error ?? 'Илгээж чадсангүй.')
+        setMessage(body.error ?? t('Илгээж чадсангүй.', 'Couldn’t send.'))
         return
       }
       setState('done')
-      setMessage('Баярлалаа! Бүртгэгдлээ.')
+      setMessage(t('Баярлалаа! Бүртгэгдлээ.', 'Thanks! You’re subscribed.'))
       setEmail('')
     } catch {
       setState('error')
-      setMessage('Сүлжээний алдаа. Дахин оролдоно уу.')
+      setMessage(t('Сүлжээний алдаа. Дахин оролдоно уу.', 'Network error. Please try again.'))
     }
   }
 
@@ -59,18 +61,18 @@ export default function NewsletterForm() {
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="Имэйл хаяг"
-          aria-label="Имэйл хаяг"
+          placeholder={t('Имэйл хаяг', 'Email address')}
+          aria-label={t('Имэйл хаяг', 'Email address')}
           aria-invalid={state === 'error' || undefined}
-          className="h-12 min-w-0 flex-1 rounded-none border-white/25 bg-transparent px-3 text-[13px] text-white placeholder:text-white/40 md:text-[13px]"
+          className="h-12 min-w-0 flex-1 rounded-full border-white/25 bg-transparent px-4 text-[13px] text-white placeholder:text-white/40 md:text-[13px]"
         />
         <Button
           type="submit"
           variant="solid"
           disabled={state === 'sending'}
-          className="h-12 bg-white px-5 text-[13px] text-footer hover:opacity-90 disabled:opacity-60"
+          className="h-12 rounded-full bg-white px-5 text-[13px] font-semibold text-footer hover:opacity-90 disabled:opacity-60"
         >
-          {state === 'sending' ? '…' : 'Илгээх'}
+          {state === 'sending' ? '…' : t('Илгээх', 'Subscribe')}
         </Button>
       </div>
       {message && (

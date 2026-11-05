@@ -111,6 +111,7 @@ export interface Category {
   parent?: { id?: string; slug: string } | null
   imagePath?: string | null
   heroImagePath?: string | null
+  heroMobileImagePath?: string | null
   categoryTranslationCollection?: Connection<CategoryTranslation> | null
   productCollection?: Connection<Product> | null
 }

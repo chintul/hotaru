@@ -3,6 +3,8 @@ import AnnouncementBar from '@/components/AnnouncementBar'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import BottomNav from '@/components/BottomNav'
+import { GuideProvider, MascotGuide } from '@/components/guide/Guide'
+import { LangSync } from '@/lib/i18n'
 import { safeQuery } from '@/lib/apollo/safeQuery'
 import { NAV_CATEGORIES } from '@/lib/queries'
 import { firstNode, nodes, stocked } from '@/lib/format'
@@ -23,10 +25,12 @@ export default async function ShopLayout({ children }: LayoutProps<'/'>) {
   const categories = stocked(nodes(data?.categoryCollection)).map((c) => ({
     href: `/shop?c=${c.slug}`,
     label: firstNode(c.categoryTranslationCollection)?.name ?? c.slug,
+    slug: c.slug,
   }))
 
   return (
-    <>
+    <GuideProvider>
+      <LangSync />
       <AnnouncementBar />
       <Header categories={categories} />
       <main className="min-h-[70vh]">{children}</main>
@@ -38,6 +42,7 @@ export default async function ShopLayout({ children }: LayoutProps<'/'>) {
       <BackToTop />
       <CartHandoff />
       <AnalyticsIdentity />
-    </>
+      <MascotGuide />
+    </GuideProvider>
   )
 }

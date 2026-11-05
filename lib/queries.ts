@@ -5,6 +5,7 @@ export const PRODUCT_CARD = gql`
     id
     slug
     preorderEta
+    preorderDepositPct
     minPriceMnt
     maxPriceMnt
     inStock
@@ -750,6 +751,28 @@ export const HERO = gql`
   }
 `
 
+export const CATEGORY_RAILS = gql`
+  ${PRODUCT_CARD}
+  query CategoryRails {
+    categoryCollection(first: 20, filter: { isVisible: { eq: true } }, orderBy: [{ position: AscNullsLast }]) {
+      edges {
+        node {
+          id
+          slug
+          categoryTranslationCollection(first: 1) { edges { node { name } } }
+          productCollection(
+            first: 12
+            filter: { status: { eq: active } }
+            orderBy: [{ createdAt: DescNullsLast }]
+          ) {
+            edges { node { ...ProductCard } }
+          }
+        }
+      }
+    }
+  }
+`
+
 export const HERO_CATEGORIES = gql`
   query HeroCategories {
     categoryCollection(first: 20, filter: { isVisible: { eq: true } }) {
@@ -758,6 +781,7 @@ export const HERO_CATEGORIES = gql`
           id
           slug
           heroImagePath
+          heroMobileImagePath
           categoryTranslationCollection(first: 1) { edges { node { name } } }
           productCollection(
             first: 1
@@ -765,14 +789,7 @@ export const HERO_CATEGORIES = gql`
             orderBy: [{ createdAt: DescNullsLast }]
           ) {
             totalCount
-            edges {
-              node {
-                createdAt
-                productImageCollection(first: 1, orderBy: [{ position: AscNullsLast }]) {
-                  edges { node { filePath } }
-                }
-              }
-            }
+            edges { node { createdAt } }
           }
         }
       }
@@ -901,7 +918,7 @@ export const ADMIN_CATEGORIES = gql`
     categoryCollection(first: 100, orderBy: [{ position: AscNullsLast }]) {
       edges {
         node {
-          id slug position isVisible heroImagePath
+          id slug position isVisible heroImagePath heroMobileImagePath
           parent { id slug }
           categoryTranslationCollection(first: 1, filter: { locale: { eq: "mn" } }) {
             edges { node { name description } }
@@ -917,6 +934,14 @@ export const ADMIN_SET_CATEGORY_HERO_IMAGE = gql`
   mutation AdminSetCategoryHeroImage($categoryId: UUID!, $heroImagePath: String) {
     adminSetCategoryHeroImage(categoryId: $categoryId, heroImagePath: $heroImagePath) {
       id heroImagePath
+    }
+  }
+`
+
+export const ADMIN_SET_CATEGORY_MOBILE_HERO_IMAGE = gql`
+  mutation AdminSetCategoryMobileHeroImage($categoryId: UUID!, $heroMobileImagePath: String) {
+    adminSetCategoryMobileHeroImage(categoryId: $categoryId, heroMobileImagePath: $heroMobileImagePath) {
+      id heroMobileImagePath
     }
   }
 `

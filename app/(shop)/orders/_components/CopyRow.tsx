@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { IconCheck, IconCopy } from '@/components/Icons'
+import { useT } from '@/lib/i18n'
 
 interface CopyRowProps {
   label: string
@@ -11,6 +12,7 @@ interface CopyRowProps {
 }
 
 export default function CopyRow({ label, value, mono = false, accent = false }: CopyRowProps) {
+  const t = useT()
   const [copied, setCopied] = useState(false)
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
@@ -36,7 +38,7 @@ export default function CopyRow({ label, value, mono = false, accent = false }: 
       }`}
     >
       <div className="min-w-0 flex-1">
-        <p className={`text-[11px] font-semibold uppercase tracking-[.6px] ${accent ? 'text-cream-ink' : 'text-ink-faint'}`}>
+        <p className={`text-[11px] font-semibold ${accent ? 'text-cream-ink' : 'text-ink-faint'}`}>
           {label}
         </p>
         <p className={`mt-0.5 break-words text-[15px] ${mono ? 'tabular-nums tracking-[.3px]' : ''} font-medium`}>
@@ -46,7 +48,7 @@ export default function CopyRow({ label, value, mono = false, accent = false }: 
       <button
         type="button"
         onClick={copy}
-        aria-label={`${label} хуулах`}
+        aria-label={t(`${label} хуулах`, `Copy ${label.toLowerCase()}`)}
         className={`grid h-9 w-9 shrink-0 place-items-center rounded-full border transition-colors ${
           copied ? 'border-mint-ink bg-mint text-mint-ink' : 'border-line bg-paper text-ink-soft hover:border-ink hover:text-ink'
         }`}

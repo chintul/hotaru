@@ -2,6 +2,7 @@ import Link from "next/link";
 import NewsletterForm from "./NewsletterForm";
 import { paymentCopy } from "@/lib/payment-copy";
 import { storeContact } from "@/lib/store-contact";
+import { T } from "@/lib/i18n";
 import {
   IconFacebook,
   IconInstagram,
@@ -12,28 +13,28 @@ import {
 
 const COLUMNS = [
   {
-    title: "Дэлгүүр",
+    title: ["Дэлгүүр", "Shop"],
     links: [
-      { href: "/shop", label: "Бүх бүтээгдэхүүн" },
+      { href: "/shop", label: ["Бүх бүтээгдэхүүн", "All products"] },
     ],
   },
   {
-    title: "Мэдээлэл",
+    title: ["Мэдээлэл", "Information"],
     links: [
-      { href: "/about", label: "Бидний тухай" },
-      { href: "/contact", label: "Холбоо барих" },
+      { href: "/about", label: ["Бидний тухай", "About us"] },
+      { href: "/contact", label: ["Холбоо барих", "Contact"] },
     ],
   },
   {
-    title: "Үйлчилгээ",
+    title: ["Үйлчилгээ", "Help"],
     links: [
-      { href: "/shipping", label: "Хүргэлтийн нөхцөл" },
-      { href: "/returns", label: "Буцаалт, солилт" },
-      { href: "/faq", label: "Түгээмэл асуулт" },
-      { href: "/orders", label: "Захиалга хянах" },
+      { href: "/shipping", label: ["Хүргэлтийн нөхцөл", "Delivery"] },
+      { href: "/returns", label: ["Буцаалт, солилт", "Returns & exchanges"] },
+      { href: "/faq", label: ["Түгээмэл асуулт", "FAQ"] },
+      { href: "/orders", label: ["Захиалга хянах", "Track an order"] },
     ],
   },
-];
+] as const;
 
 export default async function Footer() {
   const [pay, contact] = await Promise.all([paymentCopy(), storeContact()]);
@@ -42,16 +43,16 @@ export default async function Footer() {
     <footer className="bg-footer text-white">
       <div className="mx-auto grid max-w-350 gap-6 px-5 py-10 sm:gap-10 sm:py-16 sm:grid-cols-2 lg:grid-cols-6 lg:px-8">
         {COLUMNS.map((col) => (
-          <div key={col.title}>
-            <h3 className="nav-link text-white">{col.title}</h3>
+          <div key={col.title[0]}>
+            <h3 className="nav-link text-white"><T mn={col.title[0]} en={col.title[1]} /></h3>
             <ul className="mt-3 sm:mt-5 sm:space-y-2.5">
               {col.links.map((l) => (
-                <li key={l.href + l.label}>
+                <li key={l.href}>
                   <Link
                     href={l.href}
                     className="flex min-h-9 items-center text-[13px] text-white/70 transition-colors hover:text-white sm:min-h-0"
                   >
-                    {l.label}
+                    <T mn={l.label[0]} en={l.label[1]} />
                   </Link>
                 </li>
               ))}
@@ -61,7 +62,7 @@ export default async function Footer() {
 
         {!contact.isEmpty && (
           <div>
-            <h3 className="nav-link text-white">Холбоо барих</h3>
+            <h3 className="nav-link text-white"><T mn="Холбоо барих" en="Contact" /></h3>
             <ul className="mt-3 space-y-1 sm:mt-5 sm:space-y-3">
               {contact.phone && (
                 <li>
@@ -129,9 +130,12 @@ export default async function Footer() {
         )}
 
         <div className="lg:col-span-2">
-          <h3 className="nav-link text-white">Мэдээлэл авах</h3>
+          <h3 className="nav-link text-white"><T mn="Мэдээлэл авах" en="Stay in the loop" /></h3>
           <p className="mt-5 text-[13px] text-white/70">
-            Шинэ бүтээгдэхүүн, хөнгөлөлтийн мэдээллийг хамгийн түрүүнд аваарай.
+            <T
+              mn="Шинэ бүтээгдэхүүн, хөнгөлөлтийн мэдээллийг хамгийн түрүүнд аваарай."
+              en="Be the first to hear about new products and discounts."
+            />
           </p>
           <NewsletterForm />
         </div>
@@ -142,7 +146,7 @@ export default async function Footer() {
           <p className="text-[12px] text-white/50">
             © {new Date().getFullYear()} hotaru
           </p>
-          <p className="text-[12px] text-white/50">{pay.short} · Улаанбаатар</p>
+          <p className="text-[12px] text-white/50"><T mn={`${pay.short}, Улаанбаатар`} en={`${pay.shortEn}, Ulaanbaatar`} /></p>
         </div>
       </div>
     </footer>

@@ -35,3 +35,9 @@ export const STAGE_TITLE: Record<PayStage, string> = {
   deposit: 'Одоо төлөх дүн',
   balance: 'Үлдэгдэл төлөх',
 }
+
+export const STAGE_TITLE_EN: Record<PayStage, string> = {
+  full: 'Amount due',
+  deposit: 'Due now',
+  balance: 'Pay the balance',
+}
