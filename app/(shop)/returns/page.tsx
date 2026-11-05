@@ -2,35 +2,35 @@ import type { Metadata } from 'next'
 import Prose, { Block } from '../_components/Prose'
 import { T } from '@/lib/i18n'
 
-export const metadata: Metadata = { title: 'Буцаалт, солилт' }
+export const metadata: Metadata = { title: 'Буцаалтын нөхцөл' }
 
 export default function ReturnsPage() {
   return (
     <Prose
-      title={<T mn="Буцаалт, солилт" en="Returns & exchanges" />}
-      lead={<T mn="Гэмтэлтэй бараа ирсэн бол бид 100% хариуцна." en="If an item arrives damaged, we cover it in full." />}
+      title={<T mn="Буцаалтын нөхцөл" en="Returns policy" />}
+      lead={<T mn="Захиалсан барааг буцаах, солих боломжгүй." en="Orders can't be returned or exchanged." />}
     >
-      <Block heading={<T mn="Гэмтэлтэй бараа" en="Damaged items" />}>
+      <Block heading={<T mn="Буцаалт, солилт" en="Returns & exchanges" />}>
         <p>
           <T
-            mn="Хүлээн авснаас хойш 48 цагийн дотор мэдэгдэнэ үү. Зураг илгээвэл шийдвэрлэхэд хурдан байна. Тээвэрлэлтийн зардлыг бид хариуцна."
-            en="Let us know within 48 hours of receiving it. Sending a photo helps us sort it out faster. We pay for the shipping."
+            mn="Бүх бараа буцаалтгүй. Хүлээн авсны дараа буцаах, солих, мөнгө буцаан олгох боломжгүй тул захиалахаасаа өмнө хэмжээ, өнгө, тайлбарыг сайтар шалгаарай."
+            en="All sales are final. Once received, items can't be returned, exchanged or refunded, so please check the size, colour and description before you order."
           />
         </p>
       </Block>
-      <Block heading={<T mn="Санаа таарахгүй байвал" en="If it's not quite right" />}>
+      <Block heading={<T mn="Гэмтэлтэй ирсэн бол" en="If it arrives damaged" />}>
         <p>
           <T
-            mn="Хэрэглээгүй, савлагаа нь бүрэн бол 7 хоногийн дотор солих боломжтой. Буцаах тээврийн зардлыг худалдан авагч хариуцна."
-            en="Unused items in full packaging can be exchanged within 7 days. Return shipping is paid by the buyer."
+            mn="Хүлээн авснаас хойш 48 цагийн дотор зурагтай нь бидэнд мэдэгдээрэй. Бид шалгаад ижил барааг сольж өгнө, тээврийн зардлыг бид хариуцна."
+            en="Tell us within 48 hours of receiving it, with a photo. We check it and replace the item, and we pay for the shipping."
           />
         </p>
       </Block>
-      <Block heading={<T mn="Мөнгө буцаалт" en="Refunds" />}>
+      <Block heading={<T mn="Цуцлах, урьдчилгаа" en="Cancelling & deposits" />}>
         <p>
           <T
-            mn="Захиалга илгээгдээгүй байхад цуцалбал төлсөн дүнг бүтэн буцаана. Төлсөн мөнгийг ажлын 1–3 хоногт таны данс руу буцаана."
-            en="If you cancel before the order ships, we refund the full amount to your account within 1–3 working days."
+            mn="Төлбөр төлөхөөс өмнө захиалгаа цуцалж болно. Төлбөр төлсний дараа цуцлах, мөнгө буцаах боломжгүй. Урьдчилсан захиалгын урьдчилгаа буцаагдахгүй."
+            en="You can cancel an order before you pay. Once paid, it can't be cancelled or refunded. Pre-order deposits are non-refundable."
           />
         </p>
       </Block>

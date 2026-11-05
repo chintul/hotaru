@@ -59,6 +59,7 @@ export function guideQuestions(t: Translate) {
       q: t('Урьдчилсан захиалга гэж юу вэ?', 'What is a pre-order?'),
       a: [
         t('Үлдэгдэлгүй барааг урьдчилгаа төлөөд захиална.', 'You order an out-of-stock item by paying a deposit.'),
+        t('Захиалга баталгаажсанаас хойш 10–14 хоногт ирнэ.', 'It arrives 10–14 days after your order is confirmed.'),
         t('Үлдсэнийг бараа ирэхэд төлнө. Ирмэгц бид мэдэгдэнэ.', 'You pay the rest when it arrives. We let you know as soon as it does.'),
       ],
     },
@@ -76,10 +77,10 @@ export function guideQuestions(t: Translate) {
     returns: {
       q: t('Буцааж, сольж болох уу?', 'Can I return or exchange?'),
       a: [
-        t('Гэмтэлтэй бол хүлээн авснаас хойш 48 цагийн дотор мэдэгдээрэй, бид 100% хариуцна.', 'If it arrives damaged, tell us within 48 hours and we cover it in full.'),
-        t('Хэрэглээгүй, савлагаа бүрэн бол 7 хоногийн дотор сольж болно.', 'Unused items in full packaging can be exchanged within 7 days.'),
+        t('Үгүй. Захиалсан барааг буцаах, солих боломжгүй.', 'No. Orders can’t be returned or exchanged.'),
+        t('Гэмтэлтэй ирсэн бол хүлээн авснаас хойш 48 цагийн дотор мэдэгдээрэй, бид сольж өгнө.', 'If it arrives damaged, tell us within 48 hours and we replace it.'),
       ],
-      link: { href: '/returns', label: t('Буцаалт, солилт', 'Returns & exchanges') },
+      link: { href: '/returns', label: t('Буцаалтын нөхцөл', 'Returns policy') },
     },
     confirm: {
       q: t('Төлбөр хэзээ баталгаажих вэ?', 'When is my payment confirmed?'),
@@ -91,8 +92,8 @@ export function guideQuestions(t: Translate) {
     cancel: {
       q: t('Захиалгаа цуцалж болох уу?', 'Can I cancel my order?'),
       a: [
-        t('Илгээгдээгүй байхад цуцалж болно.', 'Yes, as long as it has not shipped.'),
-        t('Төлсөн дүнг ажлын 1–3 хоногт буцааж шилжүүлнэ.', 'We refund what you paid within 1–3 working days.'),
+        t('Төлбөр төлөхөөс өмнө цуцалж болно.', 'Yes, before you pay.'),
+        t('Төлбөр төлсний дараа цуцлах, мөнгө буцаах боломжгүй.', 'Once paid, orders can’t be cancelled or refunded.'),
       ],
       link: contact,
     },
@@ -199,7 +200,7 @@ export function MascotGuide() {
 
   return (
     <div
-      className="fixed bottom-[calc(var(--bottom-nav-h)+8px)] left-1.5 z-30 flex items-end gap-1.5 lg:bottom-6 lg:left-6"
+      className="mascot-guide fixed left-1.5 z-30 flex items-end gap-1.5 lg:left-6"
       onKeyDown={(e) => {
         if (e.key === 'Escape') close()
       }}

@@ -76,7 +76,7 @@ export default function Header({ categories = [] }: HeaderProps) {
           type="button"
           onClick={() => open('search')}
           aria-label={t('Хайх', 'Search')}
-          className="header-search flex h-10 min-w-0 flex-1 items-center gap-2.5 rounded-full px-3.5 text-left text-[14px] text-ink-faint lg:w-44 lg:flex-none xl:w-72"
+          className="header-search hidden h-10 min-w-0 items-center gap-2.5 rounded-full px-3.5 text-left text-[14px] text-ink-faint lg:flex lg:w-44 lg:flex-none xl:w-72"
         >
           <IconSearch width="18" height="18" aria-hidden="true" className="shrink-0 text-ink-soft" />
           <span className="truncate">{t('Бараа хайх', 'Search products')}</span>
@@ -121,7 +121,7 @@ export default function Header({ categories = [] }: HeaderProps) {
           ))}
         </nav>
 
-        <div className="flex shrink-0 items-center">
+        <div className="ml-auto flex shrink-0 items-center lg:ml-0">
           <div className="hidden lg:block">
             <LangSwitch compact />
           </div>

@@ -17,7 +17,7 @@ export interface HeroSlide {
   href: string
 }
 
-const ADVANCE_MS = 6000
+const ADVANCE_MS = 5000
 const SWIPE_PX = 40
 
 export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
@@ -48,9 +48,7 @@ export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
       className="studio-hero"
       aria-roledescription="carousel"
       aria-label={t('Онцлох цуглуулгууд', 'Featured collections')}
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-      onFocusCapture={() => setPaused(true)}
+      onFocusCapture={(e) => setPaused(e.target.matches(':focus-visible'))}
       onBlurCapture={() => setPaused(false)}
     >
       <div

@@ -265,7 +265,7 @@ export const MY_ORDERS = gql`
           id orderNumber status paymentStatus totalMnt upfrontMnt balanceMnt placedAt trackingNumber
           deliveryMethod { name kind }
           orderItemCollection(first: 20) {
-            edges { node { id productTitle variantLabel quantity unitPriceMnt lineTotalMnt isPreorder } }
+            edges { node { id productTitle variantLabel imagePath quantity unitPriceMnt lineTotalMnt isPreorder } }
           }
         }
       }
@@ -807,7 +807,7 @@ export const ACCOUNT_OVERVIEW = gql`
       edges {
         node {
           id orderNumber status paymentStatus totalMnt placedAt
-          orderItemCollection(first: 3) { edges { node { id productTitle imagePath } } }
+          orderItemCollection(first: 10) { edges { node { id productTitle imagePath quantity } } }
         }
       }
     }

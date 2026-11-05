@@ -39,6 +39,20 @@ const QA: readonly QA[] = [
     ],
   },
   {
+    q: ['Урьдчилсан захиалга хэзээ ирэх вэ?', 'When does a pre-order arrive?'],
+    a: [
+      'Захиалга баталгаажсанаас хойш 10–14 хоногт ирнэ. Бараа ирмэгц бид мэдэгдэж, үлдэгдлийн нэхэмжлэл илгээнэ.',
+      'It arrives 10–14 days after your order is confirmed. We let you know as soon as it does and send an invoice for the balance.',
+    ],
+  },
+  {
+    q: ['Буцааж, сольж болох уу?', 'Can I return or exchange?'],
+    a: [
+      'Үгүй. Захиалсан барааг буцаах, солих боломжгүй. Гэмтэлтэй ирсэн бол хүлээн авснаас хойш 48 цагийн дотор мэдэгдээрэй, бид сольж өгнө.',
+      'No. Orders can’t be returned or exchanged. If something arrives damaged, tell us within 48 hours and we replace it.',
+    ],
+  },
+  {
     q: ['Хүргэлт хэр хугацаанд ирэх вэ?', 'How long does delivery take?'],
     a: [
       'Улаанбаатар хотод ажлын 1–2 хоног. Орон нутагт унааны хуваарь дагана.',
@@ -48,8 +62,8 @@ const QA: readonly QA[] = [
   {
     q: ['Захиалгаа цуцалж болох уу?', 'Can I cancel my order?'],
     a: [
-      'Илгээгдээгүй байхад цуцалж болно. Захиалгын хуудаснаас цуцлах эсвэл бидэнтэй холбогдоно уу.',
-      'Yes, as long as it has not shipped. Cancel from the order page or get in touch with us.',
+      'Төлбөр төлөхөөс өмнө захиалгын хуудаснаас цуцалж болно. Төлбөр төлсний дараа цуцлах, мөнгө буцаах боломжгүй.',
+      'Yes, before you pay, from the order page. Once paid, orders can’t be cancelled or refunded.',
     ],
   },
 ]

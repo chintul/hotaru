@@ -3,6 +3,8 @@ import type { Mnt } from './types.ts'
 
 export const DEFAULT_DEPOSIT_PCT = 50
 
+export const PREORDER_ARRIVAL_DAYS = '10–14'
+
 export interface PreorderStock {
   quantity?: number | null
   allowBackorder?: boolean | null

@@ -12,7 +12,7 @@ import { useUI } from './UIProvider'
 import ProductImage, { swatchTone } from './ProductImage'
 import { IconCheck, IconHeart, IconMinus, IconPlus, IconShare } from './Icons'
 import { errorMessage } from '@/lib/errors'
-import { DEFAULT_DEPOSIT_PCT, depositOf, isPreorder, unitPriceOf } from '@/lib/preorder'
+import { DEFAULT_DEPOSIT_PCT, PREORDER_ARRIVAL_DAYS, depositOf, isPreorder, unitPriceOf } from '@/lib/preorder'
 import PreorderTag from './PreorderTag'
 import { saleOf } from '@/lib/sale'
 import { Button } from '@/components/ui/button'
@@ -531,11 +531,15 @@ export default function ProductDetailClient({ product, copy, payNote, payNoteEn 
           {preorder && (
             <div className="mt-6 rounded-2xl bg-paper-warm p-4 text-[13px]">
               <PreorderTag />
-              {product.preorderEta && (
-                <p className="mt-2.5 text-ink-soft">
-                  {t('Ирэх хугацаа:', 'Expected:')} <span className="font-semibold text-ink">{product.preorderEta}</span>
-                </p>
-              )}
+              <p className="mt-2.5 text-ink-soft">
+                {t('Ирэх хугацаа:', 'Arrives:')}{' '}
+                <span className="font-semibold text-ink">
+                  {product.preorderEta || t(
+                    `захиалга баталгаажсанаас хойш ${PREORDER_ARRIVAL_DAYS} хоногт`,
+                    `${PREORDER_ARRIVAL_DAYS} days after your order is confirmed`,
+                  )}
+                </span>
+              </p>
               <div className="mt-3 space-y-1 border-t border-line pt-3">
                 <p className="text-ink-soft">
                   {t('Урьдчилгаа:', 'Deposit:')}{' '}
@@ -558,8 +562,8 @@ export default function ProductDetailClient({ product, copy, payNote, payNoteEn 
               </div>
               <p className="mt-3 leading-relaxed text-ink-soft">
                 {t(
-                  'Урьдчилгаа төлбөр буцаагдахгүй тул итгэлтэй байвал захиалаарай. Бараа ирмэгц үлдэгдлийн нэхэмжлэл илгээж, бүрэн төлөгдсөний дараа хүргэнэ.',
-                  "Deposits are non-refundable, so order only if you're sure. When the item arrives we send an invoice for the balance and deliver once it's paid in full.",
+                  'Урьдчилгаа буцаагдахгүй, захиалсан барааг буцаах, солих боломжгүй тул итгэлтэй байвал захиалаарай. Бараа ирмэгц үлдэгдлийн нэхэмжлэл илгээж, бүрэн төлөгдсөний дараа хүргэнэ.',
+                  "Deposits are non-refundable and orders can't be returned or exchanged, so order only if you're sure. When the item arrives we send an invoice for the balance and deliver once it's paid in full.",
                 )}
               </p>
             </div>
@@ -649,7 +653,7 @@ export default function ProductDetailClient({ product, copy, payNote, payNoteEn 
       </div>
 
       {showBar && (
-        <div className="fixed inset-x-0 bottom-(--bottom-nav-h) z-30 border-t border-line bg-paper/97 backdrop-blur">
+        <div className="pdp-sticky-bar fixed inset-x-0 bottom-(--bottom-nav-h) z-30 border-t border-line bg-paper/97 backdrop-blur">
           <div className="mx-auto flex max-w-[1400px] items-center gap-4 px-5 py-3 lg:px-8">
             <div className="relative hidden h-12 w-12 shrink-0 overflow-hidden bg-shade sm:block">
               <ProductImage filePath={images[0]?.filePath} alt="" seed={product.slug} sizes="48px" />
