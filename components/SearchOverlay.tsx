@@ -200,7 +200,7 @@ function Suggestions({ categories, onNavigate, compact = false }: SuggestionsPro
   ]
   return (
     <div className="mt-4">
-      {!compact && <p className="mb-2 text-[11px] font-medium text-ink-faint">{t('Ангилалаар үзэх', 'Browse by category')}</p>}
+      {!compact && <p className="mb-2 text-[11px] font-medium text-ink-faint">{t('Ангиллаар үзэх', 'Browse by category')}</p>}
       <ul className={`flex flex-wrap gap-1.5 ${compact ? 'justify-center' : ''}`}>
         {links.map((link) => (
           <li key={link.href}>

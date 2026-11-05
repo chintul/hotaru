@@ -71,7 +71,7 @@ export default function AccountPage() {
           <p className="mt-1 text-[13px] text-ink-soft">
             {profile?.email ?? user?.email}
             {profile?.phone && ` · ${profile.phone}`}
-            {profile?.createdAt && (lang === 'en' ? ` · since ${formatDate(profile.createdAt)}` : ` · ${formatDate(profile.createdAt)}-с хойш`)}
+            {profile?.createdAt && (lang === 'en' ? ` · since ${formatDate(profile.createdAt)}` : ` · бүртгүүлсэн: ${formatDate(profile.createdAt)}`)}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -95,7 +95,7 @@ export default function AccountPage() {
           <h2 className="text-[15px] font-bold">{t('Утасны дугаараа баталгаажуулах', 'Verify your phone number')}</h2>
           <p className="mt-1.5 max-w-xl text-[13px] text-ink-soft">
             {t(
-              'Баталгаажуулсны дараа зөвхөн утсаараа нэвтэрч, хүргэлтийн үед холбогдоход ашиглагдана.',
+              'Баталгаажуулсны дараа утсаараа нэвтэрч болно. Дугаарыг тань хүргэлтийн үед холбогдоход ашиглана.',
               'Once verified, you can sign in with just your phone, and we’ll use it to reach you on delivery.',
             )}
           </p>
@@ -199,7 +199,7 @@ function ProfileDetails({ profile, onSaved }: ProfileDetailsProps) {
             htmlFor={marketingId}
             className="cursor-pointer text-[13px] font-normal leading-normal text-ink-soft"
           >
-            {t('Шинэ бүтээгдэхүүн, хөнгөлөлтийн мэдээлэл имэйлээр авах', 'Email me about new products and offers')}
+            {t('Шинэ бүтээгдэхүүн, хөнгөлөлтийн мэдээллийг имэйлээр авах', 'Email me about new products and offers')}
           </Label>
         </div>
 

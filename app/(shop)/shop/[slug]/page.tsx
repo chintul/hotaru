@@ -45,7 +45,7 @@ export default async function ProductPage({ params }: PageProps<'/shop/[slug]'>)
     return (
       <div className="mx-auto max-w-[1400px] px-5 py-20 text-center sm:px-8">
         <p className="text-ink-soft">
-          <T mn="Бүтээгдэхүүн ачаалж чадсангүй." en="Could not load this product." />
+          <T mn="Бүтээгдэхүүнийг ачаалж чадсангүй." en="Could not load this product." />
         </p>
       </div>
     )

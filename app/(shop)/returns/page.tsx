@@ -21,7 +21,7 @@ export default function ReturnsPage() {
       <Block heading={<T mn="Гэмтэлтэй ирсэн бол" en="If it arrives damaged" />}>
         <p>
           <T
-            mn="Хүлээн авснаас хойш 48 цагийн дотор зурагтай нь бидэнд мэдэгдээрэй. Бид шалгаад ижил барааг сольж өгнө, тээврийн зардлыг бид хариуцна."
+            mn="Хүлээн авснаас хойш 48 цагийн дотор зургийн хамт бидэнд мэдэгдээрэй. Бид шалгаад ижил бараагаар сольж өгөх бөгөөд тээврийн зардлыг хариуцна."
             en="Tell us within 48 hours of receiving it, with a photo. We check it and replace the item, and we pay for the shipping."
           />
         </p>

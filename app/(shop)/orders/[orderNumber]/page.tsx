@@ -338,7 +338,7 @@ export default function OrderPage({
     return (
       <Empty
         emoji="🔑"
-        title={t("Нэвтэрч орно уу", "Please log in")}
+        title={t("Нэвтэрнэ үү", "Please log in")}
         body={t("Захиалгаа харахын тулд нэвтэрнэ үү.", "Log in to see your order.")}
         href={`/login?next=/orders/${orderNumber}`}
         cta={t("Нэвтрэх", "Log in")}
@@ -421,7 +421,7 @@ export default function OrderPage({
       {order.status === "refunded" && (
         <Banner tone="stop" title={t("Төлбөр буцаагдсан", "Payment refunded")}>
           {t(
-            "Мөнгө таны данс руу 1–3 ажлын өдөрт орно.",
+            "Мөнгө таны дансанд ажлын 1–3 өдөрт орно.",
             "The money will reach your account within 1–3 working days.",
           )}
         </Banner>
@@ -444,7 +444,7 @@ export default function OrderPage({
             <div>
               <p className="text-[11px] font-semibold text-ink-faint">
                 {choosingAmount
-                  ? t("Одоо хэдийг төлөх вэ?", "How much would you like to pay now?")
+                  ? t("Одоо хэдэн төгрөг төлөх вэ?", "How much would you like to pay now?")
                   : t(STAGE_TITLE[stage], STAGE_TITLE_EN[stage])}
               </p>
               {choosingAmount ? (
@@ -520,7 +520,7 @@ export default function OrderPage({
           )}
           {stage === "deposit" && (
             <p className="mt-2 text-[13px] leading-relaxed text-ink-soft">
-              {t("Урьдчилгаа төлбөр буцаагдахгүйг анхаарна уу.", "Please note the deposit is non-refundable.")}
+              {t("Урьдчилгаа төлбөр буцаагдахгүй гэдгийг анхаарна уу.", "Please note the deposit is non-refundable.")}
             </p>
           )}
 
@@ -799,13 +799,13 @@ function PaymentBreakdown({ order }: { order: Order }) {
           />
         ) : (
           <li className="py-3 text-[13px] text-ink-soft">
-            {t("Бүтэн дүнгээр төлөх тул үлдэгдэл үлдэхгүй.", "You’re paying in full, so there’s no balance.")}
+            {t("Бүтэн дүнгээр төлж байгаа тул үлдэгдэл гарахгүй.", "You’re paying in full, so there’s no balance.")}
           </li>
         )}
       </ul>
       <p className="mt-3 border-t border-line pt-3 text-[12px] leading-relaxed text-ink-faint">
         {t(
-          `Бараа захиалга баталгаажсанаас хойш ${PREORDER_ARRIVAL_DAYS} хоногт ирнэ. Урьдчилгаа буцаагдахгүй. Бүх бараа тань хамт, бүрэн төлөгдсөний дараа хүргэгдэнэ.`,
+          `Бараа захиалга баталгаажсанаас хойш ${PREORDER_ARRIVAL_DAYS} хоногт ирнэ. Урьдчилгаа буцаагдахгүй. Бүрэн төлөгдсөний дараа бүх барааг тань хамт хүргэнэ.`,
           `Items arrive ${PREORDER_ARRIVAL_DAYS} days after your order is confirmed. The deposit is non-refundable. All your items are delivered together once fully paid.`,
         )}
       </p>

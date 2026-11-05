@@ -143,7 +143,7 @@ export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
               <button className="round-arrow" type="button" aria-label={t('Өмнөх зураг', 'Previous image')} onClick={() => go(current - 1)}>
                 <ArrowLeft size={17} />
               </button>
-              <button className="round-arrow" type="button" aria-label={t('Дараах зураг', 'Next image')} onClick={() => go(current + 1)}>
+              <button className="round-arrow" type="button" aria-label={t('Дараагийн зураг', 'Next image')} onClick={() => go(current + 1)}>
                 <ArrowRight size={17} />
               </button>
             </div>

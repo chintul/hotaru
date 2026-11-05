@@ -11,7 +11,7 @@ const STOPS = [
   { key: 'paid', label: 'Төлсөн', en: 'Paid' },
   { key: 'packed', label: 'Бэлтгэсэн', en: 'Packed' },
   { key: 'shipped', label: 'Замдаа', en: 'On the way' },
-  { key: 'delivered', label: 'Хүрсэн', en: 'Delivered' },
+  { key: 'delivered', label: 'Хүргэсэн', en: 'Delivered' },
 ] as const
 
 const PREORDER_STOPS = [
@@ -20,7 +20,7 @@ const PREORDER_STOPS = [
   { key: 'balance', label: 'Үлдэгдэл', en: 'Balance' },
   { key: 'packed', label: 'Бэлтгэсэн', en: 'Packed' },
   { key: 'shipped', label: 'Замдаа', en: 'On the way' },
-  { key: 'delivered', label: 'Хүрсэн', en: 'Delivered' },
+  { key: 'delivered', label: 'Хүргэсэн', en: 'Delivered' },
 ] as const
 
 type StopKey = (typeof PREORDER_STOPS)[number]['key']

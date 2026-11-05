@@ -222,7 +222,7 @@ function CartPanel({ confirmClear, setConfirmClear }: CartPanelProps) {
               </div>
               <p className="mt-0.5 text-[12px] leading-relaxed text-ink-soft">
                 {t(
-                  `Хамгийн багадаа урьдчилгаа. Бараа баталгаажсанаас хойш ${PREORDER_ARRIVAL_DAYS} хоногт ирэх бөгөөд үлдсэнийг тэр үед төлнө.`,
+                  `Энэ бол хамгийн бага урьдчилгаа. Бараа захиалга баталгаажсанаас хойш ${PREORDER_ARRIVAL_DAYS} хоногт ирэх бөгөөд үлдэгдлийг тэр үед төлнө.`,
                   `The minimum deposit. Items arrive ${PREORDER_ARRIVAL_DAYS} days after your order is confirmed; you pay the rest then.`,
                 )}
               </p>

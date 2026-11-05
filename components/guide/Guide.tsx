@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { createContext, useContext, useEffect, useState, useSyncExternalStore, type ReactNode } from 'react'
+import { preload } from 'react-dom'
 import SiteMascot from '@/components/SiteMascot'
 import { useT, type Translate } from '@/lib/i18n'
 
@@ -48,7 +49,7 @@ export function guideQuestions(t: Translate) {
   return {
     contact,
     delivery: {
-      q: t('Хүргэлт хэд хоног вэ?', 'How long does delivery take?'),
+      q: t('Хүргэлт хэдэн хоног болох вэ?', 'How long does delivery take?'),
       a: [
         t('Улаанбаатарт ажлын 1–2 хоногт, 5,000₮.', 'In Ulaanbaatar, 1–2 working days, 5,000₮.'),
         t('Орон нутагт 15,000₮, унаанд тавьж илгээнэ.', 'Outside the city, 15,000₮, sent by intercity transport.'),
@@ -72,7 +73,7 @@ export function guideQuestions(t: Translate) {
     },
     discount: {
       q: t('Хөнгөлөлт байгаа юу?', 'Are there any discounts?'),
-      a: [t('100,000₮-с дээш захиалгад 10% хөнгөлөлттэй.', 'Orders over 100,000₮ get 10% off.')],
+      a: [t('100,000₮-өөс дээш захиалгад 10% хөнгөлөлттэй.', 'Orders over 100,000₮ get 10% off.')],
     },
     returns: {
       q: t('Буцааж, сольж болох уу?', 'Can I return or exchange?'),
@@ -128,7 +129,7 @@ function defaultTip(pathname: string, t: Translate): GuideTip {
       questions: [g.preorder, g.filter, g.delivery],
     }
   if (pathname.startsWith('/shop/'))
-    return { lines: [t('Өнгө, хэмжээгээ сонгоод сагсалаарай.', 'Pick a colour and size, then add it to your cart.')], questions: [g.delivery, g.returns] }
+    return { lines: [t('Өнгө, хэмжээгээ сонгоод сагсандаа нэмээрэй.', 'Pick a colour and size, then add it to your cart.')], questions: [g.delivery, g.returns] }
   if (pathname.startsWith('/checkout'))
     return {
       lines: [
@@ -143,7 +144,7 @@ function defaultTip(pathname: string, t: Translate): GuideTip {
   if (pathname.startsWith('/account'))
     return { lines: [t('Хувийн мэдээлэл, хаягаа эндээс засна.', 'Edit your details and addresses here.')], questions: [g.cancel, g.returns] }
   if (pathname.startsWith('/wishlist'))
-    return { lines: [t('Хадгалсан бараа чинь энд байна.', 'Your saved items are here.')], questions: [g.preorder, g.delivery] }
+    return { lines: [t('Хадгалсан бараа тань энд байна.', 'Your saved items are here.')], questions: [g.preorder, g.delivery] }
   return {
     lines: [t('Сайн уу! Юу асуух вэ?', 'Hi! What would you like to know?')],
     link: g.contact,
@@ -152,6 +153,17 @@ function defaultTip(pathname: string, t: Translate): GuideTip {
 }
 
 const GUIDE_KHISHIG = ['/checkout', '/orders', '/account']
+
+const GUIDE_CHARACTERS = ['elsa', 'khishig'] as const
+
+const CALM_ADVICE = [
+  ['Гүнзгий амьсгаа аваад, мөрөө сулла. Яарах хэрэггүй.', 'Take a deep breath and drop your shoulders. No rush.'],
+  ['Өнөөдөр ус уусан уу? Нэг аяга уучихаарай.', 'Had some water today? Have a glass.'],
+  ['Өөртөө жаахан амсхийх зав гаргаарай.', 'Give yourself a little break.'],
+  ['Чи өнөөдөр сайн ажилласан.', 'You did well today.'],
+  ['Жаахан суниаад авбал бие чинь баярлана.', 'A little stretch will feel nice.'],
+  ['Унтахаасаа өмнө утсаа жаахан хол тавиарай.', 'Put your phone away a little before bed.'],
+] as const
 
 const subscribeScroll = (onChange: () => void) => {
   window.addEventListener('scroll', onChange, { passive: true })
@@ -183,11 +195,13 @@ export function MascotGuide() {
   const tip = useContext(GuideContext)?.tip ?? defaultTip(pathname, t)
   const [openOn, setOpenOn] = useState<string | null>(null)
   const [answer, setAnswer] = useState<number | null>(null)
+  const [advice, setAdvice] = useState(0)
   const scrolled = useSyncExternalStore(subscribeScroll, pastCover, serverPastCover)
   const wide = useSyncExternalStore(subscribeWide, getWide, serverWide)
   const open = openOn === pathname
-  const amu = !GUIDE_KHISHIG.some((p) => pathname.startsWith(p))
-  const name = amu ? t('Зэн', 'Zen') : t('Нова', 'Nova')
+  const elsa = !GUIDE_KHISHIG.some((p) => pathname.startsWith(p))
+  const character = elsa ? 'elsa' : 'khishig'
+  const name = elsa ? t('Элса', 'Elsa') : t('Нова', 'Nova')
   const questions = (tip.questions ?? []).slice(0, 4)
   const picked = answer === null ? null : questions[answer]
 
@@ -196,25 +210,35 @@ export function MascotGuide() {
     setAnswer(null)
   }
 
+  for (const c of GUIDE_CHARACTERS) {
+    preload(`/mascots/${c}-directions.webp`, { as: 'image', fetchPriority: 'low' })
+    preload(`/mascots/${c}-reactions.webp`, { as: 'image', fetchPriority: 'low' })
+  }
+
   if (pathname === '/' && !scrolled) return null
 
   return (
     <div
-      className="mascot-guide fixed left-1.5 z-30 flex items-end gap-1.5 lg:left-6"
+      className="mascot-guide fixed left-3 z-30 flex items-end gap-2 lg:left-6 lg:gap-1.5"
       onKeyDown={(e) => {
         if (e.key === 'Escape') close()
       }}
     >
       <div
-        className="relative shrink-0 drop-shadow-[0_6px_12px_rgb(23_35_46/0.22)]"
+        className="relative shrink-0"
         onClick={() => {
           if (open) close()
-          else setOpenOn(pathname)
+          else {
+            setAdvice(Math.floor(Math.random() * CALM_ADVICE.length))
+            setOpenOn(pathname)
+          }
         }}
       >
-        <SiteMascot character={amu ? 'amu' : 'khishig'} label={`${name}, ${t('зөвлөгөө', 'help')}`} size={wide ? (amu ? 124 : 104) : amu ? 100 : 86} />
+        <div className="guide-avatar max-lg:grid max-lg:h-[76px] max-lg:w-[76px] max-lg:items-end max-lg:justify-items-center max-lg:overflow-hidden max-lg:rounded-full max-lg:bg-cream max-lg:shadow-(--t-lift) max-lg:ring-1 max-lg:ring-line lg:drop-shadow-[0_6px_12px_rgb(23_35_46/0.22)]">
+          <SiteMascot key={character} className="guide-swap" character={character} label={`${name}, ${t('зөвлөгөө', 'help')}`} size={wide ? (elsa ? 124 : 104) : elsa ? 82 : 78} />
+        </div>
         {!open && (
-          <span aria-hidden className="absolute right-0.5 top-1.5 grid h-[22px] w-[22px] place-items-center rounded-full bg-primary-strong text-[11px] font-bold text-on-primary lg:right-1 lg:top-2 lg:h-6 lg:w-6 lg:text-[12px]">
+          <span aria-hidden className="absolute -right-1 -top-1 grid h-[22px] w-[22px] place-items-center rounded-full bg-primary-strong text-[11px] font-bold text-on-primary ring-2 ring-paper lg:right-1 lg:top-2 lg:h-6 lg:w-6 lg:text-[12px] lg:ring-0">
             ?
           </span>
         )}
@@ -222,7 +246,7 @@ export function MascotGuide() {
 
       <div aria-live="polite" className="min-w-0">
         {open && (
-          <div className="relative mb-8 w-[min(300px,calc(100vw-116px))] lg:w-[min(300px,calc(100vw-128px))] rounded-2xl border border-line bg-paper p-4 pr-9 text-[14px] leading-relaxed text-ink shadow-(--t-lift)">
+          <div className="relative mb-2 w-[min(300px,calc(100vw-108px))] rounded-2xl lg:mb-8 lg:w-[min(300px,calc(100vw-128px))] border border-line bg-paper p-4 pr-9 text-[14px] leading-relaxed text-ink shadow-(--t-lift)">
             <p className="text-[13px] font-semibold text-note-ink">{name}</p>
 
             {picked ? (
@@ -250,6 +274,11 @@ export function MascotGuide() {
                   ))}
                 </div>
                 {tip.link && <TipLink link={tip.link} />}
+                {elsa && (
+                  <p className="mt-3 rounded-xl bg-cream px-3 py-2 text-[13px] text-ink">
+                    {t(CALM_ADVICE[advice][0], CALM_ADVICE[advice][1])}
+                  </p>
+                )}
                 {questions.length > 0 && (
                   <ul className="mt-3 flex flex-col gap-1.5">
                     {questions.map((item, i) => (

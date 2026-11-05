@@ -132,7 +132,7 @@ export default function AmountChooser({
             {t('бараа ирэхэд', 'when your items arrive')}
           </span>
         ) : (
-          <span className="text-ink-soft">{t('Бүтэн дүнгээр төлөхөд үлдэгдэл үлдэхгүй', 'Paying in full leaves no balance')}</span>
+          <span className="text-ink-soft">{t('Бүтэн дүнгээр төлбөл үлдэгдэл гарахгүй', 'Paying in full leaves no balance')}</span>
         )}
       </p>
 

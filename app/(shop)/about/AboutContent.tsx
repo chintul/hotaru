@@ -12,23 +12,24 @@ const COPY = {
     heroLead: 'Өдөр бүр хэрэглэхэд таатай, удаан эдэлгээтэй зүйлсийг бид өөрсдөө хайж, шалгаж, сонгон хүргэдэг.',
     shop: 'Дэлгүүр үзэх',
     meet: 'Бидэнтэй танилцах',
-    aboutTitle: 'hotaru.mn-ийн тухай',
-    aboutQuote: 'Бид зөвхөн харагдах байдлыг бус, хэрэглэхэд хэр эвтэйхэн, чанартай, удаан эдэлгээтэй вэ гэдгийг нь чухалчилдаг.',
-    aboutBody: 'hotaru.mn нь өдөр тутмын хэрэглээнд зориулсан загварлаг, чанартай бүтээгдэхүүнүүдийг боломжийн үнээр хүргэдэг онлайн дэлгүүр юм.',
+    aboutTitle: 'hotaru.mn-ий тухай',
+    aboutQuote: 'Бид зөвхөн гадаад төрхийг нь бус, хэрэглэхэд хэр эвтэйхэн, чанартай, удаан эдэлгээтэй байхыг нь чухалчилдаг.',
+    aboutBody: 'hotaru.mn нь өдөр тутмын хэрэглээнд зориулсан загварлаг, чанартай бүтээгдэхүүнийг боломжийн үнээр хүргэдэг онлайн дэлгүүр юм.',
     stepsTitle: 'Бид хэрхэн сонгодог вэ',
     steps: [
       { title: 'Сонгоно', body: 'Материал, хийц, багтаамж, тав тух, өдөр тутмын хэрэглээнд тохирох эсэхээр нь шүүнэ.' },
-      { title: 'Шалгана', body: 'Олон төрлөөс илүү, өөрсдөө итгэлтэй санал болгож чадахыг нь л үлдээнэ.' },
+      { title: 'Шалгана', body: 'Олон сонголт гэхээсээ илүү, итгэлтэйгээр санал болгож чадах бараагаа л үлдээнэ.' },
       { title: 'Хүргэнэ', body: 'Улаанбаатарт ажлын 1–2 хоногт, 5,000₮-ийн хүргэлттэй.' },
     ],
-    foundersTitle: 'Үүсгэн байгуулагчид',
-    foundersIntro: 'hotaru-г бид хоёр эхлүүлсэн. Өдөр бүр хэрэглэхэд баярламаар зүйлсийг өөрсдөө хайж, шалгаж, итгэлтэй болсноо л санал болгодог.',
+    foundersTitle: 'Манай баг',
+    foundersIntro: 'hotaru-г бид хоёр эхлүүлсэн. Өдөр бүр хэрэглэхэд таатай зүйлсийг өөрсдөө хайж, туршиж үзээд, итгэлтэй болсон бараагаа л санал болгодог.',
     founders: [
-      { name: 'Нова', role: 'Үүсгэн байгуулагч, технологи хариуцсан захирал', bio: 'hotaru-г эхлүүлэх санааг гаргасан. Сайт, систем гээд технологийн талыг бүхэлд нь хариуцдаг бөгөөд захиалга бэлтгэх, бараа сонгоход ч гар бие оролцдог.' },
-      { name: 'Зэн', role: 'Хамтран үүсгэн байгуулагч, үйл ажиллагаа хариуцсан захирал', bio: 'Маркетинг, харилцаа холбоог хариуцдаг. Бараа сонголтыг удирдаж, материал, хийц, тав тухыг нь нэг бүрчлэн нягталдаг. Бидний пост, мессеж бүрийн ард Зэн бий.' },
+      { name: 'Нова', role: 'Үүсгэн байгуулагч, технологи хариуцаж ажилладаг', bio: 'hotaru-г эхлүүлэх санааг гаргасан. Сайт, систем гээд технологийн талыг бүхэлд нь хариуцдаг бөгөөд захиалга бэлтгэх, бараа сонгоход ч гар бие оролцдог.' },
+      { name: 'Зэн', role: 'Хамтран үүсгэн байгуулагч, үйл ажиллагаа хариуцаж ажилладаг', away: 'Түр амралттай', bio: 'Маркетинг, харилцаа холбоо, бараа сонголтыг хариуцаж ажилладаг. Материал, хийц, тав тухыг нь нэг бүрчлэн нягталдаг. Одоогоор жаахан амралтаа авсан ч хэзээ нэгэн өдөр эргэн ирнэ.' },
+      { name: 'Элса', role: 'Борлуулалтын менежер', bio: 'Хэцүү өдөр тохиолдвол Элсатай ярилцаарай. Сэтгэлийг чинь тайвшруулж, энгийн мөртлөө хөөрхөн зөвлөгөө өгнө: ус уу, гүнзгий амьсгаа ав, өөртөө жаахан амсхийх зав гарга.' },
     ],
     goalTitle: 'Бидний зорилго',
-    goalBody: 'Өдөр тутамдаа хэрэглэх зүйл тань гоё харагдахаас гадна хэрэглэхэд таатай байх ёстой гэж бид боддог. Тиймээс загварлаг, чанартай бүтээгдэхүүнийг зах зээлийн бодит үнэлгээгээр таны гарт хялбар хүргэхийг зорьж ажиллаж байна.',
+    goalBody: 'Өдөр тутамдаа хэрэглэх зүйл тань гоё харагдахаас гадна хэрэглэхэд таатай байх ёстой гэж бид боддог. Тиймээс загварлаг, чанартай бүтээгдэхүүнийг зах зээлийн бодит үнээр таны гарт хялбархан хүргэхийг зорьж ажиллаж байна.',
     values: ['Чанартай', 'Тав тухтай', 'Боломжийн үнэтэй'],
   },
   en: {
@@ -45,11 +46,12 @@ const COPY = {
       { title: 'We test', body: 'Rather than many options, we keep only what we can recommend with confidence.' },
       { title: 'We deliver', body: 'Across Ulaanbaatar in 1–2 working days, for 5,000₮.' },
     ],
-    foundersTitle: 'Founders',
+    foundersTitle: 'Our team',
     foundersIntro: 'The two of us started hotaru. We search for things that make everyday life a little happier, test them ourselves, and only recommend what we trust.',
     founders: [
-      { name: 'Nova', role: 'Founder & CTO', bio: 'Came up with the idea for hotaru. Runs the site, the systems and everything technical, and helps prepare orders and choose products.' },
-      { name: 'Zen', role: 'Co-founder & COO', bio: 'Leads marketing and communications, and heads product selection, checking material, craft and comfort one by one. Every post and message from us comes from Zen.' },
+      { name: 'Nova', role: 'Founder, technology', bio: 'Came up with the idea for hotaru. Runs the site, the systems and everything technical, and helps prepare orders and choose products.' },
+      { name: 'Zen', role: 'Co-founder, operations', away: 'On a little break', bio: 'Looks after marketing, communications and product selection, checking material, craft and comfort one by one. Taking a little break for now, but will be back one day.' },
+      { name: 'Elsa', role: 'Sales manager', bio: 'Having a rough day? Talk to Elsa for a moment of calm and simple, sweet advice: drink some water, take a deep breath, give yourself a little break.' },
     ],
     goalTitle: 'Our goal',
     goalBody: 'We believe the things you use every day should feel as good as they look. So we work to bring stylish, quality products to you easily, at honest market prices.',
@@ -60,6 +62,7 @@ const COPY = {
 const MASCOTS = [
   { character: 'khishig', size: 120 },
   { character: 'amu', size: 150 },
+  { character: 'elsa', size: 130 },
 ] as const
 
 const H2 = 'font-(family-name:--font-display) text-[clamp(26px,2.6vw,34px)] font-semibold leading-tight tracking-[-0.02em] text-primary-strong'
@@ -143,7 +146,12 @@ export default function AboutContent() {
                   <SiteMascot character={MASCOTS[i].character} label={f.name} size={MASCOTS[i].size} />
                 </div>
                 <div className="min-w-0 flex-[1_1_200px]">
-                  <h3 className="text-[22px] font-semibold text-primary-strong">{f.name}</h3>
+                  <h3 className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[22px] font-semibold text-primary-strong">
+                    {f.name}
+                    {'away' in f && (
+                      <span className="rounded-full bg-cream px-2.5 py-0.5 text-[12px] font-medium text-cream-ink">{f.away}</span>
+                    )}
+                  </h3>
                   <p className="mt-0.5 text-[14px] font-medium text-note-ink">{f.role}</p>
                   <p className="mt-3 text-[15px] leading-relaxed text-ink-soft">{f.bio}</p>
                 </div>

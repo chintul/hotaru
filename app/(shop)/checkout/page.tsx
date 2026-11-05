@@ -74,7 +74,7 @@ export default function CheckoutPage() {
       <Shell step={1}>
         <div className="rounded-2xl border border-line px-6 py-20 text-center">
           <p className="text-[15px] font-semibold">{t('Сагс хоосон байна', 'Your bag is empty')}</p>
-          <p className="mt-1.5 text-[13px] text-ink-soft">{t('Захиалга өгөхийн тулд бараа нэмнэ үү.', 'Add something to place an order.')}</p>
+          <p className="mt-1.5 text-[13px] text-ink-soft">{t('Захиалахын тулд сагсандаа бараа нэмнэ үү.', 'Add something to place an order.')}</p>
           <Button asChild variant="solid" size="cta" className="mt-6">
             <Link href="/shop">{t('Дэлгүүр рүү', 'Go to shop')}</Link>
           </Button>
@@ -304,13 +304,13 @@ function CheckoutForm({ items, subtotal, profileId }: CheckoutFormProps) {
                 <Field label={t('Тоот', 'Apartment')} value={draft.apartment}
                   onChange={(v) => setDraft({ ...draft, apartment: v })} />
                 <div className="col-span-2">
-                  <Field label={t('Нэмэлт заавар (орчны тэмдэг)', 'Directions (nearby landmark)')} value={draft.landmarkNote}
+                  <Field label={t('Нэмэлт тайлбар (ойролцоох байршил)', 'Directions (nearby landmark)')} value={draft.landmarkNote}
                     onChange={(v) => setDraft({ ...draft, landmarkNote: v })} />
                 </div>
               </div>
               {addresses.length === 0 && (
                 <p className="mt-4 text-[12px] text-ink-faint">
-                  {t('Захиалга баталгаажуулахад энэ хаяг хадгалагдана.', 'This address is saved when you place the order.')}
+                  {t('Захиалгаа баталгаажуулахад энэ хаяг хадгалагдана.', 'This address is saved when you place the order.')}
                 </p>
               )}
               <div className={`mt-5 gap-3 ${addresses.length ? 'flex' : 'hidden'}`}>
@@ -415,7 +415,7 @@ function CheckoutForm({ items, subtotal, profileId }: CheckoutFormProps) {
             />
             {discountCode.trim() && (
               <p className="mt-1.5 text-[12px] text-ink-faint">
-                {t('Захиалга баталгаажуулахад кодыг шалгаж, нийт дүнгээс хасна.', 'We check the code when you place the order and take it off the total.')}
+                {t('Захиалгаа баталгаажуулах үед кодыг шалгаад хөнгөлөлтийг нийт дүнгээс хасна.', 'We check the code when you place the order and take it off the total.')}
               </p>
             )}
           </div>
@@ -441,7 +441,7 @@ function CheckoutForm({ items, subtotal, profileId }: CheckoutFormProps) {
               </div>
               <p className="mt-2.5 text-[12px] leading-relaxed text-ink-soft">
                 {t(
-                  `Энэ нь хамгийн бага урьдчилгаа; дараагийн алхамд бүтэн дүнгээр нь ч төлж болно. Бараа захиалга баталгаажсанаас хойш ${PREORDER_ARRIVAL_DAYS} хоногт ирнэ. Урьдчилгаа буцаагдахгүй, буцаалт, солилт хийгдэхгүй.`,
+                  `Энэ бол хамгийн бага урьдчилгаа. Дараагийн алхамд бүтэн дүнгээр нь ч төлж болно. Бараа захиалга баталгаажсанаас хойш ${PREORDER_ARRIVAL_DAYS} хоногт ирнэ. Урьдчилгаа буцаагдахгүй бөгөөд барааг буцаах, солих боломжгүй.`,
                   `This is the minimum deposit; you can pay in full in the next step. Items arrive ${PREORDER_ARRIVAL_DAYS} days after your order is confirmed. Deposits are non-refundable and orders can't be returned or exchanged.`,
                 )}
               </p>

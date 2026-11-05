@@ -270,7 +270,7 @@ export default function ProductDetailClient({ product, copy, payNote, payNoteEn 
         : guidePreorder
           ? [
               t(
-                `Энэ бараа урьдчилсан захиалгаар, одоо ${formatMnt(guideMin)}-өөс төлж авна.`,
+                `Энэ барааг урьдчилан захиална. Одоо ${formatMnt(guideMin)}-өөс эхлэн төлж болно.`,
                 `This item is a pre-order. You can pay from ${formatMnt(guideMin)} now.`,
               ),
             ]
@@ -288,7 +288,7 @@ export default function ProductDetailClient({ product, copy, payNote, payNoteEn 
       ...(guideAvailable
         ? [
             {
-              q: t('Одоо хэдийг төлөх вэ?', 'How much do I pay now?'),
+              q: t('Одоо хэдэн төгрөг төлөх вэ?', 'How much do I pay now?'),
               a: guidePreorder
                 ? [
                     t(
@@ -315,7 +315,7 @@ export default function ProductDetailClient({ product, copy, payNote, payNoteEn 
                     product.preorderEta
                       ? t(`Ирэх хугацаа: ${product.preorderEta}.`, `Expected: ${product.preorderEta}.`)
                       : t('Ирэх хугацаа тодорхой болмогц мэдэгдэнэ.', "We'll let you know once the arrival date is set."),
-                    t('Ирэхэд үлдэгдлээ төлмөгц хүргэнэ.', 'Once it arrives and the balance is paid, we deliver.'),
+                    t('Бараа ирсний дараа үлдэгдлээ төлмөгц хүргэнэ.', 'Once it arrives and the balance is paid, we deliver.'),
                   ]
                 : [t('Улаанбаатарт ажлын 1–2 хоногт хүргэнэ.', 'Delivered in Ulaanbaatar within 1–2 working days.')],
             },

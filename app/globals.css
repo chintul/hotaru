@@ -453,6 +453,9 @@ body {
   .mascot-guide { bottom: calc(var(--bottom-nav-h) + 8px); transition: bottom var(--dur) var(--ease); }
   @media (min-width: 1024px) { .mascot-guide { bottom: 24px; } }
   body:has(.pdp-sticky-bar) .mascot-guide { bottom: calc(var(--bottom-nav-h) + 84px); }
+  .guide-swap { animation: guide-swap 260ms var(--ease) both; }
+  @keyframes guide-swap { from { opacity: 0; transform: translateY(8px) scale(0.92); } }
+  @media (prefers-reduced-motion: reduce) { .guide-swap { animation: none; } }
 
   /* About hero: the two bubbles drift and squish like soap bubbles, with a
      glossy highlight, and three sparkles twinkle out of step. */
