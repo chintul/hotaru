@@ -87,12 +87,23 @@ export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
           >
             {slide.mobileImagePath ? (
               <>
-                <span className="absolute inset-0 sm:hidden">
+                <span className="absolute inset-0 landscape:hidden">
                   <ProductImage filePath={slide.mobileImagePath} alt="" seed={slide.id} priority={i === 0} sizes="100vw" />
                 </span>
-                <span className="absolute inset-0 hidden sm:block">
-                  <ProductImage filePath={slide.imagePath} alt="" seed={slide.id} sizes="100vw" />
-                </span>
+                {slide.imagePath ? (
+                  <span className="absolute inset-0 hidden landscape:block">
+                    <ProductImage filePath={slide.imagePath} alt="" seed={slide.id} sizes="100vw" />
+                  </span>
+                ) : (
+                  <span className="cover-poster absolute inset-0 hidden landscape:block">
+                    <span className="cover-poster-backdrop">
+                      <ProductImage filePath={slide.mobileImagePath} alt="" seed={slide.id} sizes="320px" />
+                    </span>
+                    <span className="cover-poster-photo">
+                      <ProductImage filePath={slide.mobileImagePath} alt="" seed={slide.id} priority={i === 0} sizes="(min-width: 1024px) 50vw, 70vw" />
+                    </span>
+                  </span>
+                )}
               </>
             ) : (
               <ProductImage

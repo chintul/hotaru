@@ -159,6 +159,15 @@ const subscribeScroll = (onChange: () => void) => {
 const pastCover = () => window.scrollY > window.innerHeight * 0.7
 const serverPastCover = () => false
 
+const WIDE = '(min-width: 1024px)'
+const subscribeWide = (onChange: () => void) => {
+  const query = window.matchMedia(WIDE)
+  query.addEventListener('change', onChange)
+  return () => query.removeEventListener('change', onChange)
+}
+const getWide = () => window.matchMedia(WIDE).matches
+const serverWide = () => false
+
 function TipLink({ link }: { link: GuideLink }) {
   return (
     <Link href={link.href} className="link-underline mt-2.5 inline-block font-semibold text-primary-strong">
@@ -174,6 +183,7 @@ export function MascotGuide() {
   const [openOn, setOpenOn] = useState<string | null>(null)
   const [answer, setAnswer] = useState<number | null>(null)
   const scrolled = useSyncExternalStore(subscribeScroll, pastCover, serverPastCover)
+  const wide = useSyncExternalStore(subscribeWide, getWide, serverWide)
   const open = openOn === pathname
   const amu = !GUIDE_KHISHIG.some((p) => pathname.startsWith(p))
   const name = amu ? t('Аму', 'Amu') : t('Хишиг', 'Khishig')
@@ -189,7 +199,7 @@ export function MascotGuide() {
 
   return (
     <div
-      className="fixed bottom-[calc(var(--bottom-nav-h)+10px)] left-2 z-30 flex items-end gap-1.5 lg:bottom-6 lg:left-6"
+      className="fixed bottom-[calc(var(--bottom-nav-h)+8px)] left-1.5 z-30 flex items-end gap-1.5 lg:bottom-6 lg:left-6"
       onKeyDown={(e) => {
         if (e.key === 'Escape') close()
       }}
@@ -201,9 +211,9 @@ export function MascotGuide() {
           else setOpenOn(pathname)
         }}
       >
-        <SiteMascot character={amu ? 'amu' : 'khishig'} label={`${name}, ${t('зөвлөгөө', 'help')}`} size={amu ? 124 : 104} />
+        <SiteMascot character={amu ? 'amu' : 'khishig'} label={`${name}, ${t('зөвлөгөө', 'help')}`} size={wide ? (amu ? 124 : 104) : amu ? 100 : 86} />
         {!open && (
-          <span aria-hidden className="absolute right-1 top-2 grid h-6 w-6 place-items-center rounded-full bg-primary-strong text-[12px] font-bold text-on-primary">
+          <span aria-hidden className="absolute right-0.5 top-1.5 grid h-[22px] w-[22px] place-items-center rounded-full bg-primary-strong text-[11px] font-bold text-on-primary lg:right-1 lg:top-2 lg:h-6 lg:w-6 lg:text-[12px]">
             ?
           </span>
         )}
@@ -211,7 +221,7 @@ export function MascotGuide() {
 
       <div aria-live="polite" className="min-w-0">
         {open && (
-          <div className="relative mb-8 w-[min(300px,calc(100vw-128px))] rounded-2xl border border-line bg-paper p-4 pr-9 text-[14px] leading-relaxed text-ink shadow-(--t-lift)">
+          <div className="relative mb-8 w-[min(300px,calc(100vw-116px))] lg:w-[min(300px,calc(100vw-128px))] rounded-2xl border border-line bg-paper p-4 pr-9 text-[14px] leading-relaxed text-ink shadow-(--t-lift)">
             <p className="text-[13px] font-semibold text-note-ink">{name}</p>
 
             {picked ? (

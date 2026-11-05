@@ -80,7 +80,7 @@ export default async function HomePage() {
 
   const categories = stockedCategories(heroCategoriesData);
   const covers: HeroSlide[] = categories
-    .filter((c) => c.heroImagePath)
+    .filter((c) => c.heroImagePath || c.heroMobileImagePath)
     .map((c) => ({
       id: c.id,
       imagePath: c.heroImagePath,

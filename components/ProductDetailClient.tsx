@@ -341,8 +341,8 @@ export default function ProductDetailClient({ product, copy, payNote, payNoteEn 
     <>
       <GuideTipSetter tip={guideTip} />
       <div className="grid gap-8 md:grid-cols-2 md:gap-8 lg:gap-14">
-        <div>
-          <div className="relative aspect-square overflow-hidden bg-shade">
+        <div className="min-w-0">
+          <div className="relative aspect-square overflow-hidden rounded-xl bg-shade">
             <div key={activeImage} className="fade-in absolute inset-0">
               <ProductImage
                 filePath={images[activeImage]?.filePath}
@@ -364,12 +364,12 @@ export default function ProductDetailClient({ product, copy, payNote, payNoteEn 
           </div>
 
           {images.length > 1 && (
-            <div className="mt-3 grid grid-cols-5 gap-2.5">
+            <div className="-mx-5 mt-3 flex gap-2 overflow-x-auto px-5 [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-5 sm:gap-2.5 sm:overflow-visible sm:px-0">
               {images.map((img, i) => (
                 <button
                   key={img.filePath + i}
                   onClick={() => setChosenImage(i)}
-                  className={`relative aspect-square overflow-hidden bg-shade transition-all duration-200 ${
+                  className={`relative aspect-square w-16 shrink-0 overflow-hidden rounded-lg bg-shade transition-all duration-200 sm:w-auto ${
                     i === activeImage ? 'ring-1 ring-ink-strong' : 'opacity-70 hover:opacity-100'
                   }`}
                   aria-label={t(`Зураг ${i + 1}`, `Image ${i + 1}`)}
@@ -574,7 +574,7 @@ export default function ProductDetailClient({ product, copy, payNote, payNoteEn 
 
           <p className="mt-4 text-[13px] font-semibold">{t('Тоо ширхэг:', 'Quantity:')}</p>
           <div className="mt-2 grid grid-cols-[auto_1fr] items-center gap-3 sm:flex sm:flex-wrap">
-            <div className="flex items-center border border-line">
+            <div className="flex items-center rounded-full border border-line-strong">
               <button onClick={() => setQty(Math.max(1, qty - 1))} className="grid h-11 w-11 place-items-center text-ink-soft hover:text-ink" aria-label={t('Тоо хасах', 'Decrease quantity')}>
                 <IconMinus />
               </button>

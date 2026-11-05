@@ -9,9 +9,9 @@ const TINTS = ['bg-note-soft', 'bg-blush', 'bg-cream'] as const
 const COPY = {
   mn: {
     heroTitle: 'Өдөр бүрийг гэрэлтүүлэх жижигхэн зүйлс',
-    heroLead: 'hotaru — япон хэлээр «гэрэлт цох». Өдөр бүр хэрэглэхэд таатай, удаан хэрэглэгдэх зүйлсийг сонгон хүргэдэг.',
+    heroLead: 'Өдөр бүр хэрэглэхэд таатай, удаан эдэлгээтэй зүйлсийг бид өөрсдөө хайж, шалгаж, сонгон хүргэдэг.',
     shop: 'Дэлгүүр үзэх',
-    meet: 'Биднийг танилцах',
+    meet: 'Бидэнтэй танилцах',
     aboutTitle: 'hotaru.mn-ийн тухай',
     aboutQuote: 'Бид зөвхөн харагдах байдлыг бус, хэрэглэхэд хэр эвтэйхэн, чанартай, удаан эдэлгээтэй вэ гэдгийг нь чухалчилдаг.',
     aboutBody: 'hotaru.mn нь өдөр тутмын хэрэглээнд зориулсан загварлаг, чанартай бүтээгдэхүүнүүдийг боломжийн үнээр хүргэдэг онлайн дэлгүүр юм.',
@@ -24,7 +24,7 @@ const COPY = {
     foundersTitle: 'Үүсгэн байгуулагчид',
     foundersIntro: 'hotaru-г бид хоёр эхлүүлсэн. Өдөр бүр хэрэглэхэд баярламаар зүйлсийг өөрсдөө хайж, шалгаж, итгэлтэй болсноо л санал болгодог.',
     founders: [
-      { name: 'Хишиг', role: 'Үүсгэн байгуулагч, гүйцэтгэх захирал', bio: 'hotaru-г эхлүүлэх санааг гаргасан. Сайт, систем гээд технологийн талыг бүхэлд нь хариуцдаг бөгөөд захиалга бэлтгэх, бараа сонгоход ч гар бие оролцдог.' },
+      { name: 'Хишиг', role: 'Үүсгэн байгуулагч, технологи хариуцсан захирал', bio: 'hotaru-г эхлүүлэх санааг гаргасан. Сайт, систем гээд технологийн талыг бүхэлд нь хариуцдаг бөгөөд захиалга бэлтгэх, бараа сонгоход ч гар бие оролцдог.' },
       { name: 'Аму', role: 'Хамтран үүсгэн байгуулагч, үйл ажиллагаа хариуцсан захирал', bio: 'Маркетинг, харилцаа холбоог хариуцдаг. Бараа сонголтыг удирдаж, материал, хийц, тав тухыг нь нэг бүрчлэн нягталдаг. Бидний пост, мессеж бүрийн ард Аму бий.' },
     ],
     goalTitle: 'Бидний зорилго',
@@ -37,7 +37,7 @@ const COPY = {
   },
   en: {
     heroTitle: 'Small things that brighten every day',
-    heroLead: 'hotaru means “firefly” in Japanese. We pick things that feel good to use every day and last a long time.',
+    heroLead: 'We find, test and hand-pick things that feel good to use every day and last a long time.',
     shop: 'Shop now',
     meet: 'Meet us',
     aboutTitle: 'About hotaru.mn',
@@ -52,7 +52,7 @@ const COPY = {
     foundersTitle: 'Founders',
     foundersIntro: 'The two of us started hotaru. We search for things that make everyday life a little happier, test them ourselves, and only recommend what we trust.',
     founders: [
-      { name: 'Khishig', role: 'Founder & CEO', bio: 'Came up with the idea for hotaru. Runs the site, the systems and everything technical, and helps prepare orders and choose products.' },
+      { name: 'Khishig', role: 'Founder & CTO', bio: 'Came up with the idea for hotaru. Runs the site, the systems and everything technical, and helps prepare orders and choose products.' },
       { name: 'Amu', role: 'Co-founder & COO', bio: 'Leads marketing and communications, and heads product selection, checking material, craft and comfort one by one. Every post and message from us comes from Amu.' },
     ],
     goalTitle: 'Our goal',
@@ -97,8 +97,11 @@ export default function AboutContent() {
           </div>
           <div className="flex flex-[1_1_360px] justify-center">
             <div className="relative grid aspect-square w-full max-w-[440px] place-items-end overflow-hidden rounded-full bg-note-soft">
-              <span aria-hidden className="absolute left-[10%] top-[12%] aspect-square w-[22%] rounded-full bg-blush" />
-              <span aria-hidden className="absolute right-[12%] top-[20%] aspect-square w-[12%] rounded-full bg-cream" />
+              <span aria-hidden className="about-bubble absolute left-[10%] top-[12%] aspect-square w-[22%] bg-blush" />
+              <span aria-hidden className="about-bubble about-bubble-small absolute right-[12%] top-[20%] aspect-square w-[12%] bg-cream" />
+              <span aria-hidden className="about-sparkle left-[38%] top-[14%]" />
+              <span aria-hidden className="about-sparkle about-sparkle-2 right-[26%] top-[38%]" />
+              <span aria-hidden className="about-sparkle about-sparkle-3 left-[22%] top-[44%]" />
               <div className="relative mb-[6%] flex items-end justify-center gap-2">
                 <SiteMascot character="khishig" label={t.founders[0].name} size={150} />
                 <SiteMascot character="amu" label={t.founders[1].name} size={180} />

@@ -1,9 +1,9 @@
 'use client'
 
-import { useRef, useState, type FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
 import { useMutation, useQuery } from '@apollo/client/react'
 import {
-  ADMIN_CATEGORIES, ADMIN_SET_CATEGORY_HERO_IMAGE, ADMIN_SET_CATEGORY_MOBILE_HERO_IMAGE, ADMIN_UPSERT_CATEGORY,
+  ADMIN_CATEGORIES, ADMIN_UPSERT_CATEGORY,
 } from '@/lib/queries'
 import { firstNode, nodes } from '@/lib/format'
 import { slugify } from '@/lib/slug'
@@ -16,8 +16,7 @@ import {
 import { Plus } from '@/components/admin/icons'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
-import ProductImage from '@/components/ProductImage'
-import { uploadProductImage } from '@/components/admin/product/uploadImage'
+import CoverField from '@/components/admin/CoverField'
 
 type CategoryRow = Category & { id: string }
 
@@ -33,16 +32,6 @@ interface UpsertCategoryVars {
   isVisible: boolean
   sortOrder: number
   categoryId: string | null
-}
-
-interface SetHeroVars {
-  categoryId: string
-  heroImagePath: string | null
-}
-
-interface SetMobileHeroVars {
-  categoryId: string
-  heroMobileImagePath: string | null
 }
 
 interface CategoryDraft {
@@ -74,87 +63,6 @@ function draftFrom(c: CategoryRow): CategoryDraft {
     sortOrder: String(c.position ?? 0),
     isVisible: c.isVisible ?? true,
   }
-}
-
-const COVER_KIND = {
-  wide: {
-    label: 'Нүүр хуудасны cover',
-    hint: '3:1 харьцаатай өргөн зураг. Компьютер дээр гүйдэг cover-т энэ ангиллын слайд болно.',
-    aspect: 'aspect-[3/1] w-full max-w-90',
-  },
-  mobile: {
-    label: 'Утасны cover',
-    hint: '4:5 харьцаатай босоо зураг. Утсан дээр өргөн cover-ын оронд харагдана.',
-    aspect: 'aspect-[4/5] w-28',
-  },
-} as const
-
-function HeroImageField({ category, kind, onSaved }: {
-  category: CategoryRow
-  kind: keyof typeof COVER_KIND
-  onSaved: () => Promise<unknown>
-}) {
-  const [setWide] = useMutation<unknown, SetHeroVars>(ADMIN_SET_CATEGORY_HERO_IMAGE)
-  const [setMobile] = useMutation<unknown, SetMobileHeroVars>(ADMIN_SET_CATEGORY_MOBILE_HERO_IMAGE)
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
-  const copy = COVER_KIND[kind]
-  const current = kind === 'wide' ? category.heroImagePath : category.heroMobileImagePath
-
-  const save = async (path: string | null) => {
-    if (kind === 'wide') await setWide({ variables: { categoryId: category.id, heroImagePath: path } })
-    else await setMobile({ variables: { categoryId: category.id, heroMobileImagePath: path } })
-    await onSaved()
-  }
-
-  const upload = async (file: File) => {
-    setError(null)
-    setBusy(true)
-    try {
-      const result = await uploadProductImage(file, `category-${category.slug}`)
-      if (!result.filePath) throw new Error('Зураг бүртгэгдсэнгүй.')
-      await save(result.filePath)
-    } catch (e) {
-      setError(errorMessage(e, 'Байршуулахад алдаа гарлаа.'))
-    } finally {
-      setBusy(false)
-      if (inputRef.current) inputRef.current.value = ''
-    }
-  }
-
-  const clear = async () => {
-    setError(null)
-    setBusy(true)
-    try { await save(null) } catch (e) { setError(errorMessage(e, 'Алдаа гарлаа.')) } finally { setBusy(false) }
-  }
-
-  return (
-    <div className="col-span-full">
-      <span className="mb-1.5 block text-[13px] font-medium text-foreground">{copy.label}</span>
-      <div className="flex flex-wrap items-center gap-3">
-        <span className={`relative block overflow-hidden rounded-md border border-a-line bg-a-hover ${copy.aspect}`}>
-          {current ? (
-            <ProductImage filePath={current} alt="" sizes="360px" />
-          ) : (
-            <span className="grid h-full place-items-center text-[12px] text-a-muted">Cover байхгүй</span>
-          )}
-        </span>
-        <div className="flex gap-2">
-          <input ref={inputRef} type="file" accept="image/*" className="hidden"
-            onChange={(e) => { const file = e.target.files?.[0]; if (file) void upload(file) }} />
-          <Button type="button" disabled={busy} onClick={() => inputRef.current?.click()}>
-            {busy ? 'Байршуулж байна…' : current ? 'Солих' : 'Зураг оруулах'}
-          </Button>
-          {current && (
-            <Button type="button" disabled={busy} onClick={() => void clear()}>Арилгах</Button>
-          )}
-        </div>
-      </div>
-      <p className="mt-1.5 text-[12px] text-a-muted">{copy.hint}</p>
-      {error && <p className="mt-1 text-[13px] text-danger-ink">{error}</p>}
-    </div>
-  )
 }
 
 function friendlyError(e: unknown): string {
@@ -255,8 +163,8 @@ export default function CategoriesPage() {
                     onChange={(e) => setDraft({ ...draft, description: e.target.value })} />
                 </Field>
               </div>
-              {editing && <HeroImageField category={editing} kind="wide" onSaved={refetch} />}
-              {editing && <HeroImageField category={editing} kind="mobile" onSaved={refetch} />}
+              {editing && <CoverField category={editing} kind="wide" onSaved={refetch} />}
+              {editing && <CoverField category={editing} kind="mobile" onSaved={refetch} />}
               <div className="flex min-h-10 items-center gap-2 col-span-full">
                 <Checkbox id="category-visible" checked={draft.isVisible}
                   onCheckedChange={(checked) => setDraft({ ...draft, isVisible: checked === true })}

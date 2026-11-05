@@ -27,7 +27,6 @@ interface HeaderProps {
   categories?: NavLink[]
 }
 
-
 const subscribeScroll = (onChange: () => void) => {
   window.addEventListener('scroll', onChange, { passive: true })
   return () => window.removeEventListener('scroll', onChange)
@@ -68,12 +67,23 @@ export default function Header({ categories = [] }: HeaderProps) {
 
   return (
     <header data-clear={pathname === '/' && !scrolled} className="glass-header storefront-header sticky top-0 z-40">
-      <div className="mx-auto flex h-14 max-w-[1400px] items-center justify-between gap-4 px-4 sm:px-5 lg:h-[72px] lg:justify-start lg:px-8">
-        <Link href="/" className="flex min-h-11 min-w-0 shrink items-center">
-          <Logo className="h-6 w-auto max-w-full object-contain sm:h-7 lg:h-8 lg:object-left" />
+      <div className="mx-auto flex h-14 max-w-[1400px] items-center gap-3 px-4 sm:px-5 lg:h-[72px] lg:gap-5 lg:px-8 xl:gap-6">
+        <Link href="/" className="flex min-h-11 shrink-0 items-center">
+          <Logo className="h-[22px] w-auto object-contain object-left sm:h-7 lg:h-7 xl:h-8" />
         </Link>
 
-        <nav aria-label={t('Үндсэн цэс', 'Main menu')} className="mx-auto hidden items-center gap-8 lg:flex">
+        <button
+          type="button"
+          onClick={() => open('search')}
+          aria-label={t('Хайх', 'Search')}
+          className="header-search flex h-10 min-w-0 flex-1 items-center gap-2.5 rounded-full px-3.5 text-left text-[14px] text-ink-faint lg:w-44 lg:flex-none xl:w-72"
+        >
+          <IconSearch width="18" height="18" aria-hidden="true" className="shrink-0 text-ink-soft" />
+          <span className="truncate">{t('Бараа хайх', 'Search products')}</span>
+          <kbd className="ml-auto hidden rounded-md border border-line px-1.5 py-0.5 font-sans text-[11px] text-ink-faint xl:inline">⌘K</kbd>
+        </button>
+
+        <nav aria-label={t('Үндсэн цэс', 'Main menu')} className="mx-auto hidden items-center gap-5 whitespace-nowrap lg:flex xl:gap-9">
           <TopLink href="/" label={t('Нүүр', 'Home')} active={isActive('/')} />
 
           <DropdownMenu modal={false} open={shopOpen} onOpenChange={setShopOpen}>
@@ -111,31 +121,33 @@ export default function Header({ categories = [] }: HeaderProps) {
           ))}
         </nav>
 
-        <div className="flex items-center gap-1">
-          <LangSwitch className="mr-1 hidden lg:inline-flex" />
+        <div className="flex shrink-0 items-center">
+          <div className="hidden lg:block">
+            <LangSwitch compact />
+          </div>
           <button
             type="button"
             onClick={() => setLang(lang === 'en' ? 'mn' : 'en')}
             aria-label={lang === 'en' ? 'Монгол хэл рүү шилжих' : 'Switch to English'}
-            className="grid h-11 min-w-11 place-items-center rounded-full px-2 text-[13px] font-semibold text-ink-strong hover:bg-line-soft lg:hidden"
+            className="grid h-10 min-w-11 place-items-center rounded-full border border-line px-2.5 text-[12px] font-semibold text-ink-strong lg:hidden"
           >
             {lang === 'en' ? 'МН' : 'EN'}
           </button>
-          <Button variant="ghost" size="touch" onClick={() => open('search')} aria-label={t('Хайх', 'Search')} title={t('Хайх (⌘K)', 'Search (⌘K)')} className="min-w-11 gap-2.5 rounded-full px-3">
-            <IconSearch /><span className="hidden text-xs xl:inline">{t('Бараа хайх', 'Search products')}</span>
-          </Button>
-          <Button variant="ghost" size="icon-touch" onClick={() => open('cart')} className="relative" aria-label={t('Сагс', 'Cart')}>
-            <IconBag />
-            {count > 0 && (
-              <span
-                key={count}
-                className="count-pop absolute -right-0.5 -top-0.5 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-primary-strong px-1 text-[10px] font-bold text-on-primary"
-              >
-                {count}
-              </span>
-            )}
-          </Button>
-          <UserMenu />
+          <span aria-hidden="true" className="mx-3 hidden h-6 w-px bg-line lg:block xl:mx-4" />
+          <div className="hidden items-center gap-1 lg:flex">
+            <Button variant="ghost" size="icon-touch" onClick={() => open('cart')} className="relative" aria-label={t('Сагс', 'Cart')}>
+              <IconBag />
+              {count > 0 && (
+                <span
+                  key={count}
+                  className="count-pop absolute -right-0.5 -top-0.5 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-primary-strong px-1 text-[10px] font-bold text-on-primary"
+                >
+                  {count}
+                </span>
+              )}
+            </Button>
+            <UserMenu />
+          </div>
         </div>
       </div>
     </header>

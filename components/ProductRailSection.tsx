@@ -29,7 +29,7 @@ export default function ProductRailSection({
 
       <ProductRail>
         {products.map((p) => (
-          <li key={p.id ?? p.slug} className="arrival-item w-[168px] shrink-0 sm:w-[220px] lg:w-[250px]">
+          <li key={p.id ?? p.slug} className="arrival-item w-[41vw] max-w-[200px] shrink-0 sm:w-[220px] sm:max-w-none lg:w-[250px]">
             <ProductCard product={p} swipe={false} sizes={RAIL_CARD_SIZES} />
           </li>
         ))}

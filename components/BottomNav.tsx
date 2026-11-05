@@ -6,8 +6,7 @@ import type { ComponentType, ReactNode } from 'react'
 import { useUI, type Overlay } from './UIProvider'
 import { useCart } from './useCart'
 import { useAccount } from './useAccount'
-import { useTheme } from './ThemeProvider'
-import { LINK_ICON, THEME_CHOICES } from './UserMenu'
+import { LINK_ICON, ThemeSwitch } from './UserMenu'
 import type { NavLink } from './Header'
 import {
   IconBag,
@@ -160,7 +159,6 @@ function SheetRow({ href, onNavigate, icon: Icon, children }: SheetRowProps) {
 
 function AccountSheet({ open, onClose, onNavigate }: { open: boolean; onClose: () => void; onNavigate: () => void }) {
   const { isAuthenticated, displayName, links, signOut } = useAccount()
-  const { preference, setPreference } = useTheme()
   const t = useT()
 
   return (
@@ -184,25 +182,8 @@ function AccountSheet({ open, onClose, onNavigate }: { open: boolean; onClose: (
         </ul>
 
         <p className="label mt-5 text-ink-faint">{t('Өнгөний горим', 'Appearance')}</p>
-        <div role="group" aria-label={t('Өнгөний горим', 'Appearance')} className="mt-2 grid grid-cols-3 gap-1 rounded-full bg-shade p-1">
-          {THEME_CHOICES.map(({ value, label, labelEn, icon: Icon }) => {
-            const selected = preference === value
-            return (
-              <button
-                key={value}
-                type="button"
-                aria-pressed={selected}
-                onClick={() => setPreference(value)}
-                className={cn(
-                  'flex min-h-11 items-center justify-center gap-1.5 rounded-full text-[13px] transition-colors',
-                  selected ? 'bg-paper font-semibold text-ink-strong shadow-(--t-lift)' : 'text-ink-soft',
-                )}
-              >
-                <Icon width="16" height="16" aria-hidden="true" />
-                {t(label, labelEn)}
-              </button>
-            )
-          })}
+        <div className="mt-2">
+          <ThemeSwitch />
         </div>
 
         <p className="label mt-5 text-ink-faint">{t('Мэдээлэл', 'Information')}</p>

@@ -21,8 +21,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
@@ -42,14 +40,10 @@ export const THEME_CHOICES: readonly { value: ThemePreference; label: string; la
   { value: 'dark', label: 'Бараан', labelEn: 'Dark', icon: IconMoon },
 ]
 
-const isThemeChoice = (value: string): value is ThemePreference =>
-  THEME_CHOICES.some((c) => c.value === value)
-
 const ITEM = 'min-h-10 gap-3 rounded-lg px-3 text-[14px]'
 
 export default function UserMenu() {
   const { isAuthenticated, displayName, links, signOut } = useAccount()
-  const { preference, setPreference } = useTheme()
   const t = useT()
 
   return (
@@ -81,18 +75,10 @@ export default function UserMenu() {
           )
         })}
         <DropdownMenuSeparator />
-        <DropdownMenuLabel className="px-3 pb-1 pt-2 text-[11px] font-normal text-muted-foreground">{t('Өнгөний горим', 'Appearance')}</DropdownMenuLabel>
-        <DropdownMenuRadioGroup
-          value={preference}
-          onValueChange={(value) => { if (isThemeChoice(value)) setPreference(value) }}
-        >
-          {THEME_CHOICES.map(({ value, label, labelEn, icon: Icon }) => (
-            <DropdownMenuRadioItem key={value} value={value} className={cn(ITEM, 'pl-8')}>
-              <Icon width="18" height="18" aria-hidden="true" />
-              {t(label, labelEn)}
-            </DropdownMenuRadioItem>
-          ))}
-        </DropdownMenuRadioGroup>
+        <div className="px-2 pb-1.5 pt-2">
+          <p className="px-1 pb-2 text-[11px] text-muted-foreground">{t('Өнгөний горим', 'Appearance')}</p>
+          <ThemeSwitch compact />
+        </div>
         {isAuthenticated && (
           <>
             <DropdownMenuSeparator />
@@ -104,5 +90,33 @@ export default function UserMenu() {
         )}
       </DropdownMenuContent>
     </DropdownMenu>
+  )
+}
+
+export function ThemeSwitch({ compact = false }: { compact?: boolean }) {
+  const { preference, setPreference } = useTheme()
+  const t = useT()
+  return (
+    <div role="group" aria-label={t('Өнгөний горим', 'Appearance')} className="grid grid-cols-3 gap-1 rounded-full bg-shade p-1">
+      {THEME_CHOICES.map(({ value, label, labelEn, icon: Icon }) => {
+        const selected = preference === value
+        return (
+          <button
+            key={value}
+            type="button"
+            aria-pressed={selected}
+            onClick={() => setPreference(value)}
+            className={cn(
+              'flex items-center justify-center gap-1.5 rounded-full transition-colors',
+              compact ? 'min-h-8 text-[12px]' : 'min-h-11 text-[13px]',
+              selected ? 'bg-paper font-semibold text-ink-strong shadow-(--t-lift)' : 'text-ink-soft hover:text-ink-strong',
+            )}
+          >
+            <Icon width={compact ? 14 : 16} height={compact ? 14 : 16} aria-hidden="true" />
+            {t(label, labelEn)}
+          </button>
+        )
+      })}
+    </div>
   )
 }

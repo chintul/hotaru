@@ -66,7 +66,7 @@ export function CategoryName({ slug, mn }: { slug: string; mn: string }) {
   return <>{categoryName(slug, mn, useLang())}</>
 }
 
-export function LangSwitch({ className = '' }: { className?: string }) {
+export function LangSwitch({ className = '', compact = false }: { className?: string; compact?: boolean }) {
   const lang = useLang()
   return (
     <div
@@ -80,7 +80,7 @@ export function LangSwitch({ className = '' }: { className?: string }) {
           type="button"
           aria-pressed={lang === code}
           onClick={() => setLang(code)}
-          className="min-h-10 min-w-11 rounded-full px-2.5 text-[12px] font-semibold text-ink-soft transition-colors aria-pressed:bg-primary-strong aria-pressed:text-on-primary"
+          className={`${compact ? 'min-h-8 min-w-9 px-2 text-[11px]' : 'min-h-10 min-w-11 px-2.5 text-[12px]'} rounded-full font-semibold text-ink-soft transition-colors aria-pressed:bg-primary-strong aria-pressed:text-on-primary`}
         >
           {code === 'mn' ? 'МН' : 'EN'}
         </button>

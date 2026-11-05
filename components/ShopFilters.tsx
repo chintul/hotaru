@@ -135,9 +135,9 @@ export default function ShopFilters({ categories, counts }: ShopFiltersProps) {
       <div className="lg:hidden">
         <button
           onClick={() => openOverlay('filters')}
-          className={`flex w-full items-center justify-between border border-line px-4 py-3 transition-opacity ${pending ? 'opacity-60' : ''}`}
+          className={`flex h-11 w-full items-center justify-between rounded-full border border-line-strong px-5 transition-opacity ${pending ? 'opacity-60' : ''}`}
         >
-          <span className="nav-link text-[13px]">{t('Шүүх', 'Filter')}</span>
+          <span className="text-[14px] font-semibold text-ink-strong">{t('Шүүх', 'Filter')}</span>
           {activeCount > 0 ? (
             <span className="grid h-5 min-w-5 place-items-center rounded-full bg-ink-strong px-1.5 text-[11px] font-semibold text-paper">
               {activeCount}
