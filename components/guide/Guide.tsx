@@ -187,7 +187,7 @@ export function MascotGuide() {
   const wide = useSyncExternalStore(subscribeWide, getWide, serverWide)
   const open = openOn === pathname
   const amu = !GUIDE_KHISHIG.some((p) => pathname.startsWith(p))
-  const name = amu ? t('Аму', 'Amu') : t('Хишиг', 'Khishig')
+  const name = amu ? t('Зэн', 'Zen') : t('Нова', 'Nova')
   const questions = (tip.questions ?? []).slice(0, 4)
   const picked = answer === null ? null : questions[answer]
 

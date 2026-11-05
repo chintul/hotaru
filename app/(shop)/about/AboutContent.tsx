@@ -24,8 +24,8 @@ const COPY = {
     foundersTitle: 'Үүсгэн байгуулагчид',
     foundersIntro: 'hotaru-г бид хоёр эхлүүлсэн. Өдөр бүр хэрэглэхэд баярламаар зүйлсийг өөрсдөө хайж, шалгаж, итгэлтэй болсноо л санал болгодог.',
     founders: [
-      { name: 'Хишиг', role: 'Үүсгэн байгуулагч, технологи хариуцсан захирал', bio: 'hotaru-г эхлүүлэх санааг гаргасан. Сайт, систем гээд технологийн талыг бүхэлд нь хариуцдаг бөгөөд захиалга бэлтгэх, бараа сонгоход ч гар бие оролцдог.' },
-      { name: 'Аму', role: 'Хамтран үүсгэн байгуулагч, үйл ажиллагаа хариуцсан захирал', bio: 'Маркетинг, харилцаа холбоог хариуцдаг. Бараа сонголтыг удирдаж, материал, хийц, тав тухыг нь нэг бүрчлэн нягталдаг. Бидний пост, мессеж бүрийн ард Аму бий.' },
+      { name: 'Нова', role: 'Үүсгэн байгуулагч, технологи хариуцсан захирал', bio: 'hotaru-г эхлүүлэх санааг гаргасан. Сайт, систем гээд технологийн талыг бүхэлд нь хариуцдаг бөгөөд захиалга бэлтгэх, бараа сонгоход ч гар бие оролцдог.' },
+      { name: 'Зэн', role: 'Хамтран үүсгэн байгуулагч, үйл ажиллагаа хариуцсан захирал', bio: 'Маркетинг, харилцаа холбоог хариуцдаг. Бараа сонголтыг удирдаж, материал, хийц, тав тухыг нь нэг бүрчлэн нягталдаг. Бидний пост, мессеж бүрийн ард Зэн бий.' },
     ],
     goalTitle: 'Бидний зорилго',
     goalBody: 'Өдөр тутамдаа хэрэглэх зүйл тань гоё харагдахаас гадна хэрэглэхэд таатай байх ёстой гэж бид боддог. Тиймээс загварлаг, чанартай бүтээгдэхүүнийг зах зээлийн бодит үнэлгээгээр таны гарт хялбар хүргэхийг зорьж ажиллаж байна.',
@@ -48,8 +48,8 @@ const COPY = {
     foundersTitle: 'Founders',
     foundersIntro: 'The two of us started hotaru. We search for things that make everyday life a little happier, test them ourselves, and only recommend what we trust.',
     founders: [
-      { name: 'Khishig', role: 'Founder & CTO', bio: 'Came up with the idea for hotaru. Runs the site, the systems and everything technical, and helps prepare orders and choose products.' },
-      { name: 'Amu', role: 'Co-founder & COO', bio: 'Leads marketing and communications, and heads product selection, checking material, craft and comfort one by one. Every post and message from us comes from Amu.' },
+      { name: 'Nova', role: 'Founder & CTO', bio: 'Came up with the idea for hotaru. Runs the site, the systems and everything technical, and helps prepare orders and choose products.' },
+      { name: 'Zen', role: 'Co-founder & COO', bio: 'Leads marketing and communications, and heads product selection, checking material, craft and comfort one by one. Every post and message from us comes from Zen.' },
     ],
     goalTitle: 'Our goal',
     goalBody: 'We believe the things you use every day should feel as good as they look. So we work to bring stylish, quality products to you easily, at honest market prices.',
