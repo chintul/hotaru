@@ -1,7 +1,9 @@
+import { T } from '@/lib/i18n'
+
 export default function OrderSkeleton() {
   return (
     <div className="mx-auto max-w-[860px] px-4 py-8 sm:px-6 sm:py-12" aria-busy="true" aria-live="polite">
-      <span className="sr-only">Захиалга ачааллаж байна…</span>
+      <span className="sr-only"><T mn="Захиалга ачааллаж байна…" en="Loading your order…" /></span>
 
       <div className="o-skeleton h-3.5 w-28" />
 

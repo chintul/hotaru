@@ -10,6 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Sheet, SheetClose, SheetContent, SheetTitle } from '@/components/ui/sheet'
+import { categoryName, useLang, useT } from '@/lib/i18n'
 
 export interface ShopFilterCategory {
   slug: string
@@ -26,6 +27,8 @@ type StockFilter = 'in' | 'out'
 export default function ShopFilters({ categories, counts }: ShopFiltersProps) {
   const router = useRouter()
   const params = useSearchParams()
+  const lang = useLang()
+  const t = useT()
 
   const [pending, startTransition] = useTransition()
   const activeCat = params.get('c')
@@ -59,20 +62,20 @@ export default function ShopFilters({ categories, counts }: ShopFiltersProps) {
   const activeCount = [activeCat, stock, params.get('min'), params.get('max')].filter(Boolean).length
 
   const stockOptions: [StockFilter, string][] = [
-    ['in', `Бэлэн (${counts.inStock})`],
-    ['out', `Дууссан (${counts.outOfStock})`],
+    ['in', `${t('Бэлэн', 'In stock')} (${counts.inStock})`],
+    ['out', `${t('Дууссан', 'Sold out')} (${counts.outOfStock})`],
   ]
 
   const renderBody = (scope: string) => (
     <>
-      <Group title="Ангилал">
+      <Group title={t('Ангилал', 'Category')}>
         <ul className="space-y-2.5">
           <li>
             <button
               onClick={() => setParam('c', null)}
               className={`text-[13px] ${!activeCat ? 'font-semibold text-ink' : 'text-ink-soft hover:text-ink'}`}
             >
-              Бүгд
+              {t('Бүгд', 'All')}
             </button>
           </li>
           {categories.map((c) => (
@@ -81,14 +84,14 @@ export default function ShopFilters({ categories, counts }: ShopFiltersProps) {
                 onClick={() => setParam('c', c.slug)}
                 className={`text-[13px] ${activeCat === c.slug ? 'font-semibold text-ink' : 'text-ink-soft hover:text-ink'}`}
               >
-                {c.label}
+                {categoryName(c.slug, c.label, lang)}
               </button>
             </li>
           ))}
         </ul>
       </Group>
 
-      <Group title="Нөөц">
+      <Group title={t('Нөөц', 'Availability')}>
         {stockOptions.map(([value, label]) => {
           const id = `${idBase}-${scope}-stock-${value}`
           return (
@@ -106,22 +109,22 @@ export default function ShopFilters({ categories, counts }: ShopFiltersProps) {
         })}
       </Group>
 
-      <Group title="Үнэ">
+      <Group title={t('Үнэ', 'Price')}>
         <div className="flex items-center gap-2">
           <Input
             value={min} onChange={(e) => setMin(e.target.value)} inputMode="numeric" placeholder="0"
-            aria-label="Доод үнэ"
-            className="h-10 rounded-none px-2 text-[13px] md:text-[13px]"
+            aria-label={t('Доод үнэ', 'Minimum price')}
+            className="h-10 rounded-lg px-2 text-[13px] md:text-[13px]"
           />
           <span className="text-ink-faint">—</span>
           <Input
             value={max} onChange={(e) => setMax(e.target.value)} inputMode="numeric" placeholder="500000"
-            aria-label="Дээд үнэ"
-            className="h-10 rounded-none px-2 text-[13px] md:text-[13px]"
+            aria-label={t('Дээд үнэ', 'Maximum price')}
+            className="h-10 rounded-lg px-2 text-[13px] md:text-[13px]"
           />
         </div>
         <Button variant="solid" size="touch" onClick={applyPriceRange} className="mt-3 w-full">
-          Шүүх
+          {t('Шүүх', 'Apply')}
         </Button>
       </Group>
     </>
@@ -132,9 +135,9 @@ export default function ShopFilters({ categories, counts }: ShopFiltersProps) {
       <div className="lg:hidden">
         <button
           onClick={() => openOverlay('filters')}
-          className={`flex w-full items-center justify-between border border-line px-4 py-3 transition-opacity ${pending ? 'opacity-60' : ''}`}
+          className={`flex h-11 w-full items-center justify-between rounded-full border border-line-strong px-5 transition-opacity ${pending ? 'opacity-60' : ''}`}
         >
-          <span className="nav-link text-[13px]">Шүүх</span>
+          <span className="text-[14px] font-semibold text-ink-strong">{t('Шүүх', 'Filter')}</span>
           {activeCount > 0 ? (
             <span className="grid h-5 min-w-5 place-items-center rounded-full bg-ink-strong px-1.5 text-[11px] font-semibold text-paper">
               {activeCount}
@@ -162,9 +165,9 @@ export default function ShopFilters({ categories, counts }: ShopFiltersProps) {
           className="gap-0 lg:hidden"
         >
           <div className="flex items-center justify-between border-b border-line px-5 py-4">
-            <SheetTitle className="nav-link text-[14px] font-bold text-ink-strong">Шүүх</SheetTitle>
+            <SheetTitle className="nav-link text-[14px] font-bold text-ink-strong">{t('Шүүх', 'Filter')}</SheetTitle>
             <SheetClose asChild>
-              <Button variant="ghost" size="icon-touch" className="-mr-2" aria-label="Хаах">
+              <Button variant="ghost" size="icon-touch" className="-mr-2" aria-label={t('Хаах', 'Close')}>
                 <IconClose />
               </Button>
             </SheetClose>
@@ -173,7 +176,7 @@ export default function ShopFilters({ categories, counts }: ShopFiltersProps) {
           <div className="border-t border-line px-5 py-4">
             <SheetClose asChild>
               <Button variant="solid" size="cta" className="w-full">
-                Үр дүнг харах
+                {t('Үр дүнг харах', 'Show results')}
               </Button>
             </SheetClose>
           </div>

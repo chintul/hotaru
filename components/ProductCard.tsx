@@ -14,10 +14,10 @@ import { useCart } from "./useCart";
 import { useTrack } from "./useTrack";
 import { useUI } from "./UIProvider";
 import { IconBag, IconCheck } from "./Icons";
-import PreorderTag from "./PreorderTag";
-import { isPreorder, unitPriceOf } from "@/lib/preorder";
+import { DEFAULT_DEPOSIT_PCT, depositOf, isPreorder, unitPriceOf } from "@/lib/preorder";
 import { hasSizes, uniqueColours } from "@/lib/sizes";
 import { saleOf, type Sale } from "@/lib/sale";
+import { useT, type Translate } from "@/lib/i18n";
 
 const MAX_SWATCHES_PER_ROW = 4;
 const MAX_CARD_SLIDES = 5;
@@ -27,6 +27,8 @@ const CARD_SIZES = "(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw";
 interface ProductCardProps {
   product: Product;
   priority?: boolean;
+  swipe?: boolean;
+  sizes?: string;
 }
 
 function nextVariantWithDifferentImage(
@@ -45,10 +47,10 @@ function nextVariantWithDifferentImage(
 
 type CardAction = "size" | "preorder" | "add";
 
-const ACTION_LABEL: Record<CardAction, string> = {
-  size: "Сагслах",
-  preorder: "Сагслах",
-  add: "Сагслах",
+const ACTION_LABEL: Record<CardAction, readonly [mn: string, en: string]> = {
+  size: ["Сагслах", "Add to cart"],
+  preorder: ["Сагслах", "Add to cart"],
+  add: ["Сагслах", "Add to cart"],
 };
 
 function cheapestSale(variants: Variant[]): Sale | null {
@@ -62,14 +64,14 @@ function cheapestSale(variants: Variant[]): Sale | null {
     : null;
 }
 
-function saleBadge(variants: Variant[]): string | null {
+function saleBadge(variants: Variant[], t: Translate): string | null {
   const pcts = variants.flatMap((v) => {
     const sale = saleOf(v.priceMnt, v.compareAtPriceMnt);
     return sale ? [sale.pct] : [];
   });
   if (!pcts.length) return null;
   const top = Math.max(...pcts);
-  return pcts.every((p) => p === top) ? `−${top}%` : `−${top}% хүртэл`;
+  return pcts.every((p) => p === top) ? `−${top}%` : t(`−${top}% хүртэл`, `up to −${top}%`);
 }
 
 function colourFaces(variants: Variant[]): Variant[] {
@@ -83,8 +85,11 @@ function colourFaces(variants: Variant[]): Variant[] {
 export default function ProductCard({
   product,
   priority = false,
+  swipe = true,
+  sizes = CARD_SIZES,
 }: ProductCardProps) {
   const c = copy(product);
+  const t = useT();
   const images = nodes(product.productImageCollection);
   const allVariants = nodes(product.variantCollection);
   const sized = hasSizes(allVariants);
@@ -109,13 +114,9 @@ export default function ProductCard({
   const slides = [
     primaryImage,
     ...images.filter((i) => i.filePath !== primaryImage?.filePath),
-  ].slice(0, MAX_CARD_SLIDES);
+  ].slice(0, swipe ? MAX_CARD_SLIDES : 1);
   const [slidesArmed, setSlidesArmed] = useState(false);
-  const [slide, setSlide] = useState(0);
-  const pickVariant = (i: number) => {
-    setActive(i);
-    setSlide(0);
-  };
+  const pickVariant = (i: number) => setActive(i);
 
   const { add } = useCart();
   const track = useTrack();
@@ -168,7 +169,10 @@ export default function ProductCard({
     : toNumber(product.maxPriceMnt);
   const ranged = max > min;
   const priceSale = preorderPrices.length ? null : cheapestSale(allVariants);
-  const badge = preorderPrices.length ? null : saleBadge(allVariants);
+  const badge = preorderPrices.length ? null : saleBadge(allVariants, t);
+  const depositFrom = preorderOnly
+    ? depositOf(min, product.preorderDepositPct ?? DEFAULT_DEPOSIT_PCT)
+    : null;
   const action: CardAction | null = pickSizeFirst
     ? "size"
     : quickAddVariantId
@@ -177,23 +181,19 @@ export default function ProductCard({
         : "add"
       : null;
   const actionLabel = action
-    ? `${c.title ?? product.slug} — ${ACTION_LABEL[action].toLowerCase()}`
+    ? `${c.title ?? product.slug} — ${t(...ACTION_LABEL[action]).toLowerCase()}`
     : undefined;
 
   return (
-    <div className="group flex h-full flex-col">
+    <div className="product-card group flex h-full flex-col">
       <div className="relative">
         <Link href={href} className="block">
-          <div className="card-media relative aspect-square bg-shade p-1">
+          <div className="card-media relative aspect-[4/5] overflow-hidden rounded-xl bg-shade">
             <div className="media-primary absolute inset-0">
               <div
                 key={active}
                 className="snap-track card-track"
                 onTouchStart={() => setSlidesArmed(true)}
-                onScroll={(e) => {
-                  const el = e.currentTarget;
-                  setSlide(Math.round(el.scrollLeft / el.clientWidth));
-                }}
               >
                 {slides.map((image, i) => (
                   <div key={image?.filePath ?? i}>
@@ -203,35 +203,20 @@ export default function ProductCard({
                         alt={image?.alt || c.title || product.slug}
                         seed={i === 0 ? product.slug : `${product.slug}-${i}`}
                         priority={priority && i === 0}
-                        sizes={CARD_SIZES}
+                        sizes={sizes}
                       />
                     )}
                   </div>
                 ))}
               </div>
             </div>
-            {slides.length > 1 && (
-              <div
-                aria-hidden
-                className="card-dots pointer-events-none absolute inset-x-2 top-1.5 flex gap-1"
-              >
-                {slides.map((image, i) => (
-                  <span
-                    key={image?.filePath ?? i}
-                    className={`h-[3px] flex-1 rounded-full shadow-[0_0_2px_rgb(23_35_46/0.45)] transition-colors duration-(--dur-fast) ${
-                      i === slide ? "bg-paper" : "bg-paper/45"
-                    }`}
-                  />
-                ))}
-              </div>
-            )}
             {canHover && hoverImage && (
               <div className="media-hover absolute inset-0">
                 <ProductImage
                   filePath={hoverImage.filePath}
                   alt={hoverImage.alt || c.title || product.slug}
                   seed={`${product.slug}-2`}
-                  sizes={CARD_SIZES}
+                  sizes={sizes}
                 />
               </div>
             )}
@@ -245,19 +230,15 @@ export default function ProductCard({
               </span>
             )}
 
-            {preorderOnly && (
-              <PreorderTag sticker className="absolute bottom-2 left-2" />
-            )}
-
             {badge && (
-              <span className="absolute bottom-2 left-2 rounded-full bg-paper px-2 py-0.5 text-[11px] font-semibold tabular-nums text-sale shadow-(--t-lift)">
+              <span className="pointer-events-none absolute left-2.5 top-2.5 rounded-full bg-paper px-2 py-0.5 text-[11px] font-semibold tabular-nums text-sale">
                 {badge}
               </span>
             )}
 
             {!product.inStock && (
-              <span className="absolute right-3 top-3 bg-paper/95 px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.6px]">
-                Дууссан
+              <span className="absolute right-2.5 top-2.5 rounded-full bg-paper/95 px-2 py-0.5 text-[11px] font-medium text-ink-soft">
+                {t("Дууссан", "Sold out")}
               </span>
             )}
           </div>
@@ -267,9 +248,10 @@ export default function ProductCard({
           <Link
             href={href}
             aria-label={actionLabel}
-            className="absolute bottom-2 right-2 hidden h-9 items-center rounded-full border border-line bg-paper px-3.5 text-[12px] font-semibold text-ink-strong shadow-(--t-lift) transition-transform active:scale-95 sm:inline-flex"
+            className="card-action absolute bottom-2.5 right-2.5 inline-flex h-10 items-center gap-1.5 rounded-full bg-paper px-3.5 text-[12px] font-semibold text-ink-strong shadow-(--t-lift) transition-transform active:scale-95"
           >
-            {ACTION_LABEL[action]}
+            <IconBag width="16" height="16" />
+            {t(...ACTION_LABEL[action])}
           </Link>
         )}
 
@@ -278,7 +260,7 @@ export default function ProductCard({
             onClick={onQuickAdd}
             disabled={adding}
             aria-label={actionLabel}
-            className="absolute bottom-2 right-2 hidden h-9 w-9 place-items-center rounded-full border border-line bg-paper text-ink-strong shadow-(--t-lift) transition-[transform,opacity] active:scale-90 disabled:opacity-60 sm:grid"
+            className="card-action absolute bottom-2.5 right-2.5 grid h-10 w-10 place-items-center rounded-full bg-paper text-ink-strong shadow-(--t-lift) transition-transform active:scale-90 disabled:opacity-60"
           >
             {added ? (
               <IconCheck width="18" height="18" />
@@ -289,16 +271,16 @@ export default function ProductCard({
         )}
       </div>
 
-      <div className="mt-3 flex flex-1 flex-col text-center">
+      <div className="product-card-info mt-3 flex flex-1 flex-col gap-0.5 text-left">
         <Link href={href} className="block">
-          <p className="line-clamp-2 min-h-[2.75em] text-[14px] leading-snug hover:underline underline-offset-4">
+          <p className="truncate text-[14px] leading-snug text-ink-strong hover:underline underline-offset-4">
             {c.title}
           </p>
         </Link>
-        <p className="mt-1.5 text-[15px] font-bold">
+        <p className="text-[14px] font-semibold tabular-nums text-ink-strong">
           {ranged ? (
             <span className="mr-1 text-[12px] font-normal text-ink-soft">
-              эхлэх үнэ
+              {t("эхлэх үнэ", "from")}
             </span>
           ) : null}
           <span
@@ -313,8 +295,17 @@ export default function ProductCard({
           )}
         </p>
 
+        {depositFrom !== null && (
+          <p className="flex items-center gap-1.5 text-[12px] text-ink-soft">
+            <span aria-hidden className="preorder-dot" />
+            <span>
+              {t("Урьдчилгаа", "Deposit")} <span className="tabular-nums">{formatMnt(depositFrom)}</span>
+            </span>
+          </p>
+        )}
+
         {variants.length > 1 && (
-          <div className="mt-2.5 flex justify-center gap-1.5">
+          <div className="mt-2 flex flex-wrap items-center justify-start gap-1">
             {variants.slice(0, MAX_SWATCHES_PER_ROW).map((v, i) => (
               <button
                 key={v.id}
@@ -324,15 +315,15 @@ export default function ProductCard({
                 data-active={i === active}
                 className="swatch"
                 title={v.optionValue ?? ""}
-                aria-label={v.optionValue ?? "Сонголт"}
+                aria-label={v.optionValue ?? t("Сонголт", "Option")}
               >
-                <span className="block h-[22px] w-[22px] overflow-hidden rounded-full bg-shade">
+                <span className="block h-4 w-4 overflow-hidden rounded-full bg-shade">
                   {v.image?.filePath ? (
                     <ProductImage
                       filePath={v.image.filePath}
                       alt=""
-                      width={22}
-                      height={22}
+                      width={16}
+                      height={16}
                       className="h-full w-full"
                     />
                   ) : (
@@ -345,41 +336,12 @@ export default function ProductCard({
               </button>
             ))}
             {variants.length > MAX_SWATCHES_PER_ROW && (
-              <span className="grid h-[30px] place-items-center px-1 text-[12px] text-ink-soft">
+              <span className="px-1 text-[12px] text-ink-soft">
                 +{variants.length - MAX_SWATCHES_PER_ROW}
               </span>
             )}
           </div>
         )}
-
-        <div className="mt-auto pt-3 sm:hidden">
-          {action === "add" ? (
-            <button
-              onClick={onQuickAdd}
-              disabled={adding}
-              aria-label={actionLabel}
-              className="flex h-11 w-full items-center justify-center gap-1.5 rounded-full border border-line-strong bg-paper px-3 text-xs font-semibold text-ink-strong transition-[transform,opacity] active:scale-[0.97] disabled:opacity-60"
-            >
-              {added ? (
-                <IconCheck width="16" height="16" />
-              ) : (
-                <IconBag width="16" height="16" />
-              )}
-              {added ? "Нэмэгсэн" : ACTION_LABEL.add}
-            </button>
-          ) : action ? (
-            <Link
-              href={href}
-              aria-label={actionLabel}
-              className="flex h-11 w-full items-center justify-center gap-1.5 rounded-full border border-line-strong bg-paper px-3 text-[13px] font-semibold text-ink-strong transition-transform active:scale-[0.97]"
-            >
-              <IconBag width="16" height="16" />
-              {ACTION_LABEL[action]}
-            </Link>
-          ) : (
-            <div aria-hidden className="h-11" />
-          )}
-        </div>
       </div>
     </div>
   );

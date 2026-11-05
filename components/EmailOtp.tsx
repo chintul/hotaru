@@ -7,6 +7,7 @@ import { ensureSession, supabaseBrowser } from '@/lib/supabase/browser'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { T, useT } from '@/lib/i18n'
 
 const AUTH_FIELD = 'h-13.5 rounded-xl bg-background px-4 text-[16px] md:text-[16px]'
 
@@ -33,6 +34,7 @@ export default function EmailOtp({ onVerified, next = '/account' }: EmailOtpProp
   const [phase, setPhase] = useState<Phase>('email')
   const [error, setError] = useState<string | null>(null)
   const [transferToken, setTransferToken] = useState<string | null>(null)
+  const t = useT()
 
   const issueTransferTokenBeforeIdentityChanges = async () => {
     try {
@@ -61,7 +63,7 @@ export default function EmailOtp({ onVerified, next = '/account' }: EmailOtpProp
       setPhase('sent')
     } catch (err) {
       setPhase('email')
-      setError(messageOf(err) ?? 'Илгээж чадсангүй.')
+      setError(messageOf(err) ?? t('Илгээж чадсангүй.', 'Couldn’t send.'))
     }
   }
 
@@ -87,25 +89,25 @@ export default function EmailOtp({ onVerified, next = '/account' }: EmailOtpProp
       onVerified?.({ email })
     } catch (err) {
       setPhase('sent')
-      setError(messageOf(err)?.includes('expired') ? 'Код хугацаа нь дууссан байна.' : 'Код буруу байна.')
+      setError(messageOf(err)?.includes('expired') ? t('Код хугацаа нь дууссан байна.', 'This code has expired.') : t('Код буруу байна.', 'That code isn’t right.'))
     }
   }
 
   if (phase === 'email' || (phase === 'verifying' && !transferToken && !code)) {
     return (
       <form onSubmit={send}>
-        <Label htmlFor="email-otp-input" className="text-[13px] font-medium text-ink">Имэйл хаяг</Label>
+        <Label htmlFor="email-otp-input" className="text-[13px] font-medium text-ink">{t('Имэйл хаяг', 'Email address')}</Label>
         <Input
           id="email-otp-input"
           type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
           placeholder="name@example.com" autoComplete="email" className={`${AUTH_FIELD} mt-2`}
         />
         <p className="mt-2 text-[12px] leading-relaxed text-ink-faint">
-          Имэйлээр нэвтрэх холбоос болон 6 оронтой код ирнэ.
+          {t('Имэйлээр нэвтрэх холбоос болон 6 оронтой код ирнэ.', 'We’ll email you a sign-in link and a 6-digit code.')}
         </p>
         {error && <p className="mt-3 text-[13px] text-danger-ink">{error}</p>}
         <Button type="submit" variant="solid" size="cta" disabled={phase === 'verifying'} className="mt-4 w-full rounded-full">
-          {phase === 'verifying' ? 'Илгээж байна…' : 'Код илгээх'}
+          {phase === 'verifying' ? t('Илгээж байна…', 'Sending…') : t('Код илгээх', 'Send code')}
         </Button>
       </form>
     )
@@ -114,16 +116,20 @@ export default function EmailOtp({ onVerified, next = '/account' }: EmailOtpProp
   return (
     <form onSubmit={verify}>
       <p className="text-[13px] leading-relaxed text-ink-soft">
-        <strong className="text-ink">{email}</strong> хаяг руу илгээлээ. Имэйл дэх холбоос дээр
-        дарж нэвтрэх эсвэл 6 оронтой кодыг доор оруулна уу.
+        <T
+          mn={<><strong className="text-ink">{email}</strong> хаяг руу илгээлээ. Имэйл дэх холбоос дээр
+            дарж нэвтрэх эсвэл 6 оронтой кодыг доор оруулна уу.</>}
+          en={<>We sent it to <strong className="text-ink">{email}</strong>. Tap the link in the email to sign in,
+            or enter the 6-digit code below.</>}
+        />
       </p>
 
       <Input
         value={code}
         onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
         inputMode="numeric"
-        placeholder="6 оронтой код"
-        aria-label="6 оронтой код"
+        placeholder={t('6 оронтой код', '6-digit code')}
+        aria-label={t('6 оронтой код', '6-digit code')}
         className={`${AUTH_FIELD} mt-4 text-center text-[20px] font-semibold tracking-[8px] md:text-[20px]`}
       />
 
@@ -131,12 +137,12 @@ export default function EmailOtp({ onVerified, next = '/account' }: EmailOtpProp
 
       <Button type="submit" variant="solid" size="cta" disabled={phase === 'verifying' || code.length < 6}
         className="mt-4 w-full rounded-full">
-        {phase === 'verifying' ? 'Шалгаж байна…' : 'Нэвтрэх'}
+        {phase === 'verifying' ? t('Шалгаж байна…', 'Checking…') : t('Нэвтрэх', 'Sign in')}
       </Button>
 
       <button type="button" onClick={() => { setPhase('email'); setCode(''); setError(null) }}
         className="mt-3 min-h-11 w-full text-[13px] text-ink-soft hover:text-ink">
-        Өөр хаяг ашиглах
+        {t('Өөр хаяг ашиглах', 'Use a different email')}
       </button>
     </form>
   )

@@ -5,12 +5,13 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { IconGrid } from './Icons'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { useT } from '@/lib/i18n'
 
 const SORTS = [
-  ['featured', 'Онцлох'],
-  ['price-asc', 'Үнэ: багаас их'],
-  ['price-desc', 'Үнэ: ихээс бага'],
-  ['newest', 'Шинэ эхэндээ'],
+  ['featured', 'Онцлох', 'Featured'],
+  ['price-asc', 'Үнэ: багаас их', 'Price: low to high'],
+  ['price-desc', 'Үнэ: ихээс бага', 'Price: high to low'],
+  ['newest', 'Шинэ эхэндээ', 'Newest first'],
 ] as const
 
 const COLUMN_OPTIONS = [2, 3, 4] as const
@@ -25,6 +26,7 @@ export default function ShopToolbar({ total, cols }: ShopToolbarProps) {
   const params = useSearchParams()
   const [pending, startTransition] = useTransition()
   const sortId = useId()
+  const t = useT()
 
   const set = (key: string, value: string) => {
     const next = new URLSearchParams(params.toString())
@@ -35,12 +37,12 @@ export default function ShopToolbar({ total, cols }: ShopToolbarProps) {
   return (
     <div className={`mb-6 flex flex-wrap items-center gap-4 border-b border-line pb-4 transition-opacity duration-200 ${pending ? 'opacity-60' : ''}`}>
       <div className="hidden items-center gap-2 md:flex">
-        <span className="text-[12px] uppercase tracking-[0.6px] text-ink-soft">Харах</span>
+        <span className="text-[12px] text-ink-soft">{t('Харах', 'View')}</span>
         {COLUMN_OPTIONS.map((n) => (
           <button
             key={n}
             onClick={() => set('cols', String(n))}
-            aria-label={`${n} багана`}
+            aria-label={t(`${n} багана`, `${n} columns`)}
             className={`grid h-8 w-8 place-items-center border ${
               cols === n ? 'border-ink text-ink' : 'border-line text-ink-faint hover:text-ink'
             }`}
@@ -50,26 +52,26 @@ export default function ShopToolbar({ total, cols }: ShopToolbarProps) {
         ))}
       </div>
 
-      <span className="text-[13px] text-ink-soft">{total} бүтээгдэхүүн</span>
+      <span className="text-[13px] text-ink-soft">{t(`${total} бүтээгдэхүүн`, `${total} ${total === 1 ? 'product' : 'products'}`)}</span>
 
       <div className="ml-auto flex items-center gap-2">
         <Label
           htmlFor={sortId}
-          className="sr-only text-[12px] font-normal uppercase leading-normal tracking-[0.6px] text-ink-soft sm:not-sr-only"
+          className="sr-only text-[12px] font-normal leading-normal text-ink-soft sm:not-sr-only"
         >
-          Эрэмбэлэх
+          {t('Эрэмбэлэх', 'Sort by')}
         </Label>
         <Select value={params.get('sort') ?? 'featured'} onValueChange={(value) => set('sort', value)}>
           <SelectTrigger
             id={sortId}
             size="touch"
-            className="rounded-none px-3 text-[13px] sm:data-[size=touch]:h-9"
+            className="rounded-full px-3 text-[13px] sm:data-[size=touch]:h-9"
           >
             <SelectValue />
           </SelectTrigger>
-          <SelectContent position="popper" align="end" className="rounded-none border-line bg-paper">
-            {SORTS.map(([v, l]) => (
-              <SelectItem key={v} value={v} className="rounded-none text-[13px]">{l}</SelectItem>
+          <SelectContent position="popper" align="end" className="rounded-xl border-line bg-paper">
+            {SORTS.map(([v, mn, en]) => (
+              <SelectItem key={v} value={v} className="rounded-lg text-[13px]">{t(mn, en)}</SelectItem>
             ))}
           </SelectContent>
         </Select>

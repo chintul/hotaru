@@ -10,9 +10,9 @@ const buttonVariants = cva(
       variant: {
         default: "bg-primary text-primary-foreground hover:bg-primary/90",
         solid:
-          "rounded-none bg-primary text-[14px] font-bold tracking-[0.7px] text-primary-foreground uppercase hover:opacity-85 disabled:opacity-35",
+          "rounded-full bg-primary text-[15px] font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-35",
         line:
-          "rounded-none border border-accent-foreground text-[13px] font-bold tracking-[0.7px] text-accent-foreground uppercase hover:border-primary hover:bg-primary hover:text-primary-foreground",
+          "rounded-full border-[1.5px] border-accent-foreground text-[14px] font-semibold text-accent-foreground hover:border-primary hover:bg-primary hover:text-primary-foreground",
         destructive:
           "bg-destructive text-destructive-foreground hover:bg-destructive/90",
         outline:

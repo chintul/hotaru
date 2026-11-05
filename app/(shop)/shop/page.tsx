@@ -7,6 +7,7 @@ import ProductGrid from '@/components/ProductGrid'
 import ShopFilters from '@/components/ShopFilters'
 import ShopToolbar from '@/components/ShopToolbar'
 import type { Category, Connection, Product } from '@/lib/types'
+import { CategoryName, T } from '@/lib/i18n'
 
 interface NavCategoriesData {
   categoryCollection: Connection<Category> | null
@@ -84,16 +85,19 @@ export default async function ShopPage({ searchParams }: PageProps<'/shop'>) {
   const total = data?.productCollection?.totalCount ?? 0
   const inStock = countsData?.productCollection?.totalCount ?? 0
 
-  const heading = category
-    ? firstNode(category.categoryTranslationCollection)?.name ?? 'Дэлгүүр'
-    : 'Бүх бүтээгдэхүүн'
+  const categoryMn = category ? firstNode(category.categoryTranslationCollection)?.name : undefined
+  const heading = category ? (
+    categoryMn ? <CategoryName slug={category.slug} mn={categoryMn} /> : <T mn="Дэлгүүр" en="Shop" />
+  ) : (
+    <T mn="Бүх бүтээгдэхүүн" en="All products" />
+  )
   const blurb = category ? firstNode(category.categoryTranslationCollection)?.description : null
 
   return (
     <div className="mx-auto max-w-[1400px] px-5 py-10 lg:px-8">
-      <div className="mb-8 text-center">
-        <h1 className="section-title uppercase">{heading}</h1>
-        {blurb && <p className="mx-auto mt-2 max-w-xl text-[13px] text-ink-soft">{blurb}</p>}
+      <div className="mb-8">
+        <h1 className="section-title">{heading}</h1>
+        {blurb && <p className="mt-2 max-w-xl text-[15px] leading-relaxed text-ink-soft">{blurb}</p>}
       </div>
 
       <div className="flex flex-col gap-4 lg:flex-row lg:gap-12">
@@ -111,7 +115,9 @@ export default async function ShopPage({ searchParams }: PageProps<'/shop'>) {
 
           {error ? (
             <div className="border border-line bg-shade px-5 py-16 text-center">
-              <p className="text-ink-soft">Каталог ачаалж чадсангүй.</p>
+              <p className="text-ink-soft">
+                <T mn="Каталог ачаалж чадсангүй." en="Could not load the catalogue." />
+              </p>
             </div>
           ) : (
             <ProductGrid products={products} cols={cols} />

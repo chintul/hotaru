@@ -7,6 +7,7 @@ import { ensureSession, supabaseBrowser } from '@/lib/supabase/browser'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { T, useT } from '@/lib/i18n'
 
 const POLL_MS = 3000
 
@@ -62,6 +63,7 @@ export default function PhoneVerify({ onVerified, initialPhone = '' }: PhoneVeri
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const apollo = useApolloClient()
   const transferTokenRef = useRef<string | null>(null)
+  const t = useT()
 
   const stopPolling = useCallback(() => {
     if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null }
@@ -128,7 +130,7 @@ export default function PhoneVerify({ onVerified, initialPhone = '' }: PhoneVeri
           setStatus('expired')
         } else if (body.status === 'ERROR') {
           stopPolling()
-          setError(body.message ?? 'Нэвтэрч чадсангүй.')
+          setError(body.message ?? t('Нэвтэрч чадсангүй.', 'Couldn’t sign you in.'))
           setStatus('failed')
         }
       } catch {}
@@ -158,8 +160,8 @@ export default function PhoneVerify({ onVerified, initialPhone = '' }: PhoneVeri
         const failure: StartFailure = await res.json()
         setStatus('idle')
         setError(failure.code === 'NOT_CONFIGURED'
-          ? 'Утсаар баталгаажуулах түр боломжгүй байна. Имэйлээр үргэлжлүүлнэ үү.'
-          : failure.error ?? 'Эхлүүлж чадсангүй.')
+          ? t('Утсаар баталгаажуулах түр боломжгүй байна. Имэйлээр үргэлжлүүлнэ үү.', 'Phone verification is unavailable right now. Please continue with email.')
+          : failure.error ?? t('Эхлүүлж чадсангүй.', 'Couldn’t get started.'))
         return
       }
       const started: VerifySession = await res.json()
@@ -168,14 +170,14 @@ export default function PhoneVerify({ onVerified, initialPhone = '' }: PhoneVeri
       poll(started.sessionId)
     } catch {
       setStatus('idle')
-      setError('Сүлжээний алдаа.')
+      setError(t('Сүлжээний алдаа.', 'Network error.'))
     }
   }
 
   if (status === 'verified') {
     return (
       <p className="rounded-md border border-success-line bg-success-soft px-4 py-3 text-[13px] text-success-ink">
-        Утасны дугаар баталгаажлаа: <strong>{session?.phone ?? phone}</strong>
+        {t('Утасны дугаар баталгаажлаа:', 'Phone number verified:')} <strong>{session?.phone ?? phone}</strong>
       </p>
     )
   }
@@ -186,7 +188,7 @@ export default function PhoneVerify({ onVerified, initialPhone = '' }: PhoneVeri
     <div>
       {status !== 'pending' && (
         <form onSubmit={(e) => { e.preventDefault(); start() }}>
-          <Label htmlFor="phone-verify-input" className="text-[13px] font-medium text-ink">Утасны дугаар</Label>
+          <Label htmlFor="phone-verify-input" className="text-[13px] font-medium text-ink">{t('Утасны дугаар', 'Phone number')}</Label>
           <Input
             id="phone-verify-input"
             value={phone}
@@ -197,7 +199,7 @@ export default function PhoneVerify({ onVerified, initialPhone = '' }: PhoneVeri
             className="mt-2 h-13.5 rounded-xl bg-background px-4 text-[16px] tracking-[.5px] md:text-[16px]"
           />
           <p className="mt-2 text-[12px] leading-relaxed text-ink-faint">
-            Код танд ирэхгүй. Дараагийн алхамд та өөрийн утаснаас манай дугаар руу нэг мессеж илгээж баталгаажуулна (150₮).
+            {t('Код танд ирэхгүй. Дараагийн алхамд та өөрийн утаснаас манай дугаар руу нэг мессеж илгээж баталгаажуулна (150₮).', 'We won’t text you a code. In the next step you’ll send one message from your phone to our number to verify (150₮).')}
           </p>
           <Button
             type="submit"
@@ -206,25 +208,28 @@ export default function PhoneVerify({ onVerified, initialPhone = '' }: PhoneVeri
             disabled={status === 'starting' || phone.replace(/\D/g, '').length < 8}
             className="mt-5 w-full rounded-full"
           >
-            {status === 'starting' ? 'Түр хүлээнэ үү…' : 'Үргэлжлүүлэх'}
+            {status === 'starting' ? t('Түр хүлээнэ үү…', 'Please wait…') : t('Үргэлжлүүлэх', 'Continue')}
           </Button>
         </form>
       )}
 
       {status === 'pending' && session && (
         <div>
-          <p className="text-[15px] font-semibold text-ink-strong">Одоо мессеж илгээнэ үү</p>
+          <p className="text-[15px] font-semibold text-ink-strong">{t('Одоо мессеж илгээнэ үү', 'Now send a message')}</p>
           <p className="mt-1 text-[13px] text-ink-soft">
-            <strong className="font-medium text-ink">{session.phone}</strong> дугаартай утаснаасаа доорх кодыг илгээнэ.
+            <T
+              mn={<><strong className="font-medium text-ink">{session.phone}</strong> дугаартай утаснаасаа доорх кодыг илгээнэ.</>}
+              en={<>Send the code below from <strong className="font-medium text-ink">{session.phone}</strong>.</>}
+            />
           </p>
 
           <dl className="mt-4 divide-y divide-line rounded-2xl border border-line-strong bg-background">
             <div className="flex items-center justify-between gap-4 px-4 py-3">
-              <dt className="text-[13px] text-ink-soft">Хүлээн авах дугаар</dt>
+              <dt className="text-[13px] text-ink-soft">{t('Хүлээн авах дугаар', 'Send to')}</dt>
               <dd className="text-[18px] font-semibold tabular-nums tracking-[1px] text-ink-strong">{session.shortcode}</dd>
             </div>
             <div className="flex items-center justify-between gap-4 px-4 py-3">
-              <dt className="text-[13px] text-ink-soft">Мессежийн текст</dt>
+              <dt className="text-[13px] text-ink-soft">{t('Мессежийн текст', 'Message text')}</dt>
               <dd className="font-mono text-[20px] font-bold tracking-[3px] text-ink-strong">
                 {code ?? '—'}
               </dd>
@@ -233,10 +238,13 @@ export default function PhoneVerify({ onVerified, initialPhone = '' }: PhoneVeri
           {!code && <p className="mt-2 text-[13px] text-ink-soft">{session.displayInstruction}</p>}
 
           <Button asChild variant="solid" size="cta" className="mt-4 flex w-full rounded-full lg:hidden">
-            <a href={session.smsUri}>Мессеж бичих</a>
+            <a href={session.smsUri}>{t('Мессеж бичих', 'Write message')}</a>
           </Button>
           <p className="mt-3 hidden text-[13px] text-ink-soft lg:block">
-            Утсаараа <strong className="font-medium text-ink">{session.shortcode}</strong> руу дээрх кодыг мессежээр илгээнэ үү.
+            <T
+              mn={<>Утсаараа <strong className="font-medium text-ink">{session.shortcode}</strong> руу дээрх кодыг мессежээр илгээнэ үү.</>}
+              en={<>Text the code above to <strong className="font-medium text-ink">{session.shortcode}</strong> from your phone.</>}
+            />
           </p>
 
           <p role="status" className="mt-4 flex items-center gap-2.5 rounded-xl bg-shade px-4 py-3 text-[13px] text-ink-soft">
@@ -244,14 +252,14 @@ export default function PhoneVerify({ onVerified, initialPhone = '' }: PhoneVeri
               <span className="o-ping absolute h-2.5 w-2.5 rounded-full bg-primary-strong" />
               <span className="h-2 w-2 rounded-full bg-primary-strong" />
             </span>
-            <span className="flex-1">Мессежийг хүлээж байна. Ирмэгц автоматаар нэвтэрнэ.</span>
+            <span className="flex-1">{t('Мессежийг хүлээж байна. Ирмэгц автоматаар нэвтэрнэ.', 'Waiting for your message. You’ll be signed in automatically.')}</span>
             <span className="tabular-nums text-ink-faint">{formatClock(secondsLeft)}</span>
           </p>
 
           <div className="mt-3 flex items-center justify-between text-[12px] text-ink-faint">
-            <span>1 мессеж 150₮</span>
+            <span>{t('1 мессеж 150₮', '1 message 150₮')}</span>
             <button type="button" onClick={reset} className="min-h-11 text-[13px] text-ink-soft underline-offset-4 hover:text-ink hover:underline">
-              Өөр дугаар оруулах
+              {t('Өөр дугаар оруулах', 'Use a different number')}
             </button>
           </div>
         </div>
@@ -260,10 +268,10 @@ export default function PhoneVerify({ onVerified, initialPhone = '' }: PhoneVeri
       {status === 'expired' && (
         <div className="mt-4 rounded-2xl border border-line bg-shade p-4">
           <p className="text-[13px] text-ink-soft">
-            Хугацаа дууслаа. Өмнөх код хүчингүй боллоо, шинэ код аваад дахин илгээнэ үү.
+            {t('Хугацаа дууслаа. Өмнөх код хүчингүй боллоо, шинэ код аваад дахин илгээнэ үү.', 'Time’s up. That code no longer works — get a new one and send it again.')}
           </p>
           <Button variant="line" size="touch" onClick={reset} className="mt-3 rounded-full px-5">
-            Шинэ код авах
+            {t('Шинэ код авах', 'Get a new code')}
           </Button>
         </div>
       )}
@@ -271,10 +279,10 @@ export default function PhoneVerify({ onVerified, initialPhone = '' }: PhoneVeri
       {status === 'failed' && (
         <div className="mt-4 rounded-2xl border border-line bg-shade p-4">
           <p className="text-[13px] text-ink-soft">
-            Дугаар баталгаажсан ч нэвтрэлт дуусгаж чадсангүй. Дахин оролдоно уу.
+            {t('Дугаар баталгаажсан ч нэвтрэлт дуусгаж чадсангүй. Дахин оролдоно уу.', 'Your number was verified, but we couldn’t finish signing you in. Please try again.')}
           </p>
           <Button variant="line" size="touch" onClick={reset} className="mt-3 rounded-full px-5">
-            Дахин оролдох
+            {t('Дахин оролдох', 'Try again')}
           </Button>
         </div>
       )}

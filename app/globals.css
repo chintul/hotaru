@@ -85,7 +85,8 @@
 }
 
 @theme {
-  --font-sans: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-onest), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-onest), ui-sans-serif, system-ui, sans-serif;
 }
 
 /* ---------------------------------------------------------------------------
@@ -319,18 +320,17 @@ body {
   /* Primary nav + anything that reads as a control label. */
   .nav-link {
     font-size: 14px;
-    font-weight: 700;
-    letter-spacing: 0.7px;
-    text-transform: uppercase;
+    font-weight: 600;
     color: var(--color-ink-strong);
   }
 
   /* Centred section headings: "BEST SELLING" with a small underlined View All. */
   .section-title {
-    font-size: 24px;
-    font-weight: 700;
-    letter-spacing: 1.2px;
-    text-align: center;
+    font-size: clamp(26px, 2.6vw, 32px);
+    font-weight: 600;
+    line-height: 1.15;
+    letter-spacing: -0.025em;
+    color: var(--color-ink-strong);
   }
 
   /* Page-title face. Callers pass their own clamp() size; this only carries the
@@ -338,25 +338,22 @@ body {
      /orders, /wishlist and the 404 before it existed, which left those titles
      at the body weight — heavier than intended is the bug, not the fix. */
   .display {
-    font-weight: 700;
-    letter-spacing: -0.4px;
-    line-height: 1.12;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
   }
 
   /* Small uppercase label. Kept as a utility because checkout, account and admin
      surfaces lean on it heavily; the storefront chrome uses .nav-link instead. */
   .label {
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 600;
-    letter-spacing: 0.6px;
-    text-transform: uppercase;
   }
 
   .eyebrow {
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.6px;
-    text-transform: uppercase;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-ink-soft);
   }
 
   /* Announcement marquee. Duplicated track so the loop has no visible seam. */
@@ -405,16 +402,14 @@ body {
   .card-track { height: 100%; }
   @media (hover: hover) {
     .card-track { overflow-x: hidden; }
-    .card-dots { display: none; }
   }
 
-  /* Frosted header. The page scrolls under it, so the cover and the navy rail
-     show through blurred; the inset hairline is the lit edge, the navy bloom
-     below is what reads as glow. Opaque where backdrop-filter is missing,
-     because 72% paper over unblurred photos is unreadable. */
+  /* Frosted header. The page scrolls under it blurred; the inset hairline on
+     top is the lit edge, the navy bloom below is what reads as glow. Opaque
+     where backdrop-filter is missing, because 72% paper over unblurred photos
+     is unreadable. */
   .glass-header {
     background-color: color-mix(in oklab, var(--color-paper) 72%, transparent);
-    transition: background-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
     -webkit-backdrop-filter: blur(18px) saturate(1.8);
     backdrop-filter: blur(18px) saturate(1.8);
     box-shadow:
@@ -425,15 +420,73 @@ body {
   @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
     .glass-header { background-color: var(--color-paper); }
   }
-  /* At the top of the home page the cover runs under the header. A soft paper
-     fade instead of a fill keeps the nav legible on the light campaign
-     photos, and keeps light dark-mode text off a bare photo. */
+  /* Top of the home page: the cover runs under the header and shows through
+     it untouched. The glass returns as soon as the page scrolls. Dark mode
+     keeps a soft fade, because its light nav text would sit on a light photo. */
+  .glass-header { transition: background-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease); }
   .glass-header[data-clear="true"] {
     background-color: transparent;
-    background-image: linear-gradient(to bottom, color-mix(in oklab, var(--color-paper) 55%, transparent), transparent);
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
     box-shadow: none;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme]) .glass-header[data-clear="true"] {
+      background-image: linear-gradient(to bottom, color-mix(in oklab, var(--color-paper) 60%, transparent), transparent);
+    }
+  }
+  [data-theme="dark"] .glass-header[data-clear="true"] {
+    background-image: linear-gradient(to bottom, color-mix(in oklab, var(--color-paper) 60%, transparent), transparent);
+  }
+
+  .header-search {
+    background-color: color-mix(in oklab, var(--color-paper) 82%, transparent);
+    box-shadow: inset 0 0 0 1px var(--color-line);
+    transition: box-shadow var(--dur) var(--ease), background-color var(--dur) var(--ease);
+  }
+  .header-search:hover { box-shadow: inset 0 0 0 1px var(--color-line-strong); }
+  .glass-header[data-clear="true"] .header-search {
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+  }
+
+  /* About hero: the two bubbles drift and squish like soap bubbles, with a
+     glossy highlight, and three sparkles twinkle out of step. */
+  .about-bubble {
+    border-radius: 50%;
+    animation: bubble-drift 7s var(--ease) infinite, bubble-squish 3.2s ease-in-out infinite;
+  }
+  .about-bubble::after {
+    content: ""; position: absolute; left: 22%; top: 18%; width: 30%; height: 20%;
+    border-radius: 50%; background: color-mix(in oklab, #fff 75%, transparent);
+    rotate: -30deg;
+  }
+  .about-bubble-small { animation-duration: 5.5s, 2.6s; animation-delay: -2s, -1s; }
+  .about-sparkle {
+    position: absolute; width: 16px; aspect-ratio: 1; background: var(--color-note-ink);
+    clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
+    animation: sparkle-twinkle 2.8s ease-in-out infinite;
+  }
+  .about-sparkle-2 { width: 22px; animation-delay: -1s; background: var(--color-blush-ink); }
+  .about-sparkle-3 { width: 13px; animation-delay: -1.9s; }
+  @keyframes bubble-drift {
+    0%, 100% { translate: 0 0; }
+    30% { translate: 8% -14%; }
+    65% { translate: -6% -6%; }
+  }
+  @keyframes bubble-squish {
+    0%, 100% { border-radius: 50%; scale: 1; }
+    25% { border-radius: 54% 46% 48% 52% / 46% 54% 46% 54%; scale: 1.05 .96; }
+    50% { border-radius: 47% 53% 55% 45% / 53% 47% 53% 47%; scale: .97 1.04; }
+    75% { border-radius: 52% 48% 46% 54% / 48% 52% 50% 50%; scale: 1.02; }
+  }
+  @keyframes sparkle-twinkle {
+    0%, 100% { opacity: 0; scale: .3; rotate: 0deg; }
+    45%, 55% { opacity: .9; scale: 1; rotate: 45deg; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .about-bubble, .about-sparkle { animation: none; }
+    .about-sparkle { opacity: .6; }
   }
 
   /* Variant name pill sitting over the image, with its little circular knob. */
@@ -653,3 +706,181 @@ input[type="number"] { -moz-appearance: textfield; }
 
 :where(input, textarea, select):focus,
 :where(input, textarea, select):focus-visible { outline: none; }
+
+/* ---------------------------------------------------------------------------
+   Editorial storefront.
+
+   Image first, quiet chrome. One heading voice across the home page (Onest,
+   sentence case, a lilac full stop as the only accent), photos on soft 16px
+   corners, controls outside the photographs. The campaign cross-fade is the
+   one moving thing; everything around it holds still.
+--------------------------------------------------------------------------- */
+@layer components {
+  .store-announcement {
+    min-height: 34px;
+    display: flex; align-items: center; justify-content: space-between; gap: 20px;
+    padding: 7px max(20px, calc((100vw - 1336px) / 2));
+    background: var(--color-primary); color: var(--color-primary-on);
+    font-size: 11px; letter-spacing: .2px;
+  }
+  .store-announcement > a { min-height: 24px; display: inline-flex; align-items: center; }
+
+
+  .fashion-section-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 20px; }
+  .fashion-section-heading h2 {
+    font-family: var(--font-display, inherit);
+    font-size: clamp(24px, 2.4vw, 32px); line-height: 1.15; letter-spacing: -.03em; font-weight: 500;
+    color: var(--color-ink-strong);
+  }
+  .fashion-heading-dot { color: var(--color-note-ink); }
+  .fashion-section-heading > a {
+    min-height: 44px; display: inline-flex; align-items: center; white-space: nowrap;
+    font-size: 13px; font-weight: 500; color: var(--color-ink-soft);
+    text-decoration: underline; text-underline-offset: 5px; text-decoration-color: var(--color-line-strong);
+    transition: color var(--dur-fast) var(--ease);
+  }
+  .fashion-section-heading > a:hover { color: var(--color-ink-strong); }
+
+  .campaign-stage {
+    position: relative; overflow: hidden; touch-action: pan-y;
+    aspect-ratio: 4 / 3; background: var(--color-shade);
+  }
+  @media (min-width: 640px) { .campaign-stage { aspect-ratio: 3 / 1; max-height: 720px; } }
+  .campaign-frame { position: absolute; inset: 0; opacity: 0; pointer-events: none; transition: opacity .9s var(--ease); }
+  .campaign-frame[data-active="true"] { opacity: 1; pointer-events: auto; }
+  .campaign-frame img { transform: scale(1.03); transition: transform 6s linear; }
+  .campaign-frame[data-active="true"] img { transform: scale(1); }
+  .campaign-controls {
+    max-width: 1400px; margin: auto; min-height: 64px;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    padding: 8px 32px; border-bottom: 1px solid var(--color-line);
+  }
+  .campaign-caption { min-height: 44px; display: inline-flex; align-items: baseline; gap: 10px; }
+  .campaign-caption-name {
+    font-family: var(--font-display, inherit);
+    font-size: 17px; font-weight: 500; letter-spacing: -.02em; color: var(--color-ink-strong);
+  }
+  .campaign-caption-meta { font-size: 12px; color: var(--color-ink-soft); }
+  .campaign-caption:hover .campaign-caption-name { text-decoration: underline; text-underline-offset: 5px; }
+  .campaign-dot { display: grid; place-items: center; width: 26px; height: 44px; cursor: pointer; }
+  .campaign-dot span { width: 6px; height: 6px; border-radius: 99px; background: var(--color-line-strong); transition: width var(--dur) var(--ease), background-color var(--dur) var(--ease); }
+  .campaign-dot[aria-pressed="true"] span { width: 22px; background: var(--color-ink-strong); }
+  .round-arrow {
+    width: 44px; height: 44px; display: grid; place-items: center; cursor: pointer;
+    border: 1px solid var(--color-line); border-radius: 50%; background: var(--color-paper); color: var(--color-ink-strong);
+    transition: background-color var(--dur-fast) var(--ease), opacity var(--dur-fast) var(--ease);
+  }
+  .round-arrow:hover { background: var(--color-shade); }
+  .round-arrow:disabled { opacity: .35; cursor: default; }
+
+  .product-rail-track { display: flex; gap: 20px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; padding-bottom: 4px; }
+  .product-rail-track::-webkit-scrollbar { display: none; }
+  .arrival-item { scroll-snap-align: start; }
+
+  .category-tile-media { position: relative; display: block; aspect-ratio: 1; overflow: hidden; border-radius: 16px; background: var(--color-shade); border: 1px solid var(--color-line); }
+  .category-tile-media img { transition: transform .5s var(--ease); }
+  @media (hover: hover) { .category-tile:hover .category-tile-media img { transform: scale(1.04); } }
+  .category-tile-name { font-family: var(--font-display, inherit); font-size: 16px; font-weight: 500; letter-spacing: -.02em; color: var(--color-ink-strong); }
+
+  /* The pre-order mark is a firefly: a small warm light, the brand's own
+     sign, in place of a clock. On a card it sits on the photo as frosted
+     paper so it reads over any picture. */
+  .preorder-tag {
+    display: inline-flex; align-items: center; gap: 7px; max-width: 100%;
+    border-radius: 999px; padding: 4px 11px 4px 8px;
+    background: var(--color-note-soft); color: var(--color-note-ink);
+    font-size: 12px; font-weight: 600; line-height: 1.35;
+  }
+  .preorder-tag > span:last-child { min-width: 0; overflow-wrap: anywhere; }
+  .preorder-eta { font-weight: 400; }
+  .preorder-dot {
+    flex: none; width: 7px; height: 7px; border-radius: 50%; background: #ffcf4a;
+    box-shadow: 0 0 0 2px rgb(255 207 74 / .28), 0 0 8px 1px rgb(255 196 40 / .85);
+  }
+  .preorder-tag-card {
+    padding: 4px 10px 4px 8px; font-size: 11px; color: var(--color-ink-strong);
+    background: color-mix(in oklab, var(--color-paper) 88%, transparent);
+    -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+    box-shadow: 0 1px 2px rgb(23 35 46 / .12);
+  }
+  .product-card-info { padding-inline: 2px; }
+  .product-card .swatch { width: 24px; height: 24px; border-color: transparent; }
+  .product-card .swatch::after { inset: -10px; }
+  .product-card .swatch:hover { transform: none; }
+  .product-card .swatch[data-active="true"] { transform: none; box-shadow: 0 0 0 1.5px var(--color-ink-strong); border-color: transparent; }
+  /* Quick add appears on hover or keyboard focus only, so a resting grid shows
+     photographs, not a column of buttons; touch screens open the product. */
+  .product-card .card-action { opacity: 0; translate: 0 4px; pointer-events: none; transition: opacity var(--dur-fast) var(--ease), translate var(--dur-fast) var(--ease); }
+  @media (hover: hover) {
+    .product-card:hover .card-action { opacity: 1; translate: 0 0; pointer-events: auto; }
+  }
+  .product-card .card-action:focus-visible { opacity: 1; translate: 0 0; pointer-events: auto; }
+
+  @media (max-width: 639px) {
+    .store-announcement { justify-content: center; font-size: 10px; }
+    .campaign-controls { padding: 4px 16px; }
+    .campaign-caption-name { font-size: 15px; }
+    .product-rail-track { gap: 12px; margin-inline: -20px; padding-inline: 20px; scroll-padding-inline: 20px; }
+  }
+  @media (max-width: 380px) { .preorder-tag-card { gap: 5px; font-size: 10px; padding-inline: 7px 8px; } }
+  @media (prefers-reduced-motion: reduce) { .campaign-frame img { transform: none; } }
+}
+
+/* Unified art direction: generous photography, warm paper, restrained type. */
+.studio-home { background: var(--color-paper); }
+.studio-home .fashion-section-heading h2 { font-size: clamp(23px, 2.2vw, 30px); font-weight: 500; letter-spacing: -.7px; }
+.studio-home .fashion-heading-dot { display: none; }
+/* Full-screen campaign under a transparent header, controls on the photo. */
+.studio-hero { position: relative; margin-top: -56px; }
+@media (min-width: 1024px) { .studio-hero { margin-top: -72px; } }
+.studio-hero .campaign-stage { aspect-ratio: 4 / 5; max-height: none; }
+@media (min-width: 640px) { .studio-hero .campaign-stage { aspect-ratio: auto; height: calc(100svh - 34px); min-height: 480px; } }
+/* A tall phone cover on a wide screen: the photo stands whole in the
+   middle and a blurred, enlarged copy of itself fills the sides. */
+.cover-poster { overflow: hidden; }
+.cover-poster-backdrop { position: absolute; inset: 0; }
+.cover-poster-backdrop img { filter: blur(44px) saturate(1.15); scale: 1.25; }
+.cover-poster-photo {
+  position: absolute; top: 0; bottom: 0; left: 50%; translate: -50% 0;
+  aspect-ratio: 4 / 5; height: 100%;
+  box-shadow: 0 0 90px -10px rgb(23 35 46 / .28);
+}
+.studio-hero .campaign-controls {
+  position: absolute; inset: auto 0 0; max-width: none; min-height: 0;
+  justify-content: center; padding: 0 16px 10px; border: 0; pointer-events: none;
+}
+.studio-hero .campaign-controls > * { pointer-events: auto; }
+.studio-hero .campaign-caption, .studio-hero .round-arrow { display: none; }
+.studio-hero .campaign-dot span { width: 10px; height: 3px; border-radius: 0; background: rgb(255 255 255 / .55); box-shadow: 0 0 3px rgb(23 35 46 / .35); }
+.studio-hero .campaign-dot[aria-pressed="true"] span { width: 30px; background: #fff; }
+.campaign-progress {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 2px; z-index: 1;
+  background: rgb(255 255 255 / .85); transform-origin: left; pointer-events: none;
+  animation: campaign-progress 6s linear both;
+}
+.campaign-progress[data-paused="true"] { opacity: 0; }
+@keyframes campaign-progress { from { transform: scaleX(0) } to { transform: scaleX(1) } }
+@media (prefers-reduced-motion: reduce) { .campaign-progress { display: none; } }
+.studio-arrivals { border-top: 1px solid var(--color-line); }
+.studio-home .round-arrow { width: 40px; height: 40px; }
+@media (max-width: 767px) {
+}
+
+/* The home cover's one moving thing: hotaru is Japanese for firefly, so a
+   single warm light hovers by the mascot and follows the pointer across the
+   photo. The pulse is its own loop and has to be switched off, not sped up,
+   under reduced motion; the follow is skipped in JS. */
+@layer components {
+  .hero-firefly {
+    position: absolute; z-index: 11; width: 10px; height: 10px; border-radius: 50%;
+    pointer-events: none; will-change: transform;
+    background: #fff6c4;
+    box-shadow: 0 0 6px 3px rgb(255 226 110 / .95), 0 0 22px 10px rgb(255 214 90 / .55), 0 0 46px 22px rgb(255 214 90 / .22);
+    animation: firefly-pulse 2.6s ease-in-out infinite;
+  }
+  @media (prefers-reduced-motion: reduce) { .hero-firefly { animation: none !important; } }
+}
+@keyframes firefly-pulse {
+  0%, 100% { opacity: .55; scale: .85; }
+  50% { opacity: 1; scale: 1.1; }
+}

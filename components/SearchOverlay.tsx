@@ -12,6 +12,7 @@ import { IconClose, IconSearch } from './Icons'
 import type { NavLink } from './Header'
 import { Dialog, DialogClose, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { Skeleton } from '@/components/ui/skeleton'
+import { categoryName, useLang, useT } from '@/lib/i18n'
 
 interface SearchProductsData {
   searchProducts: Connection<Product> | null
@@ -34,6 +35,7 @@ const SKELETON_TILES = 4
 export default function SearchOverlay({ categories = [] }: SearchOverlayProps) {
   const { isOpen, close, closeForNavigation } = useUI()
   const inputRef = useRef<HTMLInputElement>(null)
+  const t = useT()
   return (
     <Dialog open={isOpen('search')} onOpenChange={(next) => { if (!next) close() }}>
       <DialogContent
@@ -47,7 +49,7 @@ export default function SearchOverlay({ categories = [] }: SearchOverlayProps) {
         }}
         className="flex flex-col gap-0 overflow-hidden p-0"
       >
-        <DialogTitle className="sr-only">Хайлт</DialogTitle>
+        <DialogTitle className="sr-only">{t('Хайлт', 'Search')}</DialogTitle>
         <SearchPanel inputRef={inputRef} categories={categories} onNavigate={closeForNavigation} />
       </DialogContent>
     </Dialog>
@@ -61,6 +63,7 @@ interface SearchPanelProps {
 }
 
 function SearchPanel({ inputRef, categories, onNavigate }: SearchPanelProps) {
+  const t = useT()
   const [term, setTerm] = useState('')
   const [run, { data, loading }] = useLazyQuery<SearchProductsData, SearchProductsVars>(SEARCH_PRODUCTS)
 
@@ -86,15 +89,15 @@ function SearchPanel({ inputRef, categories, onNavigate }: SearchPanelProps) {
             enterKeyHint="search"
             value={term}
             onChange={(e) => setTerm(e.target.value)}
-            placeholder="Юу хайж байна вэ?"
-            aria-label="Бүтээгдэхүүн хайх"
+            placeholder={t('Юу хайж байна вэ?', 'What are you looking for?')}
+            aria-label={t('Бүтээгдэхүүн хайх', 'Search products')}
             className="h-full min-w-0 flex-1 bg-transparent px-2.5 text-[16px] text-ink-strong sm:text-[14px] outline-none placeholder:text-ink-faint focus-visible:outline-none [&::-webkit-search-cancel-button]:hidden"
           />
           {term && (
             <button
               type="button"
               onClick={() => { setTerm(''); inputRef.current?.focus() }}
-              aria-label="Арилгах"
+              aria-label={t('Арилгах', 'Clear')}
               className="-mr-1.5 grid h-8 w-8 shrink-0 place-items-center rounded-full text-ink-soft hover:bg-line-soft hover:text-ink"
             >
               <IconClose width="14" height="14" />
@@ -102,10 +105,10 @@ function SearchPanel({ inputRef, categories, onNavigate }: SearchPanelProps) {
           )}
         </label>
         <DialogClose className="min-h-10 shrink-0 px-1.5 text-[13px] text-ink-soft hover:text-ink lg:hidden">
-          Болих
+          {t('Болих', 'Cancel')}
         </DialogClose>
         <DialogClose
-          aria-label="Хаах"
+          aria-label={t('Хаах', 'Close')}
           className="hidden h-7 shrink-0 items-center rounded-md border border-line px-2 text-[11px] font-medium text-ink-faint hover:text-ink lg:inline-flex"
         >
           Esc
@@ -129,15 +132,20 @@ function SearchPanel({ inputRef, categories, onNavigate }: SearchPanelProps) {
               </ResultGrid>
             ) : results.length === 0 ? (
               <div className="rounded-2xl bg-shade px-4 py-6 text-center">
-                <p className="text-[14px] font-semibold text-ink-strong">“{term.trim()}” олдсонгүй</p>
+                <p className="text-[14px] font-semibold text-ink-strong">
+                  {t(`“${term.trim()}” олдсонгүй`, `No results for “${term.trim()}”`)}
+                </p>
                 <p className="mx-auto mt-1 max-w-xs text-[12px] text-ink-soft">
-                  Үгийн үндсэн хэлбэрээр хайж үзээрэй, жишээ нь “ээмэг”, “цүнх”.
+                  {t(
+                    'Үгийн үндсэн хэлбэрээр хайж үзээрэй, жишээ нь “ээмэг”, “цүнх”.',
+                    'Try the base form of the word in Mongolian, for example “ээмэг”, “цүнх”.',
+                  )}
                 </p>
                 <Suggestions categories={categories} onNavigate={onNavigate} compact />
               </div>
             ) : (
               <>
-                <p className="mb-2.5 text-[11px] text-ink-faint">{results.length} бүтээгдэхүүн</p>
+                <p className="mb-2.5 text-[11px] text-ink-faint">{t(`${results.length} бүтээгдэхүүн`, `${results.length} ${results.length === 1 ? 'product' : 'products'}`)}</p>
                 <ResultGrid>
                   {results.map((p) => {
                     const c = copy(p)
@@ -184,10 +192,15 @@ interface SuggestionsProps {
 }
 
 function Suggestions({ categories, onNavigate, compact = false }: SuggestionsProps) {
-  const links: NavLink[] = [{ href: '/shop', label: 'Бүх бүтээгдэхүүн' }, ...categories]
+  const t = useT()
+  const lang = useLang()
+  const links: NavLink[] = [
+    { href: '/shop', label: t('Бүх бүтээгдэхүүн', 'All products') },
+    ...categories.map((c) => ({ ...c, label: c.slug ? categoryName(c.slug, c.label, lang) : c.label })),
+  ]
   return (
     <div className="mt-4">
-      {!compact && <p className="mb-2 text-[11px] font-medium text-ink-faint">Ангилалаар үзэх</p>}
+      {!compact && <p className="mb-2 text-[11px] font-medium text-ink-faint">{t('Ангилалаар үзэх', 'Browse by category')}</p>}
       <ul className={`flex flex-wrap gap-1.5 ${compact ? 'justify-center' : ''}`}>
         {links.map((link) => (
           <li key={link.href}>

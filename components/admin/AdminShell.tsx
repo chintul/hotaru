@@ -17,7 +17,7 @@ import { Button, IconButton } from './ui'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import Logo from '@/components/Logo'
 import {
-  Bell, Chart, Chevron, Dots, Folder, Orders, Panel, Products,
+  Bell, Chart, Chevron, Dots, Folder, ImageIcon, Orders, Panel, Products,
   Search as SearchIcon, Settings, Star, Tag,
 } from './icons'
 import type { IconProps } from './icons'
@@ -40,6 +40,7 @@ const NAV: readonly NavItem[] = [
     owns: (p) => p === '/admin' || p.startsWith('/admin/orders') },
   { href: '/admin/products', label: 'Бараа', icon: Products },
   { href: '/admin/categories', label: 'Ангилал', icon: Folder },
+  { href: '/admin/covers', label: 'Cover', icon: ImageIcon },
   { href: '/admin/discounts', label: 'Хөнгөлөлт', icon: Tag },
   { href: '/admin/reviews', label: 'Сэтгэгдэл', icon: Star },
   { href: '/admin/analytics', label: 'Тайлан', icon: Chart },

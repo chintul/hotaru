@@ -6,8 +6,7 @@ import type { ComponentType, ReactNode } from 'react'
 import { useUI, type Overlay } from './UIProvider'
 import { useCart } from './useCart'
 import { useAccount } from './useAccount'
-import { useTheme } from './ThemeProvider'
-import { LINK_ICON, THEME_CHOICES } from './UserMenu'
+import { LINK_ICON, ThemeSwitch } from './UserMenu'
 import type { NavLink } from './Header'
 import {
   IconBag,
@@ -21,12 +20,13 @@ import {
 } from './Icons'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { cn } from '@/lib/utils'
+import { categoryName, useLang, useT } from '@/lib/i18n'
 
-const INFO_LINKS: readonly NavLink[] = [
-  { href: '/about', label: 'Бидний тухай' },
-  { href: '/contact', label: 'Холбоо барих' },
-  { href: '/faq', label: 'Түгээмэл асуулт' },
-]
+const INFO_LINKS = [
+  { href: '/about', label: ['Бидний тухай', 'About us'] },
+  { href: '/contact', label: ['Холбоо барих', 'Contact'] },
+  { href: '/faq', label: ['Түгээмэл асуулт', 'FAQ'] },
+] as const
 
 interface BottomNavProps {
   categories?: NavLink[]
@@ -36,40 +36,45 @@ export default function BottomNav({ categories = [] }: BottomNavProps) {
   const pathname = usePathname()
   const { isOpen, open, close, closeForNavigation } = useUI()
   const { count } = useCart()
+  const t = useT()
+  const lang = useLang()
 
-  const shopLinks: NavLink[] = [{ href: '/shop', label: 'Бүх бүтээгдэхүүн' }, ...categories]
+  const shopLinks: NavLink[] = [
+    { href: '/shop', label: t('Бүх бүтээгдэхүүн', 'All products') },
+    ...categories.map((c) => ({ ...c, label: c.slug ? categoryName(c.slug, c.label, lang) : c.label })),
+  ]
   const accountActive = ['/account', '/orders', '/wishlist', '/login'].some((p) => pathname.startsWith(p))
 
   return (
     <>
       <nav
-        aria-label="Үндсэн цэс"
+        aria-label={t('Үндсэн цэс', 'Main menu')}
         className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-paper/97 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden"
       >
         <ul className="mx-auto grid h-16 max-w-xl grid-cols-5">
           <li>
-            <Tab href="/" label="Нүүр" icon={IconHome} active={pathname === '/' && !isOpen('nav')} />
+            <Tab href="/" label={t('Нүүр', 'Home')} icon={IconHome} active={pathname === '/' && !isOpen('nav')} />
           </li>
           <li>
-            <Tab overlay="nav" label="Ангилал" icon={IconCategories}
+            <Tab overlay="nav" label={t('Ангилал', 'Categories')} icon={IconCategories}
               active={isOpen('nav') || pathname.startsWith('/shop')} onOpen={open} />
           </li>
           <li>
-            <Tab overlay="search" label="Хайх" icon={IconSearch} active={isOpen('search')} onOpen={open} />
+            <Tab overlay="search" label={t('Хайх', 'Search')} icon={IconSearch} active={isOpen('search')} onOpen={open} />
           </li>
           <li>
-            <Tab overlay="cart" label="Сагс" icon={IconBag} active={isOpen('cart')} onOpen={open}
+            <Tab overlay="cart" label={t('Сагс', 'Cart')} icon={IconBag} active={isOpen('cart')} onOpen={open}
               badge={count > 0 ? count : null} />
           </li>
           <li>
-            <Tab overlay="account" label="Миний" icon={IconUser} active={isOpen('account') || accountActive} onOpen={open} />
+            <Tab overlay="account" label={t('Миний', 'Me')} icon={IconUser} active={isOpen('account') || accountActive} onOpen={open} />
           </li>
         </ul>
       </nav>
 
       <Sheet open={isOpen('nav')} onOpenChange={(next) => { if (!next) close() }}>
-        <SheetContent side="bottom" aria-describedby={undefined} closeLabel="Хаах" className="gap-0 px-5 pb-6 pt-5 lg:hidden">
-          <SheetTitle className="text-[17px] font-semibold">Ангилал</SheetTitle>
+        <SheetContent side="bottom" aria-describedby={undefined} closeLabel={t('Хаах', 'Close')} className="gap-0 px-5 pb-6 pt-5 lg:hidden">
+          <SheetTitle className="text-[17px] font-semibold">{t('Ангилал', 'Categories')}</SheetTitle>
           <ul className="mt-3 overflow-y-auto">
             {shopLinks.map((link) => (
               <li key={link.href} className="border-b border-line last:border-0">
@@ -154,18 +159,18 @@ function SheetRow({ href, onNavigate, icon: Icon, children }: SheetRowProps) {
 
 function AccountSheet({ open, onClose, onNavigate }: { open: boolean; onClose: () => void; onNavigate: () => void }) {
   const { isAuthenticated, displayName, links, signOut } = useAccount()
-  const { preference, setPreference } = useTheme()
+  const t = useT()
 
   return (
     <Sheet open={open} onOpenChange={(next) => { if (!next) onClose() }}>
-      <SheetContent side="bottom" aria-describedby={undefined} closeLabel="Хаах" className="gap-0 overflow-y-auto px-5 pb-6 pt-5 lg:hidden">
+      <SheetContent side="bottom" aria-describedby={undefined} closeLabel={t('Хаах', 'Close')} className="gap-0 overflow-y-auto px-5 pb-6 pt-5 lg:hidden">
         <SheetTitle className="pr-10 text-[17px] font-semibold">
           {isAuthenticated && displayName ? (
             <>
-              <span className="block text-[12px] font-normal text-ink-faint">Нэвтэрсэн</span>
+              <span className="block text-[12px] font-normal text-ink-faint">{t('Нэвтэрсэн', 'Signed in as')}</span>
               <span className="block truncate">{displayName}</span>
             </>
-          ) : 'Миний'}
+          ) : t('Миний', 'My account')}
         </SheetTitle>
 
         <ul className="mt-3">
@@ -176,33 +181,16 @@ function AccountSheet({ open, onClose, onNavigate }: { open: boolean; onClose: (
           ))}
         </ul>
 
-        <p className="label mt-5 text-ink-faint">Өнгөний горим</p>
-        <div role="group" aria-label="Өнгөний горим" className="mt-2 grid grid-cols-3 gap-1 rounded-full bg-shade p-1">
-          {THEME_CHOICES.map(({ value, label, icon: Icon }) => {
-            const selected = preference === value
-            return (
-              <button
-                key={value}
-                type="button"
-                aria-pressed={selected}
-                onClick={() => setPreference(value)}
-                className={cn(
-                  'flex min-h-11 items-center justify-center gap-1.5 rounded-full text-[13px] transition-colors',
-                  selected ? 'bg-paper font-semibold text-ink-strong shadow-(--t-lift)' : 'text-ink-soft',
-                )}
-              >
-                <Icon width="16" height="16" aria-hidden="true" />
-                {label}
-              </button>
-            )
-          })}
+        <p className="label mt-5 text-ink-faint">{t('Өнгөний горим', 'Appearance')}</p>
+        <div className="mt-2">
+          <ThemeSwitch />
         </div>
 
-        <p className="label mt-5 text-ink-faint">Мэдээлэл</p>
+        <p className="label mt-5 text-ink-faint">{t('Мэдээлэл', 'Information')}</p>
         <ul className="mt-1">
           {INFO_LINKS.map((link) => (
             <li key={link.href} className="border-b border-line last:border-0">
-              <SheetRow href={link.href} onNavigate={onNavigate}>{link.label}</SheetRow>
+              <SheetRow href={link.href} onNavigate={onNavigate}>{t(link.label[0], link.label[1])}</SheetRow>
             </li>
           ))}
         </ul>
@@ -214,7 +202,7 @@ function AccountSheet({ open, onClose, onNavigate }: { open: boolean; onClose: (
             className="mt-5 flex min-h-12 w-full items-center justify-center gap-2 rounded-full border border-line-strong text-[14px] text-ink"
           >
             <IconLogOut width="18" height="18" aria-hidden="true" />
-            Гарах
+            {t('Гарах', 'Sign out')}
           </button>
         )}
       </SheetContent>

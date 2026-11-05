@@ -5,6 +5,7 @@ import { formatMnt } from '@/lib/format'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { useT, type Translate } from '@/lib/i18n'
 
 interface AmountChooserProps {
   min: number
@@ -25,18 +26,18 @@ const HALF_PCT = 50
 
 const groupDigits = (n: number): string => new Intl.NumberFormat('mn-MN').format(n)
 
-function choicesFor(min: number, total: number): Choice[] {
+function choicesFor(min: number, total: number, t: Translate): Choice[] {
   const half = Math.ceil((total * HALF_PCT) / 100)
-  const list: Choice[] = [{ label: 'Хамгийн бага', amount: min }]
+  const list: Choice[] = [{ label: t('Хамгийн бага', 'Minimum'), amount: min }]
   if (half > min && half < total) list.push({ label: `${HALF_PCT}%`, amount: half })
-  if (total > min) list.push({ label: 'Бүтэн дүн', amount: total })
+  if (total > min) list.push({ label: t('Бүтэн дүн', 'Full amount'), amount: total })
   return list
 }
 
-function problemOf(amount: number | null, min: number, total: number): string | null {
-  if (amount === null) return 'Төлөх дүнгээ оруулна уу'
-  if (amount < min) return `Хамгийн багадаа ${formatMnt(min)}`
-  if (amount > total) return 'Нийт дүнгээс их байж болохгүй'
+function problemOf(amount: number | null, min: number, total: number, t: Translate): string | null {
+  if (amount === null) return t('Төлөх дүнгээ оруулна уу', 'Enter an amount to pay')
+  if (amount < min) return t(`Хамгийн багадаа ${formatMnt(min)}`, `At least ${formatMnt(min)}`)
+  if (amount > total) return t('Нийт дүнгээс их байж болохгүй', 'Can’t be more than the total')
   return null
 }
 
@@ -49,10 +50,11 @@ export default function AmountChooser({
   onConfirm,
   onCancel,
 }: AmountChooserProps) {
+  const t = useT()
   const inputId = useId()
   const [amount, setAmount] = useState<number | null>(initial)
-  const choices = choicesFor(min, total)
-  const problem = problemOf(amount, min, total)
+  const choices = choicesFor(min, total, t)
+  const problem = problemOf(amount, min, total, t)
   const balance = amount === null ? 0 : total - amount
 
   const onType = (raw: string) => {
@@ -68,7 +70,10 @@ export default function AmountChooser({
       }}
     >
       <p className="text-[13px] leading-relaxed text-ink-soft">
-        Хамгийн багадаа {formatMnt(min)} урьдчилж төлнө, бүтэн дүнгээр ч төлж болно.
+        {t(
+          `Хамгийн багадаа ${formatMnt(min)} урьдчилж төлнө, бүтэн дүнгээр ч төлж болно.`,
+          `Pay at least ${formatMnt(min)} up front, or the full amount if you prefer.`,
+        )}
       </p>
 
       <div
@@ -98,9 +103,9 @@ export default function AmountChooser({
 
       <Label
         htmlFor={inputId}
-        className="mt-4 block text-[11px] font-semibold uppercase leading-normal tracking-[.6px] text-ink-faint"
+        className="mt-4 block text-[11px] font-semibold leading-normal text-ink-faint"
       >
-        Эсвэл дүнгээ бичих
+        {t('Эсвэл дүнгээ бичих', 'Or type an amount')}
       </Label>
       <div className="relative mt-2">
         <Input
@@ -123,10 +128,11 @@ export default function AmountChooser({
           <span className="text-sale">{problem}</span>
         ) : balance > 0 ? (
           <span className="text-ink-soft">
-            Үлдэгдэл: <span className="font-semibold text-ink tabular-nums">{formatMnt(balance)}</span> бараа ирэхэд
+            {t('Үлдэгдэл:', 'Balance:')} <span className="font-semibold text-ink tabular-nums">{formatMnt(balance)}</span>{' '}
+            {t('бараа ирэхэд', 'when your items arrive')}
           </span>
         ) : (
-          <span className="text-ink-soft">Бүтэн дүнгээр төлөхөд үлдэгдэл үлдэхгүй</span>
+          <span className="text-ink-soft">{t('Бүтэн дүнгээр төлөхөд үлдэгдэл үлдэхгүй', 'Paying in full leaves no balance')}</span>
         )}
       </p>
 
@@ -140,11 +146,11 @@ export default function AmountChooser({
           disabled={busy || problem !== null}
           className="flex-1 rounded-full"
         >
-          {busy ? 'Хадгалж байна…' : 'Энэ дүнгээр төлөх'}
+          {busy ? t('Хадгалж байна…', 'Saving…') : t('Энэ дүнгээр төлөх', 'Pay this amount')}
         </Button>
         {onCancel && (
           <Button type="button" variant="line" size="cta" onClick={onCancel} className="rounded-full px-5">
-            Болих
+            {t('Болих', 'Cancel')}
           </Button>
         )}
       </div>

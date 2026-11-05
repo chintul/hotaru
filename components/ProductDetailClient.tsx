@@ -18,11 +18,14 @@ import { saleOf } from '@/lib/sale'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { hasSizes, uniqueColours } from '@/lib/sizes'
+import { guideQuestions, GuideTipSetter, type GuideTip } from './guide/Guide'
+import { useT } from '@/lib/i18n'
 
 interface ProductDetailClientProps {
   product: Product
   copy: ProductTranslation
   payNote: string
+  payNoteEn: string
 }
 
 interface ToggleWishlistData {
@@ -68,7 +71,8 @@ const syncUrlVariant = (id: string | null) => {
   window.history.replaceState(null, '', url)
 }
 
-export default function ProductDetailClient({ product, copy, payNote }: ProductDetailClientProps) {
+export default function ProductDetailClient({ product, copy, payNote, payNoteEn }: ProductDetailClientProps) {
+  const t = useT()
   const variants = nodes(product.variantCollection)
   const images = nodes(product.productImageCollection)
   const { add, adding } = useCart()
@@ -97,7 +101,8 @@ export default function ProductDetailClient({ product, copy, payNote }: ProductD
 
   const sized = hasSizes(variants)
   const colours = sized ? uniqueColours(variants) : []
-  const optionLabel = variants.find((v) => v.optionLabel)?.optionLabel ?? null
+  const storedOptionLabel = variants.find((v) => v.optionLabel)?.optionLabel ?? null
+  const optionLabel = storedOptionLabel === 'Өнгө' ? t('Өнгө', 'Colour') : storedOptionLabel
   const [pick, setPick] = useState<SizedPick | null>(null)
   const colour = pick ? pick.colour : (urlVariant?.optionValue ?? colours[0] ?? null)
   const ofColour = (c: string | null) => (colours.length ? variants.filter((v) => v.optionValue === c) : variants)
@@ -176,8 +181,12 @@ export default function ProductDetailClient({ product, copy, payNote }: ProductD
   const depositPct = product.preorderDepositPct ?? DEFAULT_DEPOSIT_PCT
   const depositNow = depositOf(subtotal, depositPct)
   const addLabel = needsSize
-    ? 'Хэмжээ сонгоно уу'
-    : purchasable ? (preorder ? 'Урьдчилан захиалах' : 'Сагсанд нэмэх') : 'Дууссан'
+    ? t('Хэмжээ сонгоно уу', 'Choose a size')
+    : purchasable
+      ? preorder
+        ? t('Урьдчилан захиалах', 'Pre-order')
+        : t('Сагсанд нэмэх', 'Add to cart')
+      : t('Дууссан', 'Sold out')
   const onBuy = needsSize ? promptSize : onAddSelected
   const buyDisabled = needsSize ? false : !purchasable || adding
   const swatches = sized
@@ -232,7 +241,7 @@ export default function ProductDetailClient({ product, copy, payNote }: ProductD
       addedTimer.current = window.setTimeout(() => setJustAdded(false), CONFIRMATION_MS)
     } catch (e) {
       closeOverlay()
-      setError(errorMessage(e, 'Сагсанд нэмэхэд алдаа гарлаа.'))
+      setError(errorMessage(e, t('Сагсанд нэмэхэд алдаа гарлаа.', 'Could not add to cart.')))
     } finally {
       setAddPending(false)
     }
@@ -244,15 +253,96 @@ export default function ProductDetailClient({ product, copy, payNote }: ProductD
       const res = await toggleWishlist({ variables: { productId: product.id } })
       setSaved(Boolean(res.data?.toggleWishlist))
     } catch (e) {
-      setError(errorMessage(e, 'Хадгалахад алдаа гарлаа.'))
+      setError(errorMessage(e, t('Хадгалахад алдаа гарлаа.', 'Could not save.')))
     }
+  }
+
+  const guideBase = selected ?? shown
+  const guideAvailable = Boolean(guideBase && variantAvailable(guideBase))
+  const guidePreorder = guideAvailable && isPreorder(guideBase, 1)
+  const guideMin = depositOf(unitPriceOf(guideBase, 1), depositPct)
+  const guideFeature = copy.description?.split(/(?<=[.!?])\s|\n/)[0]?.trim()
+  const guideTip: GuideTip = {
+    lines: [
+      ...(needsSize ? [t('Эхлээд хэмжээгээ сонгоорой.', 'Pick your size first.')] : []),
+      ...(!guideAvailable
+        ? [t('Энэ сонголт дууссан. Өөр өнгө, хэмжээ сонгоод үзээрэй.', 'This option is sold out. Try another colour or size.')]
+        : guidePreorder
+          ? [
+              t(
+                `Энэ бараа урьдчилсан захиалгаар, одоо ${formatMnt(guideMin)}-өөс төлж авна.`,
+                `This item is a pre-order. You can pay from ${formatMnt(guideMin)} now.`,
+              ),
+            ]
+          : [
+              (guideBase?.quantity ?? 0) <= LOW_STOCK_THRESHOLD
+                ? t(`Ердөө ${guideBase?.quantity ?? 0} ширхэг үлдсэн.`, `Only ${guideBase?.quantity ?? 0} left.`)
+                : t(
+                    'Бэлэн байгаа, Улаанбаатарт ажлын 1–2 хоногт хүргэнэ.',
+                    'In stock. Delivered in Ulaanbaatar within 1–2 working days.',
+                  ),
+            ]),
+      ...(guideFeature ? [guideFeature] : []),
+    ],
+    questions: [
+      ...(guideAvailable
+        ? [
+            {
+              q: t('Одоо хэдийг төлөх вэ?', 'How much do I pay now?'),
+              a: guidePreorder
+                ? [
+                    t(
+                      `Одоо ${depositPct}% буюу хамгийн багадаа ${formatMnt(guideMin)} төлнө.`,
+                      `Pay ${depositPct}% now, at least ${formatMnt(guideMin)}.`,
+                    ),
+                    t(
+                      `Үлдсэн ${formatMnt(unitPriceOf(guideBase, 1) - guideMin)}-ийг бараа ирэхэд төлнө.`,
+                      `The remaining ${formatMnt(unitPriceOf(guideBase, 1) - guideMin)} is paid when it arrives.`,
+                    ),
+                  ]
+                : [
+                    t(
+                      `Бүтэн үнэ ${formatMnt(unitPriceOf(guideBase, 1))} төлнө.`,
+                      `You pay the full price of ${formatMnt(unitPriceOf(guideBase, 1))}.`,
+                    ),
+                    t('Хүргэлтийн төлбөр тусдаа.', 'Delivery is charged separately.'),
+                  ],
+            },
+            {
+              q: t('Хэзээ ирэх вэ?', 'When will it arrive?'),
+              a: guidePreorder
+                ? [
+                    product.preorderEta
+                      ? t(`Ирэх хугацаа: ${product.preorderEta}.`, `Expected: ${product.preorderEta}.`)
+                      : t('Ирэх хугацаа тодорхой болмогц мэдэгдэнэ.', "We'll let you know once the arrival date is set."),
+                    t('Ирэхэд үлдэгдлээ төлмөгц хүргэнэ.', 'Once it arrives and the balance is paid, we deliver.'),
+                  ]
+                : [t('Улаанбаатарт ажлын 1–2 хоногт хүргэнэ.', 'Delivered in Ulaanbaatar within 1–2 working days.')],
+            },
+          ]
+        : []),
+      ...(sized
+        ? [
+            {
+              q: t('Хэмжээгээ яаж сонгох вэ?', 'How do I choose a size?'),
+              a: [
+                t('Хэмжээн дээр дарж сонгоно.', 'Tap a size to select it.'),
+                t('Эргэлзвэл бидэнд бичээрэй, туслая.', "Not sure? Message us and we'll help."),
+              ],
+              link: { href: '/contact', label: t('Холбоо барих', 'Contact us') },
+            },
+          ]
+        : []),
+      guideQuestions(t).returns,
+    ],
   }
 
   return (
     <>
+      <GuideTipSetter tip={guideTip} />
       <div className="grid gap-8 md:grid-cols-2 md:gap-8 lg:gap-14">
-        <div>
-          <div className="relative aspect-square overflow-hidden bg-shade">
+        <div className="min-w-0">
+          <div className="relative aspect-square overflow-hidden rounded-xl bg-shade">
             <div key={activeImage} className="fade-in absolute inset-0">
               <ProductImage
                 filePath={images[activeImage]?.filePath}
@@ -274,17 +364,17 @@ export default function ProductDetailClient({ product, copy, payNote }: ProductD
           </div>
 
           {images.length > 1 && (
-            <div className="mt-3 grid grid-cols-5 gap-2.5">
+            <div className="-mx-5 mt-3 flex gap-2 overflow-x-auto px-5 [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-5 sm:gap-2.5 sm:overflow-visible sm:px-0">
               {images.map((img, i) => (
                 <button
                   key={img.filePath + i}
                   onClick={() => setChosenImage(i)}
-                  className={`relative aspect-square overflow-hidden bg-shade transition-all duration-200 ${
+                  className={`relative aspect-square w-16 shrink-0 overflow-hidden rounded-lg bg-shade transition-all duration-200 sm:w-auto ${
                     i === activeImage ? 'ring-1 ring-ink-strong' : 'opacity-70 hover:opacity-100'
                   }`}
-                  aria-label={`Зураг ${i + 1}`}
+                  aria-label={t(`Зураг ${i + 1}`, `Image ${i + 1}`)}
                 >
-                  <ProductImage filePath={img.filePath} alt="" seed={`${product.slug}-${i}`} sizes="120px" />
+                  <ProductImage filePath={img.filePath} alt="" seed={`${product.slug}-${i}`} sizes="120px" priority />
                 </button>
               ))}
             </div>
@@ -293,14 +383,14 @@ export default function ProductDetailClient({ product, copy, payNote }: ProductD
 
         <div className="lg:sticky lg:top-[96px] lg:self-start">
           <div className="flex items-start justify-between gap-4">
-            <h1 className="text-[24px] font-bold leading-tight tracking-[0.4px]">{copy.title}</h1>
+            <h1 className="text-[clamp(24px,2.4vw,30px)] font-semibold leading-tight tracking-[-0.02em] text-ink-strong">{copy.title}</h1>
             <button
               onClick={onShare}
               className="tap flex shrink-0 items-center gap-1.5 text-[13px] text-ink-soft hover:text-ink"
-              aria-label="Хуваалцах"
+              aria-label={t('Хуваалцах', 'Share')}
             >
               <IconShare />
-              <span className="link-underline">{shared ? 'Холбоос хуулсан' : 'Хуваалцах'}</span>
+              <span className="link-underline">{shared ? t('Холбоос хуулсан', 'Link copied') : t('Хуваалцах', 'Share')}</span>
             </button>
           </div>
 
@@ -316,7 +406,7 @@ export default function ProductDetailClient({ product, copy, payNote }: ProductD
                 </span>
               </p>
               <p className="mt-1 text-[13px] text-ink-soft">
-                <span className="tabular-nums">{formatMnt(sale.was - sale.price)}</span> хэмнэнэ
+                {t('', 'Save ')}<span className="tabular-nums">{formatMnt(sale.was - sale.price)}</span>{t(' хэмнэнэ', '')}
               </p>
             </>
           ) : (
@@ -324,7 +414,7 @@ export default function ProductDetailClient({ product, copy, payNote }: ProductD
           )}
           {preorderPriced && (
             <p className="text-[13px] text-ink-soft">
-              Урьдчилсан захиалгын үнэ · Үндсэн үнэ <span className="tabular-nums">{formatMnt(normalPrice)}</span>
+              {t('Урьдчилсан захиалгын үнэ · Үндсэн үнэ', 'Pre-order price · Regular price')} <span className="tabular-nums">{formatMnt(normalPrice)}</span>
             </p>
           )}
 
@@ -392,14 +482,14 @@ export default function ProductDetailClient({ product, copy, payNote }: ProductD
               }`}
             >
               <p className="text-[13px]">
-                <span className="font-semibold">Хэмжээ:</span>{' '}
+                <span className="font-semibold">{t('Хэмжээ:', 'Size:')}</span>{' '}
                 {selected?.size ? (
                   <span className="text-ink-soft">{selected.size}</span>
                 ) : (
-                  <span className={nudged ? 'text-primary-soft-ink' : 'text-ink-faint'}>сонгоно уу</span>
+                  <span className={nudged ? 'text-primary-soft-ink' : 'text-ink-faint'}>{t('сонгоно уу', 'please choose')}</span>
                 )}
               </p>
-              <div role="group" aria-label="Хэмжээ" className="mt-3 flex flex-wrap gap-2">
+              <div role="group" aria-label={t('Хэмжээ', 'Size')} className="mt-3 flex flex-wrap gap-2">
                 {sizeOptions.map((v) => {
                   const out = !variantAvailable(v)
                   const active = v.id === selected?.id
@@ -410,7 +500,13 @@ export default function ProductDetailClient({ product, copy, payNote }: ProductD
                       onClick={() => pickSize(v)}
                       disabled={out}
                       aria-pressed={active}
-                      aria-label={early ? `${v.size} — урьдчилсан захиалга` : out ? `${v.size} — дууссан` : (v.size ?? '')}
+                      aria-label={
+                        early
+                          ? t(`${v.size} — урьдчилсан захиалга`, `${v.size} — pre-order`)
+                          : out
+                            ? t(`${v.size} — дууссан`, `${v.size} — sold out`)
+                            : (v.size ?? '')
+                      }
                       className={`flex min-h-11 min-w-11 flex-col items-center justify-center rounded-xl border px-3 text-[14px] tabular-nums transition-[border-color,background-color,transform] duration-150 active:scale-95 ${
                         active
                           ? 'border-ink-strong bg-ink-strong font-semibold text-on-ink'
@@ -422,7 +518,7 @@ export default function ProductDetailClient({ product, copy, payNote }: ProductD
                       <span className="leading-none">{v.size}</span>
                       {early && (
                         <span className={`mt-1 text-[10px] leading-none ${active ? 'text-on-ink' : 'text-ink-soft'}`}>
-                          урьдчилсан
+                          {t('урьдчилсан', 'pre-order')}
                         </span>
                       )}
                     </button>
@@ -437,35 +533,49 @@ export default function ProductDetailClient({ product, copy, payNote }: ProductD
               <PreorderTag />
               {product.preorderEta && (
                 <p className="mt-2.5 text-ink-soft">
-                  Ирэх хугацаа: <span className="font-semibold text-ink">{product.preorderEta}</span>
+                  {t('Ирэх хугацаа:', 'Expected:')} <span className="font-semibold text-ink">{product.preorderEta}</span>
                 </p>
               )}
               <div className="mt-3 space-y-1 border-t border-line pt-3">
                 <p className="text-ink-soft">
-                  Урьдчилгаа: <span className="font-semibold text-ink">хамгийн багадаа {depositPct}%</span>
+                  {t('Урьдчилгаа:', 'Deposit:')}{' '}
+                  <span className="font-semibold text-ink">
+                    {t(`хамгийн багадаа ${depositPct}%`, `at least ${depositPct}%`)}
+                  </span>
                 </p>
                 <p className="font-semibold tabular-nums">
-                  Хамгийн багадаа {formatMnt(depositNow)} урьдчилж төлнө, бүтэн дүнгээр ч төлж болно.
+                  {t(
+                    `Хамгийн багадаа ${formatMnt(depositNow)} урьдчилж төлнө, бүтэн дүнгээр ч төлж болно.`,
+                    `Pay at least ${formatMnt(depositNow)} upfront, or the full amount if you prefer.`,
+                  )}
                 </p>
-                <p className="text-ink-soft">Төлөх дүнгээ төлбөр хийхдээ өөрөө сонгоно. Үлдэгдлийг бараа ирэхэд төлнө.</p>
+                <p className="text-ink-soft">
+                  {t(
+                    'Төлөх дүнгээ төлбөр хийхдээ өөрөө сонгоно. Үлдэгдлийг бараа ирэхэд төлнө.',
+                    'You choose the amount when you pay. The balance is due when the item arrives.',
+                  )}
+                </p>
               </div>
               <p className="mt-3 leading-relaxed text-ink-soft">
-                Урьдчилгаа төлбөр буцаагдахгүй тул итгэлтэй байвал захиалаарай. Бараа ирмэгц үлдэгдлийн нэхэмжлэл илгээж, бүрэн төлөгдсөний дараа хүргэнэ.
+                {t(
+                  'Урьдчилгаа төлбөр буцаагдахгүй тул итгэлтэй байвал захиалаарай. Бараа ирмэгц үлдэгдлийн нэхэмжлэл илгээж, бүрэн төлөгдсөний дараа хүргэнэ.',
+                  "Deposits are non-refundable, so order only if you're sure. When the item arrives we send an invoice for the balance and deliver once it's paid in full.",
+                )}
               </p>
             </div>
           )}
 
           {qty > 1 && (
             <p className="mt-6 text-[13px]">
-              <span className="font-semibold">Нийт дүн:</span>{' '}
+              <span className="font-semibold">{t('Нийт дүн:', 'Total:')}</span>{' '}
               <span className="font-bold">{formatMnt(subtotal)}</span>
             </p>
           )}
 
-          <p className="mt-4 text-[13px] font-semibold">Тоо ширхэг:</p>
+          <p className="mt-4 text-[13px] font-semibold">{t('Тоо ширхэг:', 'Quantity:')}</p>
           <div className="mt-2 grid grid-cols-[auto_1fr] items-center gap-3 sm:flex sm:flex-wrap">
-            <div className="flex items-center border border-line">
-              <button onClick={() => setQty(Math.max(1, qty - 1))} className="grid h-11 w-11 place-items-center text-ink-soft hover:text-ink" aria-label="Тоо хасах">
+            <div className="flex items-center rounded-full border border-line-strong">
+              <button onClick={() => setQty(Math.max(1, qty - 1))} className="grid h-11 w-11 place-items-center text-ink-soft hover:text-ink" aria-label={t('Тоо хасах', 'Decrease quantity')}>
                 <IconMinus />
               </button>
               <span className="min-w-[46px] text-center text-[14px] tabular-nums">{qty}</span>
@@ -473,7 +583,7 @@ export default function ProductDetailClient({ product, copy, payNote }: ProductD
                 onClick={() => setQty(qty + 1)}
                 disabled={!selected?.allowBackorder && qty >= (selected?.quantity ?? 0)}
                 className="grid h-11 w-11 place-items-center text-ink-soft hover:text-ink disabled:opacity-30"
-                aria-label="Нэмэх"
+                aria-label={t('Нэмэх', 'Increase quantity')}
               >
                 <IconPlus />
               </button>
@@ -488,8 +598,8 @@ export default function ProductDetailClient({ product, copy, payNote }: ProductD
               className="order-last col-span-2 w-full px-8 active:scale-[.98] sm:order-none sm:col-auto sm:w-auto sm:min-w-[160px] sm:flex-1"
             >
               {justAdded ? (
-                <span className="tick-in inline-flex items-center gap-2"><IconCheck /> Нэмэгдлээ</span>
-              ) : adding ? 'Нэмж байна…' : addLabel}
+                <span className="tick-in inline-flex items-center gap-2"><IconCheck /> {t('Нэмэгдлээ', 'Added')}</span>
+              ) : adding ? t('Нэмж байна…', 'Adding…') : addLabel}
             </Button>
 
             <button
@@ -497,7 +607,7 @@ export default function ProductDetailClient({ product, copy, payNote }: ProductD
               className={`grid h-11 w-11 shrink-0 place-items-center justify-self-end rounded-full border sm:justify-self-auto ${
                 saved ? 'border-sale text-sale' : 'border-line text-ink-soft hover:border-ink hover:text-ink'
               }`}
-              aria-label="Хадгалах"
+              aria-label={t('Хадгалах', 'Save')}
             >
               <IconHeart filled={saved} />
             </button>
@@ -507,28 +617,30 @@ export default function ProductDetailClient({ product, copy, payNote }: ProductD
             <p className="mt-3 text-[13px] text-ink-soft">
               {purchasable
                 ? lowStock
-                  ? `Үлдэгдэл ${selected?.quantity} ширхэг`
-                  : 'Бэлэн байгаа'
-                : 'Түр дууссан'}
+                  ? t(`Үлдэгдэл ${selected?.quantity} ширхэг`, `${selected?.quantity} left`)
+                  : t('Бэлэн байгаа', 'In stock')
+                : t('Түр дууссан', 'Temporarily sold out')}
             </p>
           )}
 
           {error && <p className="mt-3 text-[13px] text-sale">{error}</p>}
 
           <div className="mt-8 border-t border-line pt-6 text-[13px] text-ink-soft">
-            <p className="font-semibold text-ink">Хүргэлт ба төлбөр</p>
-            <p className="mt-2">{`Улаанбаатар хотод ажлын 1–2 хоногт. ${payNote}`}</p>
+            <p className="font-semibold text-ink">{t('Хүргэлт ба төлбөр', 'Delivery & payment')}</p>
+            <p className="mt-2">
+              {t(`Улаанбаатар хотод ажлын 1–2 хоногт. ${payNote}`, `Within 1–2 working days in Ulaanbaatar. ${payNoteEn}`)}
+            </p>
           </div>
 
           {copy.description && (
             <div className="mt-6 border-t border-line pt-6">
-              <p className="text-[13px] font-semibold">Тайлбар</p>
+              <p className="text-[13px] font-semibold">{t('Тайлбар', 'Description')}</p>
               <p className="mt-2 whitespace-pre-line text-[13px] text-ink-soft">{copy.description}</p>
             </div>
           )}
           {copy.careDetails && (
             <div className="mt-6 border-t border-line pt-6">
-              <p className="text-[13px] font-semibold">Арчилгаа</p>
+              <p className="text-[13px] font-semibold">{t('Арчилгаа', 'Care')}</p>
               <p className="mt-2 whitespace-pre-line text-[13px] text-ink-soft">{copy.careDetails}</p>
             </div>
           )}
@@ -557,18 +669,18 @@ export default function ProductDetailClient({ product, copy, payNote }: ProductD
                 }}
               >
                 <SelectTrigger
-                  aria-label={sized ? 'Хэмжээ' : (optionLabel ?? undefined)}
-                  className="hidden rounded-none px-3 text-[13px] sm:flex"
+                  aria-label={sized ? t('Хэмжээ', 'Size') : (optionLabel ?? undefined)}
+                  className="hidden rounded-full px-3 text-[13px] sm:flex"
                 >
-                  <SelectValue placeholder={sized ? 'Хэмжээ' : undefined} />
+                  <SelectValue placeholder={sized ? t('Хэмжээ', 'Size') : undefined} />
                 </SelectTrigger>
-                <SelectContent position="popper" side="top" align="end" className="rounded-none border-line bg-paper">
+                <SelectContent position="popper" side="top" align="end" className="rounded-xl border-line bg-paper">
                   {barOptions.map((v) => (
                     <SelectItem
                       key={v.id}
                       value={v.id}
                       disabled={sized && !variantAvailable(v)}
-                      className="rounded-none text-[13px]"
+                      className="rounded-lg text-[13px]"
                     >
                       {sized ? v.size : v.optionValue}
                     </SelectItem>

@@ -81,7 +81,8 @@ export default function ProductImage({
       alt={alt ?? ''}
       fill
       sizes={sizes}
-      priority={priority}
+      loading={priority ? 'eager' : 'lazy'}
+      fetchPriority={priority ? 'high' : 'auto'}
       transformation={[{ quality: 82 }]}
       className={`h-full w-full object-cover ${className}`}
     />

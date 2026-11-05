@@ -1,15 +1,14 @@
 import type { Metadata, Viewport } from "next";
-import { Poppins } from "next/font/google";
+import { Onest } from "next/font/google";
 import "./globals.css";
 import { ApolloWrapper } from "@/lib/apollo/ApolloWrapper";
 import { UIProvider } from "@/components/UIProvider";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { THEME_KEY } from "@/lib/theme";
 
-const poppins = Poppins({
-  subsets: ["latin", "latin-ext"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-poppins",
+const onest = Onest({
+  subsets: ["cyrillic", "cyrillic-ext", "latin", "latin-ext"],
+  variable: "--font-onest",
   display: "swap",
 });
 
@@ -54,7 +53,7 @@ document.documentElement.setAttribute('data-theme',d?'dark':'light');
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="mn" className={poppins.variable} suppressHydrationWarning>
+    <html lang="mn" className={onest.variable} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOT }} />
       </head>

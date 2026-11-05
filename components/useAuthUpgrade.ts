@@ -6,6 +6,7 @@ import { ISSUE_CART_TRANSFER, REDEEM_CART_TRANSFER } from '@/lib/queries'
 import { ensureSession, supabaseBrowser } from '@/lib/supabase/browser'
 import type { Cart } from '@/lib/types'
 import { errorMessage, messageOf } from '@/lib/errors'
+import { useLang } from '@/lib/i18n'
 
 interface IssueCartTransferData {
   issueCartTransferToken: string | null
@@ -30,6 +31,7 @@ export type UpgradeResult =
 
 export function useAuthUpgrade() {
   const apollo = useApolloClient()
+  const lang = useLang()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -76,13 +78,13 @@ export function useAuthUpgrade() {
       await apollo.resetStore()
       return { ok: true, converted: false }
     } catch (e) {
-      const message = errorMessage(e, 'Нэвтрэхэд алдаа гарлаа.')
+      const message = errorMessage(e, lang === 'en' ? 'Couldn’t sign you in.' : 'Нэвтрэхэд алдаа гарлаа.')
       setError(message)
       return { ok: false, message }
     } finally {
       setBusy(false)
     }
-  }, [apollo])
+  }, [apollo, lang])
 
   const signOut = useCallback(async () => {
     await (await supabaseBrowser()).auth.signOut()

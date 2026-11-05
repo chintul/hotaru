@@ -20,6 +20,8 @@ import {
   toNumber,
 } from "@/lib/format";
 import { useSession } from "@/components/useSession";
+import { guideQuestions, GuideTipSetter, type GuideTip } from "@/components/guide/Guide";
+import { useT, type Translate } from "@/lib/i18n";
 import ProductImage from "@/components/ProductImage";
 import PreorderTag from "@/components/PreorderTag";
 import {
@@ -42,6 +44,7 @@ import type {
 import useCountdown, { paymentDeadline } from "../_components/useCountdown";
 import {
   STAGE_TITLE,
+  STAGE_TITLE_EN,
   dueNow,
   hasBalance,
   isPreorderOrder,
@@ -71,15 +74,21 @@ interface SetUpfrontVars {
   amountMnt: string;
 }
 
-function upfrontErrorMessage(e: unknown, min: string): string {
+function upfrontErrorMessage(e: unknown, min: string, t: Translate): string {
   const message = e instanceof Error ? e.message : "";
   if (message.includes("amount must be between")) {
-    return `Хамгийн багадаа ${min} төлөх боломжтой.`;
+    return t(`Хамгийн багадаа ${min} төлөх боломжтой.`, `The minimum you can pay is ${min}.`);
   }
   if (message.includes("can only change before payment")) {
-    return "Төлбөр аль хэдийн эхэлсэн тул дүнг өөрчлөх боломжгүй.";
+    return t(
+      "Төлбөр аль хэдийн эхэлсэн тул дүнг өөрчлөх боломжгүй.",
+      "Payment has already started, so the amount can’t be changed.",
+    );
   }
-  return "Дүн хадгалахад алдаа гарлаа. Дахин оролдоно уу.";
+  return t(
+    "Дүн хадгалахад алдаа гарлаа. Дахин оролдоно уу.",
+    "Couldn’t save the amount. Please try again.",
+  );
 }
 
 type Tone = "wait" | "good" | "move" | "stop";
@@ -97,23 +106,113 @@ const STATUS_TONE: Record<OrderStatus, Tone> = {
   oversold: "stop",
 };
 
-const STATUS_NOTE: Record<OrderStatus, readonly [note: string, emoji: string]> = {
-  awaiting_payment: ["Төлбөрөө хүлээж байна", "🕰️"],
-  deposit_paid: ["Урьдчилгаа баталгаажлаа, бараа ирэхийг хүлээж байна", "🌱"],
-  awaiting_balance: ["Бараа тань ирлээ. Үлдэгдлээ төлмөгц хүргэнэ", "🎁"],
-  paid: ["Төлбөр баталгаажлаа, баярлалаа", "🎀"],
-  packed: ["Захиалга тань савлагдлаа", "📦"],
-  shipped: ["Хүргэлтэд гарсан", "🚚"],
-  delivered: ["Хүргэгдсэн, сайхан хэрэглээрэй", "💛"],
-  cancelled: ["Захиалга цуцлагдсан", "🥀"],
-  refunded: ["Төлбөр буцаагдсан", "↩️"],
-  oversold: ["Нөөц хүрэлцээгүй", "⚠️"],
+const STATUS_NOTE: Record<OrderStatus, readonly [note: string, en: string, emoji: string]> = {
+  awaiting_payment: ["Төлбөрөө хүлээж байна", "Waiting for your payment", "🕰️"],
+  deposit_paid: ["Урьдчилгаа баталгаажлаа, бараа ирэхийг хүлээж байна", "Deposit confirmed, waiting for your items to arrive", "🌱"],
+  awaiting_balance: ["Бараа тань ирлээ. Үлдэгдлээ төлмөгц хүргэнэ", "Your items are here. We’ll deliver once the balance is paid", "🎁"],
+  paid: ["Төлбөр баталгаажлаа, баярлалаа", "Payment confirmed, thank you", "🎀"],
+  packed: ["Захиалга тань савлагдлаа", "Your order is packed", "📦"],
+  shipped: ["Хүргэлтэд гарсан", "Out for delivery", "🚚"],
+  delivered: ["Хүргэгдсэн, сайхан хэрэглээрэй", "Delivered, enjoy", "💛"],
+  cancelled: ["Захиалга цуцлагдсан", "Order cancelled", "🥀"],
+  refunded: ["Төлбөр буцаагдсан", "Payment refunded", "↩️"],
+  oversold: ["Нөөц хүрэлцээгүй", "Out of stock", "⚠️"],
 };
+
+function orderGuideTip(order: Order, eta: string | null | undefined, t: Translate): GuideTip {
+  const g = guideQuestions(t);
+  const upfront = formatMnt(order.upfrontMnt);
+  const balance = formatMnt(order.balanceMnt);
+  switch (order.status) {
+    case "awaiting_payment":
+      return order.paymentStatus === "submitted"
+        ? {
+            lines: [
+              t("Төлбөрийн мэдээллийг тань хүлээн авлаа.", "We’ve received your payment details."),
+              t("Бид шалгаад удахгүй баталгаажуулна. Энэ хуудсыг хааж болно.", "We’ll check and confirm shortly. You can close this page."),
+            ],
+            questions: [g.confirm, g.cancel],
+          }
+        : {
+            lines: [
+              t("Захиалга тань бүртгэгдлээ.", "Your order is placed."),
+              t(
+                `Доорх QPay эсвэл дансаар ${upfront} төлөөд «Төлсөн» товчийг дарна уу. Бид шалгаад баталгаажуулна.`,
+                `Pay ${upfront} by QPay or bank transfer below, then tap “I’ve paid”. We’ll check and confirm.`,
+              ),
+            ],
+            questions: [g.pay, g.confirm, g.cancel],
+          };
+    case "deposit_paid":
+      return {
+        lines: [
+          t("Урьдчилгаа тань баталгаажлаа.", "Your deposit is confirmed."),
+          eta
+            ? t(`Бараа ${eta} орчим ирнэ.`, `Your items should arrive around ${eta}.`)
+            : t("Бараа ирэхэд бид танд мэдэгдэнэ.", "We’ll let you know when your items arrive."),
+          t(`Ирэхэд үлдэгдэл ${balance}-ийг төлнө.`, `You’ll pay the ${balance} balance when they arrive.`),
+        ],
+        questions: [
+          {
+            q: t("Үлдэгдлээ хэзээ төлөх вэ?", "When do I pay the balance?"),
+            a: [
+              t("Бараа ирэхэд бид мэдэгдэнэ.", "We’ll let you know when your items arrive."),
+              t(`Тэр үед энэ хуудаснаас ${balance}-ийг төлнө.`, `Then you pay ${balance} from this page.`),
+            ],
+          },
+          g.cancel,
+        ],
+      };
+    case "awaiting_balance":
+      return {
+        lines: [
+          t("Бараа тань ирлээ.", "Your items have arrived."),
+          t(`Үлдэгдэл ${balance}-ийг төлмөгц хүргэлтэд гаргана.`, `We’ll send them out as soon as the ${balance} balance is paid.`),
+        ],
+        questions: [g.pay, g.delivery],
+      };
+    case "paid":
+    case "packed":
+      return {
+        lines: [
+          t("Төлбөр баталгаажлаа.", "Payment confirmed."),
+          t("Савлаад Улаанбаатарт ажлын 1–2 хоногт хүргэнэ.", "We’ll pack it and deliver in Ulaanbaatar within 1–2 working days."),
+        ],
+        questions: [g.delivery, g.cancel],
+      };
+    case "shipped":
+      return {
+        lines: [
+          t("Захиалга тань замдаа явж байна.", "Your order is on its way."),
+          t("Жолооч залгах тул утсаа ойрхон байлгаарай.", "The driver will call, so keep your phone nearby."),
+        ],
+        questions: [g.delivery, g.returns],
+      };
+    case "delivered":
+      return {
+        lines: [
+          t("Хүргэгдсэн. Сайхан хэрэглээрэй!", "Delivered. Enjoy!"),
+          t("Сэтгэгдэл үлдээвэл бусдад тус болно.", "Leaving a review helps other shoppers."),
+        ],
+        questions: [g.returns],
+      };
+    default:
+      return {
+        lines: [
+          t(orderStatusLabel(order.status), orderStatusLabel(order.status, "en")) + ".",
+          t("Асуух зүйл байвал бидэнтэй холбогдоорой.", "If you have any questions, get in touch."),
+        ],
+        link: g.contact,
+        questions: [g.cancel],
+      };
+  }
+}
 
 export default function OrderPage({
   params,
 }: PageProps<"/orders/[orderNumber]">) {
   const { orderNumber } = use(params);
+  const t = useT();
   const { isAuthenticated, ready, user } = useSession();
   const { data, loading, refetch } = useQuery<OrderDetailData>(ORDER_DETAIL, {
     variables: { orderNumber, profileId: user?.id },
@@ -182,7 +281,7 @@ export default function OrderPage({
       setAmountChosen(true);
       setChangingAmount(false);
     } catch (e) {
-      setAmountError(upfrontErrorMessage(e, formatMnt(minUpfront(order))));
+      setAmountError(upfrontErrorMessage(e, formatMnt(minUpfront(order)), t));
     }
   };
 
@@ -238,10 +337,10 @@ export default function OrderPage({
     return (
       <Empty
         emoji="🔑"
-        title="Нэвтэрч орно уу"
-        body="Захиалгаа харахын тулд нэвтэрнэ үү."
+        title={t("Нэвтэрч орно уу", "Please log in")}
+        body={t("Захиалгаа харахын тулд нэвтэрнэ үү.", "Log in to see your order.")}
         href={`/login?next=/orders/${orderNumber}`}
-        cta="Нэвтрэх"
+        cta={t("Нэвтрэх", "Log in")}
       />
     );
   }
@@ -249,15 +348,18 @@ export default function OrderPage({
     return (
       <Empty
         emoji="🔍"
-        title="Захиалга олдсонгүй"
-        body="Энэ дугаартай захиалга таны бүртгэлд алга байна."
+        title={t("Захиалга олдсонгүй", "Order not found")}
+        body={t(
+          "Энэ дугаартай захиалга таны бүртгэлд алга байна.",
+          "There’s no order with this number on your account.",
+        )}
         href="/orders"
-        cta="Бүх захиалга"
+        cta={t("Бүх захиалга", "All orders")}
       />
     );
   }
 
-  const [note, noteEmoji] = (order.status && STATUS_NOTE[order.status]) || ["", ""];
+  const [note, noteEn, noteEmoji] = (order.status && STATUS_NOTE[order.status]) || ["", "", ""];
   const count = items.reduce((n, i) => n + (i.quantity ?? 0), 0);
   const preorder = isPreorderOrder(order);
   const eta = items.find((i) => i.isPreorder && i.preorderEta)?.preorderEta;
@@ -265,17 +367,18 @@ export default function OrderPage({
 
   return (
     <div className="mx-auto max-w-[860px] px-4 py-8 sm:px-6 sm:py-12">
+      <GuideTipSetter tip={orderGuideTip(order, eta, t)} />
       <Link
         href="/orders"
         className="inline-flex items-center gap-1 text-[13px] text-ink-faint transition-colors hover:text-ink"
       >
-        <IconChevronLeft width="16" height="16" /> Бүх захиалга
+        <IconChevronLeft width="16" height="16" /> {t("Бүх захиалга", "All orders")}
       </Link>
 
       <header className="o-card o-card-warm fade-up mt-4 p-5 sm:p-7">
         <div className="flex flex-wrap items-center gap-3">
           <span className="o-chip" data-tone={order.status ? STATUS_TONE[order.status] : undefined}>
-            {orderStatusLabel(order.status)}
+            {t(orderStatusLabel(order.status), orderStatusLabel(order.status, "en"))}
           </span>
           <span className="text-[12px] text-ink-faint">
             {formatDate(order.placedAt)}
@@ -285,10 +388,10 @@ export default function OrderPage({
           {order.orderNumber}
         </h1>
         <p className="mt-1.5 text-[14px] text-ink-soft">
-          {note} <span aria-hidden>{noteEmoji}</span>
+          {t(note, noteEn)} <span aria-hidden>{noteEmoji}</span>
         </p>
         <div className="mt-4 flex flex-wrap items-baseline gap-x-5 gap-y-1 border-t border-line pt-4 text-[13px] text-ink-soft">
-          <span>{count} ширхэг бараа</span>
+          <span>{t(`${count} ширхэг бараа`, count === 1 ? "1 item" : `${count} items`)}</span>
           <span className="font-semibold text-ink tabular-nums">
             {formatMnt(order.totalMnt)}
           </span>
@@ -302,28 +405,35 @@ export default function OrderPage({
       )}
 
       {order.status === "oversold" && (
-        <Banner tone="stop" title="Нөөц хүрэлцээгүй">
-          Уучлаарай, таны төлбөр баталгаажсан ч бараа дууссан байна. Бид тантай
-          холбогдож төлбөрийг буцаана.
+        <Banner tone="stop" title={t("Нөөц хүрэлцээгүй", "Out of stock")}>
+          {t(
+            "Уучлаарай, таны төлбөр баталгаажсан ч бараа дууссан байна. Бид тантай холбогдож төлбөрийг буцаана.",
+            "Sorry, your payment was confirmed but the item has sold out. We’ll contact you and refund your payment.",
+          )}
         </Banner>
       )}
       {order.status === "cancelled" && (
-        <Banner tone="stop" title="Захиалга цуцлагдсан">
-          Асуух зүйл байвал бидэнтэй холбогдоорой.
+        <Banner tone="stop" title={t("Захиалга цуцлагдсан", "Order cancelled")}>
+          {t("Асуух зүйл байвал бидэнтэй холбогдоорой.", "If you have any questions, get in touch.")}
         </Banner>
       )}
       {order.status === "refunded" && (
-        <Banner tone="stop" title="Төлбөр буцаагдсан">
-          Мөнгө таны данс руу 1–3 ажлын өдөрт орно.
+        <Banner tone="stop" title={t("Төлбөр буцаагдсан", "Payment refunded")}>
+          {t(
+            "Мөнгө таны данс руу 1–3 ажлын өдөрт орно.",
+            "The money will reach your account within 1–3 working days.",
+          )}
         </Banner>
       )}
 
       {order.status === "deposit_paid" && (
-        <Banner tone="move" title="Бараа тань замдаа явж байна">
-          Урьдчилгаа тань баталгаажлаа, баярлалаа.
-          {eta ? ` Ирэх хугацаа: ${eta}.` : ""} Бараа ирмэгц бид үлдэгдлийн
-          нэхэмжлэл илгээж, имэйлээр мэдэгдэнэ. Үлдэгдэл төлөгдсөний дараа бүх
-          барааг тань хамт хүргэнэ.
+        <Banner tone="move" title={t("Бараа тань замдаа явж байна", "Your items are on their way")}>
+          {t("Урьдчилгаа тань баталгаажлаа, баярлалаа.", "Your deposit is confirmed, thank you.")}
+          {eta ? t(` Ирэх хугацаа: ${eta}.`, ` Expected arrival: ${eta}.`) : ""}{" "}
+          {t(
+            "Бараа ирмэгц бид үлдэгдлийн нэхэмжлэл илгээж, имэйлээр мэдэгдэнэ. Үлдэгдэл төлөгдсөний дараа бүх барааг тань хамт хүргэнэ.",
+            "As soon as they arrive we’ll send the balance invoice and let you know by email. Once the balance is paid, we’ll deliver everything together.",
+          )}
         </Banner>
       )}
 
@@ -331,12 +441,14 @@ export default function OrderPage({
         <section className="o-card fade-up mt-4 p-5 sm:p-6">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[.6px] text-ink-faint">
-                {choosingAmount ? "Одоо хэдийг төлөх вэ?" : STAGE_TITLE[stage]}
+              <p className="text-[11px] font-semibold text-ink-faint">
+                {choosingAmount
+                  ? t("Одоо хэдийг төлөх вэ?", "How much would you like to pay now?")
+                  : t(STAGE_TITLE[stage], STAGE_TITLE_EN[stage])}
               </p>
               {choosingAmount ? (
                 <p className="mt-1 text-[13px] text-ink-soft">
-                  Нийт дүн{" "}
+                  {t("Нийт дүн", "Total")}{" "}
                   <span className="font-semibold text-ink tabular-nums">
                     {formatMnt(order.totalMnt)}
                   </span>
@@ -354,16 +466,18 @@ export default function OrderPage({
               >
                 <IconClock />
                 {deadline.expired
-                  ? "Хугацаа дууссан"
-                  : `${deadline.text} үлдсэн`}
+                  ? t("Хугацаа дууссан", "Time’s up")
+                  : t(`${deadline.text} үлдсэн`, `${deadline.text} left`)}
               </span>
             )}
           </div>
 
           {stage === "balance" && (
             <p className="mt-3 text-[13px] leading-relaxed text-ink-soft">
-              Бараа тань ирлээ. Үлдэгдлээ төлмөгц бүх барааг тань хамт савлаж
-              хүргэнэ.
+              {t(
+                "Бараа тань ирлээ. Үлдэгдлээ төлмөгц бүх барааг тань хамт савлаж хүргэнэ.",
+                "Your items have arrived. Once the balance is paid, we’ll pack and deliver everything together.",
+              )}
             </p>
           )}
           {choosingAmount && (
@@ -386,8 +500,11 @@ export default function OrderPage({
             <div className="mt-3 flex flex-wrap items-center justify-between gap-x-4 text-[13px] leading-relaxed text-ink-soft">
               <p>
                 {hasBalance(order)
-                  ? `Бараа ирэхэд төлөх үлдэгдэл: ${formatMnt(order.balanceMnt)}`
-                  : "Бүтэн дүнгээр төлж байна"}
+                  ? t(
+                      `Бараа ирэхэд төлөх үлдэгдэл: ${formatMnt(order.balanceMnt)}`,
+                      `Balance due when your items arrive: ${formatMnt(order.balanceMnt)}`,
+                    )
+                  : t("Бүтэн дүнгээр төлж байна", "Paying in full")}
               </p>
               {!submitted && (
                 <button
@@ -395,20 +512,23 @@ export default function OrderPage({
                   onClick={changeAmount}
                   className="link-underline -my-2 min-h-11 font-semibold text-ink"
                 >
-                  Дүн өөрчлөх
+                  {t("Дүн өөрчлөх", "Change amount")}
                 </button>
               )}
             </div>
           )}
           {stage === "deposit" && (
             <p className="mt-2 text-[13px] leading-relaxed text-ink-soft">
-              Урьдчилгаа төлбөр буцаагдахгүйг анхаарна уу.
+              {t("Урьдчилгаа төлбөр буцаагдахгүйг анхаарна уу.", "Please note the deposit is non-refundable.")}
             </p>
           )}
 
           {submitted && (
             <p className="mt-4 rounded-2xl bg-mint px-4 py-3 text-[13px] text-mint-ink">
-              Мэдэгдэл хүлээн авлаа. Төлбөр баталгаажмагц танд имэйл илгээнэ.
+              {t(
+                "Мэдэгдэл хүлээн авлаа. Төлбөр баталгаажмагц танд имэйл илгээнэ.",
+                "Got it. We’ll email you once the payment is confirmed.",
+              )}
             </p>
           )}
 
@@ -422,24 +542,27 @@ export default function OrderPage({
                 icon={<IconQr />}
                 tint="bg-sky text-sky-ink"
                 title="Qpay"
-                sub="Банкны аппаараа уншуулах"
+                sub={t("Банкны аппаараа уншуулах", "Scan with your bank app")}
                 onClick={() => openPayment("qpay")}
               />
             )}
             <PayPick
               icon={<IconBank />}
               tint="bg-cream text-cream-ink"
-              title="Дансаар шилжүүлэх"
-              sub={bank.bankName || "Дансны мэдээлэл харах"}
+              title={t("Дансаар шилжүүлэх", "Bank transfer")}
+              sub={bank.bankName || t("Дансны мэдээлэл харах", "See account details")}
               onClick={() => openPayment("bank")}
             />
           </div>
 
           <p className="mt-4 text-[12px] text-ink-faint">
-            Гүйлгээний утга:{" "}
+            {t("Гүйлгээний утга:", "Payment reference:")}{" "}
             <span className="font-semibold text-ink">{order.orderNumber}</span>
             {stage !== "balance" && bank.paymentDeadlineHours
-              ? ` · ${bank.paymentDeadlineHours} цагийн дотор`
+              ? t(
+                  ` · ${bank.paymentDeadlineHours} цагийн дотор`,
+                  ` · within ${bank.paymentDeadlineHours} hours`,
+                )
               : ""}
           </p>
           </>
@@ -450,8 +573,8 @@ export default function OrderPage({
       {preorder && <PaymentBreakdown order={order} />}
 
       <section className="o-card mt-4 overflow-hidden">
-        <p className="px-5 pt-5 text-[11px] font-semibold uppercase tracking-[.6px] text-ink-faint sm:px-6">
-          Бараа
+        <p className="px-5 pt-5 text-[11px] font-semibold text-ink-faint sm:px-6">
+          {t("Бараа", "Items")}
         </p>
         <ul className="mt-3 divide-y divide-line-soft px-5 sm:px-6">
           {items.map((i) => (
@@ -495,24 +618,24 @@ export default function OrderPage({
         </ul>
 
         <dl className="mt-1 space-y-2 bg-paper-warm px-5 py-5 text-[13px] sm:px-6">
-          <Row label="Барааны дүн" value={formatMnt(order.subtotalMnt)} />
+          <Row label={t("Барааны дүн", "Subtotal")} value={formatMnt(order.subtotalMnt)} />
           {toNumber(order.discountMnt) > 0 && (
             <Row
-              label="Хөнгөлөлт"
+              label={t("Хөнгөлөлт", "Discount")}
               value={`−${formatMnt(order.discountMnt)}`}
               accent
             />
           )}
           <Row
-            label="Хүргэлт"
+            label={t("Хүргэлт", "Delivery")}
             value={
               toNumber(order.deliveryMnt) === 0
-                ? "Үнэгүй"
+                ? t("Үнэгүй", "Free")
                 : formatMnt(order.deliveryMnt)
             }
           />
           <div className="flex justify-between border-t border-line pt-3 text-[16px] font-semibold">
-            <dt>Нийт</dt>
+            <dt>{t("Нийт", "Total")}</dt>
             <dd className="tabular-nums">{formatMnt(order.totalMnt)}</dd>
           </div>
         </dl>
@@ -520,8 +643,8 @@ export default function OrderPage({
 
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <section className="o-card p-5 sm:p-6">
-          <p className="text-[11px] font-semibold uppercase tracking-[.6px] text-ink-faint">
-            Хүргэлтийн хаяг
+          <p className="text-[11px] font-semibold text-ink-faint">
+            {t("Хүргэлтийн хаяг", "Delivery address")}
           </p>
           <p className="mt-3 text-[14px] font-medium">
             {address.recipient_name}
@@ -541,8 +664,8 @@ export default function OrderPage({
         </section>
 
         <section className="o-card p-5 sm:p-6">
-          <p className="text-[11px] font-semibold uppercase tracking-[.6px] text-ink-faint">
-            Хүргэлт
+          <p className="text-[11px] font-semibold text-ink-faint">
+            {t("Хүргэлт", "Delivery")}
           </p>
           <p className="mt-3 flex items-center gap-2 text-[14px] font-medium">
             <IconTruck className="text-ink-soft" />
@@ -550,14 +673,17 @@ export default function OrderPage({
           </p>
           {order.trackingNumber ? (
             <p className="mt-2 text-[13px] text-ink-soft">
-              Хяналтын дугаар:{" "}
+              {t("Хяналтын дугаар:", "Tracking number:")}{" "}
               <span className="font-medium text-ink tabular-nums">
                 {order.trackingNumber}
               </span>
             </p>
           ) : (
             <p className="mt-2 text-[13px] text-ink-faint">
-              Хүргэлтэд гарахад хяналтын дугаар энд харагдана.
+              {t(
+                "Хүргэлтэд гарахад хяналтын дугаар энд харагдана.",
+                "Your tracking number will show here once it ships.",
+              )}
             </p>
           )}
           {order.customerNote && (
@@ -569,9 +695,9 @@ export default function OrderPage({
       </div>
 
       <p className="mt-8 text-center text-[13px] text-ink-faint">
-        Асуух зүйл байна уу?{" "}
+        {t("Асуух зүйл байна уу?", "Have a question?")}{" "}
         <Link href="/contact" className="link-underline text-ink-soft">
-          Бидэнтэй холбогдох
+          {t("Бидэнтэй холбогдох", "Contact us")}
         </Link>
       </p>
 
@@ -609,11 +735,11 @@ export default function OrderPage({
 
 type StepState = "paid" | "checking" | "due" | "later";
 
-const STEP_BADGE: Record<StepState, { tone: Tone; text: string }> = {
-  paid: { tone: "good", text: "✓ Төлсөн" },
-  checking: { tone: "move", text: "Шалгаж байна" },
-  due: { tone: "wait", text: "Төлөх" },
-  later: { tone: "move", text: "Бараа ирэхэд" },
+const STEP_BADGE: Record<StepState, { tone: Tone; text: string; en: string }> = {
+  paid: { tone: "good", text: "✓ Төлсөн", en: "✓ Paid" },
+  checking: { tone: "move", text: "Шалгаж байна", en: "Checking" },
+  due: { tone: "wait", text: "Төлөх", en: "Due" },
+  later: { tone: "move", text: "Бараа ирэхэд", en: "On arrival" },
 };
 
 const SETTLED: ReadonlySet<OrderStatus> = new Set([
@@ -624,6 +750,7 @@ const SETTLED: ReadonlySet<OrderStatus> = new Set([
 ]);
 
 function PaymentBreakdown({ order }: { order: Order }) {
+  const t = useT();
   const status = order.status;
   const submitted = order.paymentStatus === "submitted";
   const deposit: StepState =
@@ -641,43 +768,45 @@ function PaymentBreakdown({ order }: { order: Order }) {
 
   return (
     <section className="o-card mt-4 p-5 sm:p-6">
-      <p className="text-[11px] font-semibold uppercase tracking-[.6px] text-ink-faint">
-        Төлбөрийн хуваарь
+      <p className="text-[11px] font-semibold text-ink-faint">
+        {t("Төлбөрийн хуваарь", "Payment schedule")}
       </p>
       <ul className="mt-3 divide-y divide-line-soft text-[14px]">
         <BreakdownRow
-          title="Хамгийн бага урьдчилгаа"
-          hint="Үүнээс багагүй төлнө"
+          title={t("Хамгийн бага урьдчилгаа", "Minimum deposit")}
+          hint={t("Үүнээс багагүй төлнө", "Pay at least this much")}
           amount={formatMnt(minUpfront(order))}
           state={null}
           muted
         />
         <BreakdownRow
-          title={hasBalance(order) ? "Урьдчилгаа" : "Бүтэн дүн"}
-          hint="Таны сонгосон дүн"
+          title={hasBalance(order) ? t("Урьдчилгаа", "Deposit") : t("Бүтэн дүн", "Full amount")}
+          hint={t("Таны сонгосон дүн", "The amount you chose")}
           amount={formatMnt(order.upfrontMnt)}
           state={closed ? null : deposit}
         />
         {hasBalance(order) ? (
           <BreakdownRow
-            title="Үлдэгдэл"
+            title={t("Үлдэгдэл", "Balance")}
             hint={
               balance === "due" || balance === "checking"
-                ? "Нэхэмжлэл ирсэн"
-                : "Бараа ирэхэд"
+                ? t("Нэхэмжлэл ирсэн", "Invoice sent")
+                : t("Бараа ирэхэд", "When your items arrive")
             }
             amount={formatMnt(order.balanceMnt)}
             state={closed ? null : balance}
           />
         ) : (
           <li className="py-3 text-[13px] text-ink-soft">
-            Бүтэн дүнгээр төлөх тул үлдэгдэл үлдэхгүй.
+            {t("Бүтэн дүнгээр төлөх тул үлдэгдэл үлдэхгүй.", "You’re paying in full, so there’s no balance.")}
           </li>
         )}
       </ul>
       <p className="mt-3 border-t border-line pt-3 text-[12px] leading-relaxed text-ink-faint">
-        Урьдчилгаа төлбөр буцаагдахгүй. Бүх бараа тань хамт, бүрэн төлөгдсөний
-        дараа хүргэгдэнэ.
+        {t(
+          "Урьдчилгаа төлбөр буцаагдахгүй. Бүх бараа тань хамт, бүрэн төлөгдсөний дараа хүргэгдэнэ.",
+          "The deposit is non-refundable. All your items are delivered together once fully paid.",
+        )}
       </p>
     </section>
   );
@@ -698,6 +827,7 @@ function BreakdownRow({
   state,
   muted = false,
 }: BreakdownRowProps) {
+  const t = useT();
   return (
     <li className={`flex items-center gap-3 py-3 ${muted ? "text-ink-soft" : ""}`}>
       <span className="min-w-0 flex-1">
@@ -706,7 +836,7 @@ function BreakdownRow({
       </span>
       {state && (
         <span className="o-chip shrink-0" data-tone={STEP_BADGE[state].tone}>
-          {STEP_BADGE[state].text}
+          {t(STEP_BADGE[state].text, STEP_BADGE[state].en)}
         </span>
       )}
       <span className="w-[92px] shrink-0 text-right font-medium tabular-nums">
@@ -807,7 +937,7 @@ function Empty({ emoji, title, body, href, cta }: EmptyProps) {
         <p className="mt-1.5 text-[13px] text-ink-soft">{body}</p>
         <Link
           href={href}
-          className="mt-6 inline-block rounded-full bg-ink-strong px-6 py-3 text-[12px] font-bold uppercase tracking-[.7px] text-paper transition-opacity hover:opacity-85"
+          className="mt-6 inline-block rounded-full bg-ink-strong px-6 py-3 text-[12px] font-bold text-paper transition-opacity hover:opacity-85"
         >
           {cta}
         </Link>
