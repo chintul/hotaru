@@ -448,7 +448,7 @@ function FulfilmentCard({ order, onDone }: FulfilmentCardProps) {
     if (order.status !== 'deposit_paid' && order.status !== 'awaiting_balance') return null
     return (
       <Card title="Хүргэлт">
-        <p className="text-[13px] text-a-muted">Үлдэгдэл төлөгдөж баталгаажсаны дараа бэлтгэж илгээнэ.</p>
+        <p className="text-[13px] text-a-muted">Үлдэгдэл төлөгдөж баталгаажсны дараа бэлтгэж илгээнэ.</p>
       </Card>
     )
   }

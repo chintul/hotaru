@@ -116,7 +116,7 @@ export default async function ShopPage({ searchParams }: PageProps<'/shop'>) {
           {error ? (
             <div className="border border-line bg-shade px-5 py-16 text-center">
               <p className="text-ink-soft">
-                <T mn="Каталог ачаалж чадсангүй." en="Could not load the catalogue." />
+                <T mn="Каталогийг ачаалж чадсангүй." en="Could not load the catalogue." />
               </p>
             </div>
           ) : (

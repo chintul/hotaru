@@ -14,7 +14,7 @@ export default async function ContactPage() {
   return (
     <Prose
       title={<T mn="Холбоо барих" en="Contact us" />}
-      lead={<T mn="Ажлын өдрүүдэд 1 ажлын өдрийн дотор хариу өгнө." en="On working days we reply within one working day." />}
+      lead={<T mn="Ажлын нэг өдрийн дотор хариу өгнө." en="On working days we reply within one working day." />}
     >
       {!contact.isEmpty && (
         <div className="grid gap-3 sm:grid-cols-2">
@@ -29,7 +29,7 @@ export default async function ContactPage() {
           )}
           {contact.socials.length > 0 && (
             <div className="border border-line p-4">
-              <p className="label text-ink-faint"><T mn="Сошиал" en="Social" /></p>
+              <p className="label text-ink-faint"><T mn="Сошиал сүлжээ" en="Social" /></p>
               <div className="mt-2.5 flex gap-2">
                 {contact.socials.map((s) => (
                   <a
@@ -52,7 +52,7 @@ export default async function ContactPage() {
       <Block heading={<T mn="Захиалгын талаар" en="About an order" />}>
         <p>
           <T
-            mn={<>Захиалгын дугаараа бэлдээд бичнэ үү — <Link href="/orders" className="link-underline text-ink">миний захиалга</Link>{' '}хуудсанд байгаа. Төлбөр баталгаажаагүй байвал захиалгын хуудсан дээрх дансны мэдээллийг дахин шалгана уу.</>}
+            mn={<>Захиалгын дугаараа бэлдээд бичнэ үү. Дугаараа <Link href="/orders" className="link-underline text-ink">«Миний захиалга»</Link>{' '}хуудаснаас харж болно. Төлбөр баталгаажаагүй бол захиалгын хуудсан дээрх дансны мэдээллийг дахин шалгана уу.</>}
             en={<>Have your order number ready; you can find it on the <Link href="/orders" className="link-underline text-ink">my orders</Link> page. If your payment is not confirmed yet, check the account details on the order page again.</>}
           />
         </p>

@@ -34,16 +34,16 @@ export default async function ShippingPage() {
           </li>
         </ul>
       </Block>
-      <Block heading={<T mn="Хэзээ илгээх вэ" en="When we ship" />}>
+      <Block heading={<T mn="Хэзээ илгээх вэ?" en="When we ship" />}>
         <p>
           {pay.qpay ? (
             <T
-              mn="Төлбөр баталгаажсаны дараа бэлтгэж эхэлнэ. QPay-аар төлсөн төлбөр шууд, дансаар шилжүүлсэн төлбөр ажлын цагт ихэвчлэн нэг өдрийн дотор баталгаажна."
+              mn="Төлбөр баталгаажсны дараа бэлтгэж эхэлнэ. QPay-аар төлсөн төлбөр шууд, дансаар шилжүүлсэн төлбөр ажлын цагт ихэвчлэн нэг өдрийн дотор баталгаажна."
               en="We start packing once your payment is confirmed. QPay payments are confirmed straight away; bank transfers usually within one working day."
             />
           ) : (
             <T
-              mn="Төлбөр баталгаажсаны дараа бэлтгэж эхэлнэ. Дансаар шилжүүлсэн төлбөр ажлын цагт ихэвчлэн нэг өдрийн дотор баталгаажна."
+              mn="Төлбөр баталгаажсны дараа бэлтгэж эхэлнэ. Дансаар шилжүүлсэн төлбөр ажлын цагт ихэвчлэн нэг өдрийн дотор баталгаажна."
               en="We start packing once your payment is confirmed. Bank transfers are usually confirmed within one working day."
             />
           )}

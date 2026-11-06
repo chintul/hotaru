@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
       const badPhone = e.code === 'BAD_PHONE'
       console.error('[verify.mn] createSession failed:', e.message)
       return NextResponse.json(
-        { error: badPhone ? 'Утасны дугаар буруу байна.' : 'Баталгаажуулалт эхлүүлж чадсангүй.' },
+        { error: badPhone ? 'Утасны дугаар буруу байна.' : 'Баталгаажуулалтыг эхлүүлж чадсангүй.' },
         { status: badPhone ? 400 : 502 },
       )
     }

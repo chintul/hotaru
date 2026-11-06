@@ -11,7 +11,7 @@ const SORTS = [
   ['featured', 'Онцлох', 'Featured'],
   ['price-asc', 'Үнэ: багаас их', 'Price: low to high'],
   ['price-desc', 'Үнэ: ихээс бага', 'Price: high to low'],
-  ['newest', 'Шинэ эхэндээ', 'Newest first'],
+  ['newest', 'Шинэ нь эхэндээ', 'Newest first'],
 ] as const
 
 const COLUMN_OPTIONS = [2, 3, 4] as const

@@ -89,7 +89,7 @@ export default function EmailOtp({ onVerified, next = '/account' }: EmailOtpProp
       onVerified?.({ email })
     } catch (err) {
       setPhase('sent')
-      setError(messageOf(err)?.includes('expired') ? t('Код хугацаа нь дууссан байна.', 'This code has expired.') : t('Код буруу байна.', 'That code isn’t right.'))
+      setError(messageOf(err)?.includes('expired') ? t('Кодын хугацаа дууссан байна.', 'This code has expired.') : t('Код буруу байна.', 'That code isn’t right.'))
     }
   }
 

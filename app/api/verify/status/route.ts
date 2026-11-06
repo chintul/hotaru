@@ -62,6 +62,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ status: 'EXPIRED' })
     }
     console.error('[verify.mn] status check failed:', messageOf(e))
-    return NextResponse.json({ error: 'Төлөв шалгаж чадсангүй.' }, { status: 502 })
+    return NextResponse.json({ error: 'Төлөвийг шалгаж чадсангүй.' }, { status: 502 })
   }
 }

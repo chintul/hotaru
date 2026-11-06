@@ -66,11 +66,33 @@ function CartPanel({ confirmClear, setConfirmClear }: CartPanelProps) {
 
   return (
     <>
-      <div className="flex items-center justify-between border-b border-line px-6 py-3.5">
-        <SheetTitle className="text-[17px] font-semibold text-ink-strong">
+      <div className="flex items-center gap-3 border-b border-line py-2.5 pl-5 pr-4 sm:px-6 sm:py-3.5">
+        <SheetTitle className="mr-auto text-[17px] font-semibold text-ink-strong">
           {t('Сагс', 'Cart')}
           {count > 0 && <span className="ml-1.5 font-normal text-ink-faint">{count}</span>}
         </SheetTitle>
+        {items.length > 0 &&
+          (confirmClear ? (
+            <span className="flex items-center gap-3 text-[13px]">
+              <span className="text-ink-soft">{t('Хоослох уу?', 'Empty it?')}</span>
+              <button
+                onClick={() => { clear(); setConfirmClear(false) }}
+                className="min-h-10 font-semibold text-sale underline underline-offset-4"
+              >
+                {t('Тийм', 'Yes')}
+              </button>
+              <button onClick={() => setConfirmClear(false)} className="min-h-10 text-ink-soft">
+                {t('Үгүй', 'No')}
+              </button>
+            </span>
+          ) : (
+            <button
+              onClick={() => setConfirmClear(true)}
+              className="min-h-10 text-[13px] text-ink-faint underline-offset-4 hover:text-ink hover:underline"
+            >
+              {t('Сагс хоослох', 'Empty cart')}
+            </button>
+          ))}
         <SheetClose asChild>
           <Button variant="ghost" size="icon-touch" className="-mr-2" aria-label={t('Хаах', 'Close')}>
             <IconClose />
@@ -78,7 +100,7 @@ function CartPanel({ confirmClear, setConfirmClear }: CartPanelProps) {
         </SheetClose>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-6">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 sm:px-6">
         {loading && !addPending && <p className="label py-10 text-ink-faint">{t('Ачааллаж байна…', 'Loading…')}</p>}
 
         {cartStale && (
@@ -209,52 +231,34 @@ function CartPanel({ confirmClear, setConfirmClear }: CartPanelProps) {
       </div>
 
       {items.length > 0 && (
-        <div className="border-t border-line px-6 pb-5 pt-4">
+        <div className="border-t border-line px-5 pb-[max(12px,env(safe-area-inset-bottom))] pt-3 sm:px-6 sm:pb-5 sm:pt-4">
           <div className="flex items-baseline justify-between">
-            <span className="text-[14px] text-ink-soft">{t('Барааны дүн', 'Subtotal')}</span>
-            <span className="text-[17px] font-semibold tabular-nums text-ink-strong">{formatMnt(subtotal)}</span>
+            <span className="text-[13px] text-ink-soft sm:text-[14px]">{t('Барааны дүн', 'Subtotal')}</span>
+            <span className={`tabular-nums ${split.hasPreorder ? 'text-[14px] text-ink-soft sm:text-[15px]' : 'text-[16px] font-semibold text-ink-strong sm:text-[17px]'}`}>{formatMnt(subtotal)}</span>
           </div>
           {split.hasPreorder && (
-            <div className="mt-3 rounded-xl bg-note-soft px-3.5 py-2.5">
+            <div className="mt-1.5 sm:mt-3 sm:rounded-xl sm:bg-note-soft sm:px-3.5 sm:py-2.5">
               <div className="flex items-baseline justify-between text-[14px]">
                 <span className="font-semibold text-ink-strong">{t('Одоо төлөх', 'Due now')}</span>
-                <span className="font-semibold tabular-nums text-ink-strong">{formatMnt(split.upfront)}</span>
+                <span className="text-[16px] font-semibold tabular-nums text-ink-strong sm:text-[14px]">{formatMnt(split.upfront)}</span>
               </div>
-              <p className="mt-0.5 text-[12px] leading-relaxed text-ink-soft">
+              <p className="mt-0.5 hidden text-[12px] leading-relaxed text-ink-soft sm:block">
                 {t(
-                  `Хамгийн багадаа урьдчилгаа. Бараа баталгаажсанаас хойш ${PREORDER_ARRIVAL_DAYS} хоногт ирэх бөгөөд үлдсэнийг тэр үед төлнө.`,
+                  `Энэ бол хамгийн бага урьдчилгаа. Бараа захиалга баталгаажсанаас хойш ${PREORDER_ARRIVAL_DAYS} хоногт ирэх бөгөөд үлдэгдлийг тэр үед төлнө.`,
                   `The minimum deposit. Items arrive ${PREORDER_ARRIVAL_DAYS} days after your order is confirmed; you pay the rest then.`,
                 )}
               </p>
             </div>
           )}
-          <p className="mt-2.5 text-[12px] text-ink-faint">
+          <p className="mt-1.5 text-[12px] leading-snug text-ink-faint sm:mt-2.5">
+            {split.hasPreorder && (
+              <span className="sm:hidden">{t('Үлдэгдлийг бараа ирэхэд төлнө. ', 'The rest is paid on arrival. ')}</span>
+            )}
             {t('Хүргэлтийн төлбөр дараагийн алхамд нэмэгдэнэ.', 'Delivery is added in the next step.')}
           </p>
-          <Button asChild variant="solid" size="cta" className="mt-4 w-full">
+          <Button asChild variant="solid" size="cta" className="mt-3 h-12 w-full sm:mt-4 sm:h-13.5">
             <Link href="/checkout">{t('Захиалах', 'Checkout')}</Link>
           </Button>
-          {confirmClear ? (
-            <div className="mt-3 flex items-center justify-center gap-4">
-              <span className="text-[13px] text-ink-soft">{t('Бүгдийг хасах уу?', 'Remove everything?')}</span>
-              <button
-                onClick={() => { clear(); setConfirmClear(false) }}
-                className="label text-sale underline underline-offset-4"
-              >
-                {t('Тийм, хоослох', 'Yes, empty it')}
-              </button>
-              <button onClick={() => setConfirmClear(false)} className="label text-ink-soft">
-                {t('Болих', 'Cancel')}
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={() => setConfirmClear(true)}
-              className="mx-auto mt-3 block text-[13px] text-ink-faint underline-offset-4 hover:text-ink hover:underline"
-            >
-              {t('Сагс хоослох', 'Empty cart')}
-            </button>
-          )}
         </div>
       )}
     </>
